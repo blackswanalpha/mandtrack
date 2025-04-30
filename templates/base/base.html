@@ -6,6 +6,8 @@
     <title>{% block title %}MindTrack - Mental Health Questionnaire Management{% endblock %}</title>
 
     <!-- Tailwind CSS -->
+    {% if debug %}
+    <!-- Use CDN in development -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -47,6 +49,10 @@
             },
         }
     </script>
+    {% else %}
+    <!-- Use compiled CSS in production -->
+    <link rel="stylesheet" href="{% static 'css/tailwind-custom.css' %}">
+    {% endif %}
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">

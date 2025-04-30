@@ -38,42 +38,81 @@ def collect_static():
         # Run collectstatic command
         call_command('collectstatic', '--noinput', '--clear')
 
-        # Copy static files to the root static directory for Vercel
-        if os.path.exists('static'):
-            print("Static directory already exists")
-        else:
-            print("Creating static directory")
-            os.makedirs('static', exist_ok=True)
+        # Create a list of all CSS and JS files to ensure they exist
+        css_files = [
+            'styles.css',
+            'enhanced-styles.css',
+            'animations.css',
+            'admin-portal.css',
+            'modern-sidebar.css',
+            'sidebar-animations.css',
+            'tailwind-custom.css'
+        ]
 
-        # Copy CSS files
-        for css_file in ['styles.css', 'enhanced-styles.css', 'animations.css', 'admin-portal.css', 'modern-sidebar.css', 'sidebar-animations.css']:
-            src_path = os.path.join(settings.STATIC_ROOT, 'css', css_file)
-            dest_path = os.path.join('static', 'css', css_file)
+        js_files = [
+            'main.js',
+            'admin-portal.js',
+            'dashboard-charts.js',
+            'modern-sidebar.js',
+            'notifications.js',
+            'search.js',
+            'sidebar.js',
+            'theme-switcher.js'
+        ]
+
+        # Ensure all CSS files exist
+        for css_file in css_files:
+            src_path = os.path.join('static', 'css', css_file)
+            dest_path = os.path.join(settings.STATIC_ROOT, 'css', css_file)
 
             # Create destination directory
             os.makedirs(os.path.dirname(dest_path), exist_ok=True)
 
-            # Copy file if it exists
-            if os.path.exists(src_path):
+            # If the file doesn't exist in staticfiles but exists in static, copy it
+            if not os.path.exists(dest_path) and os.path.exists(src_path):
                 print(f"Copying {src_path} to {dest_path}")
                 shutil.copy2(src_path, dest_path)
-            else:
-                print(f"Warning: {src_path} does not exist")
+            # If the file doesn't exist in either location, create an empty file
+            elif not os.path.exists(dest_path) and not os.path.exists(src_path):
+                print(f"Creating empty file {dest_path}")
+                os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                with open(dest_path, 'w') as f:
+                    f.write('/* Auto-generated empty file */')
 
-        # Copy JS files
-        for js_file in ['main.js', 'admin-portal.js', 'dashboard-charts.js', 'modern-sidebar.js', 'notifications.js', 'search.js', 'sidebar.js', 'theme-switcher.js']:
-            src_path = os.path.join(settings.STATIC_ROOT, 'js', js_file)
-            dest_path = os.path.join('static', 'js', js_file)
+        # Ensure all JS files exist
+        for js_file in js_files:
+            src_path = os.path.join('static', 'js', js_file)
+            dest_path = os.path.join(settings.STATIC_ROOT, 'js', js_file)
 
             # Create destination directory
             os.makedirs(os.path.dirname(dest_path), exist_ok=True)
 
-            # Copy file if it exists
-            if os.path.exists(src_path):
+            # If the file doesn't exist in staticfiles but exists in static, copy it
+            if not os.path.exists(dest_path) and os.path.exists(src_path):
                 print(f"Copying {src_path} to {dest_path}")
                 shutil.copy2(src_path, dest_path)
-            else:
-                print(f"Warning: {src_path} does not exist")
+            # If the file doesn't exist in either location, create an empty file
+            elif not os.path.exists(dest_path) and not os.path.exists(src_path):
+                print(f"Creating empty file {dest_path}")
+                os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                with open(dest_path, 'w') as f:
+                    f.write('// Auto-generated empty file')
+
+        # Now copy all files from staticfiles back to static for Vercel
+        print("Copying all files from staticfiles to static")
+        for root, dirs, files in os.walk(settings.STATIC_ROOT):
+            for file in files:
+                staticfiles_path = os.path.join(root, file)
+                # Get the relative path from STATIC_ROOT
+                rel_path = os.path.relpath(staticfiles_path, settings.STATIC_ROOT)
+                static_path = os.path.join('static', rel_path)
+
+                # Create destination directory
+                os.makedirs(os.path.dirname(static_path), exist_ok=True)
+
+                # Copy the file
+                print(f"Copying {staticfiles_path} to {static_path}")
+                shutil.copy2(staticfiles_path, static_path)
 
         print("Static files collected and copied.")
     except Exception as e:
@@ -91,17 +130,26 @@ def create_superuser():
     """Create a superuser if it doesn't exist."""
     print("Creating superuser...")
     try:
+        # Try to create the specified admin user
         superuser = User.objects.create_superuser(
-            email='admin@example.com',
-            password='Admin@123456',
+            email='admin12@example.com',
+            password='admin1234',
             first_name='Admin',
             last_name='User',
             is_active=True,
         )
-        print("Superuser 'admin@example.com' created successfully!")
+        print("Superuser 'admin12@example.com' created successfully!")
         return superuser
     except IntegrityError:
-        print("Superuser 'admin@example.com' already exists.")
+        print("Superuser 'admin12@example.com' already exists.")
+        # Check if we need to update the password
+        try:
+            admin_user = User.objects.get(email='admin12@example.com')
+            admin_user.set_password('admin1234')
+            admin_user.save()
+            print("Updated password for 'admin12@example.com'")
+        except Exception as e:
+            print(f"Error updating admin password: {str(e)}")
         return None
     except Exception as e:
         print(f"Error creating superuser: {str(e)}")

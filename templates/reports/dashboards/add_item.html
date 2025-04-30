@@ -1,0 +1,183 @@
+{% extends "reports/base.html" %}
+
+{% block title %}Add Item to Dashboard - MindTrack{% endblock %}
+
+{% block breadcrumbs %}
+<span class="mx-2">/</span>
+<a href="{% url 'dashboard_list' %}" class="text-indigo-600 hover:text-indigo-900">Dashboards</a>
+<span class="mx-2">/</span>
+<a href="{% url 'dashboard_detail' id=dashboard.id|default:'1' %}" class="text-indigo-600 hover:text-indigo-900">{{ dashboard.name|default:"Dashboard" }}</a>
+<span class="mx-2">/</span>
+<span class="text-gray-900">Add Item</span>
+{% endblock %}
+
+{% block reports_content %}
+<div class="mb-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-semibold text-gray-900">Add Item to Dashboard</h1>
+    </div>
+</div>
+
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">Item Information</h3>
+        <p class="mt-1 text-sm text-gray-500">Select the type of item to add to the dashboard.</p>
+    </div>
+    <div class="px-4 py-5 sm:p-6">
+        <form action="{% url 'add_item_to_dashboard' dashboard_id=dashboard.id|default:'1' %}" method="POST" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                <div class="sm:col-span-3">
+                    <label for="item_type" class="block text-sm font-medium text-gray-700">Item Type *</label>
+                    <div class="mt-1">
+                        <select id="item_type" name="item_type" required class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" onchange="toggleItemOptions()">
+                            <option value="">Select an item type</option>
+                            <option value="report">Report</option>
+                            <option value="chart">Chart</option>
+                            <option value="text">Text</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Report Options (shown when item_type is 'report') -->
+                <div id="report-options" class="sm:col-span-6 hidden">
+                    <div class="sm:col-span-4">
+                        <label for="report_id" class="block text-sm font-medium text-gray-700">Report *</label>
+                        <div class="mt-1">
+                            <select id="report_id" name="report_id" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                <option value="">Select a report</option>
+                                <option value="1">Mental Health Assessment Report</option>
+                                <option value="2">Anxiety Screening Report</option>
+                                <option value="3">Depression Screening Report</option>
+                                <option value="4">User Activity Report</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart Options (shown when item_type is 'chart') -->
+                <div id="chart-options" class="sm:col-span-6 hidden">
+                    <div class="sm:col-span-4">
+                        <label for="chart_id" class="block text-sm font-medium text-gray-700">Chart *</label>
+                        <div class="mt-1">
+                            <select id="chart_id" name="chart_id" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                <option value="">Select a chart</option>
+                                <option value="1">Response Trend</option>
+                                <option value="2">Score Distribution</option>
+                                <option value="3">Age Demographics</option>
+                                <option value="4">Completion Rate</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Text Options (shown when item_type is 'text') -->
+                <div id="text-options" class="sm:col-span-6 hidden">
+                    <div class="sm:col-span-6">
+                        <label for="title" class="block text-sm font-medium text-gray-700">Title *</label>
+                        <div class="mt-1">
+                            <input type="text" name="title" id="title" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                        </div>
+                    </div>
+                    <div class="sm:col-span-6 mt-4">
+                        <label for="content" class="block text-sm font-medium text-gray-700">Content *</label>
+                        <div class="mt-1">
+                            <textarea id="content" name="content" rows="4" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sm:col-span-6 border-t border-gray-200 pt-6">
+                    <h3 class="text-lg font-medium text-gray-900">Layout Settings</h3>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="position_x" class="block text-sm font-medium text-gray-700">X Position</label>
+                    <div class="mt-1">
+                        <input type="number" name="position_x" id="position_x" value="0" min="0" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">Horizontal position (0-based)</p>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="position_y" class="block text-sm font-medium text-gray-700">Y Position</label>
+                    <div class="mt-1">
+                        <input type="number" name="position_y" id="position_y" value="0" min="0" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">Vertical position (0-based)</p>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="width" class="block text-sm font-medium text-gray-700">Width</label>
+                    <div class="mt-1">
+                        <input type="number" name="width" id="width" value="6" min="1" max="12" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">Width in grid units (1-12)</p>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="height" class="block text-sm font-medium text-gray-700">Height</label>
+                    <div class="mt-1">
+                        <input type="number" name="height" id="height" value="400" min="100" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">Height in pixels</p>
+                </div>
+
+                <div class="sm:col-span-6">
+                    <div class="relative flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="allow_maximize" name="allow_maximize" type="checkbox" checked class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="allow_maximize" class="font-medium text-gray-700">Allow Maximize</label>
+                            <p class="text-gray-500">Allow users to maximize this item to full screen.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sm:col-span-6">
+                    <div class="relative flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="allow_filters" name="allow_filters" type="checkbox" checked class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="allow_filters" class="font-medium text-gray-700">Allow Filters</label>
+                            <p class="text-gray-500">Allow users to apply filters to this item.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-5 border-t border-gray-200 flex justify-end">
+                <a href="{% url 'dashboard_detail' id=dashboard.id|default:'1' %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mr-3">
+                    Cancel
+                </a>
+                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Add Item
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function toggleItemOptions() {
+        const itemType = document.getElementById('item_type').value;
+        
+        // Hide all option sections
+        document.getElementById('report-options').classList.add('hidden');
+        document.getElementById('chart-options').classList.add('hidden');
+        document.getElementById('text-options').classList.add('hidden');
+        
+        // Show the selected option section
+        if (itemType === 'report') {
+            document.getElementById('report-options').classList.remove('hidden');
+        } else if (itemType === 'chart') {
+            document.getElementById('chart-options').classList.remove('hidden');
+        } else if (itemType === 'text') {
+            document.getElementById('text-options').classList.remove('hidden');
+        }
+    }
+</script>
+{% endblock %}

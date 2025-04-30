@@ -1,0 +1,146 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}QR Code: {{ qr_code.name }} - MindTrack{% endblock %}
+
+{% block page_title %}QR Code: {{ qr_code.name }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'surveys:qr_code_list' %}" class="btn btn-sm btn-secondary transition-all">
+    <i class="fas fa-arrow-left me-1"></i> Back to QR Codes
+</a>
+<a href="{{ qr_code.image.url }}" download="qr_code_{{ qr_code.pk }}.png" class="btn btn-sm btn-success transition-all">
+    <i class="fas fa-download me-1"></i> Download QR Code
+</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4 transition-all hover:shadow-lg stagger-item">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">QR Code Details</h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5 class="font-weight-bold text-gray-800">Name</h5>
+                        <p>{{ qr_code.name }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="font-weight-bold text-gray-800">Status</h5>
+                        <p>
+                            <span class="badge {% if qr_code.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ qr_code.is_active|yesno:"Active,Inactive" }}
+                            </span>
+                            {% if qr_code.expires_at and qr_code.expires_at < now %}
+                                <span class="badge bg-danger">Expired</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5 class="font-weight-bold text-gray-800">Survey</h5>
+                        <p>
+                            <a href="{% url 'surveys:survey_detail' pk=qr_code.survey.pk %}" class="text-primary-600 hover:text-primary-900">
+                                {{ qr_code.survey.title }}
+                            </a>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="font-weight-bold text-gray-800">Access Count</h5>
+                        <p>{{ qr_code.access_count }}</p>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5 class="font-weight-bold text-gray-800">Created By</h5>
+                        <p>{{ qr_code.created_by.get_full_name|default:qr_code.created_by.email }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="font-weight-bold text-gray-800">Created At</h5>
+                        <p>{{ qr_code.created_at|date:"F d, Y H:i" }}</p>
+                    </div>
+                </div>
+                
+                {% if qr_code.expires_at %}
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5 class="font-weight-bold text-gray-800">Expires At</h5>
+                        <p>{{ qr_code.expires_at|date:"F d, Y H:i" }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if qr_code.description %}
+                <div class="mb-4">
+                    <h5 class="font-weight-bold text-gray-800">Description</h5>
+                    <p>{{ qr_code.description }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="mb-4">
+                    <h5 class="font-weight-bold text-gray-800">URL</h5>
+                    <p>
+                        <a href="{{ qr_code.url }}" target="_blank" class="text-primary-600 hover:text-primary-900">
+                            {{ qr_code.url }}
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card shadow mb-4 transition-all hover:shadow-lg stagger-item">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">QR Code Image</h6>
+            </div>
+            <div class="card-body text-center">
+                {% if qr_code.image %}
+                    <div class="bg-white p-4 inline-block border border-gray-200 rounded-lg mb-4">
+                        <img src="{{ qr_code.image.url }}" alt="QR Code for {{ qr_code.name }}" class="w-64 h-64 mx-auto">
+                    </div>
+                    
+                    <div>
+                        <a href="{{ qr_code.image.url }}" download="qr_code_{{ qr_code.pk }}.png" class="btn btn-success">
+                            <i class="fas fa-download me-1"></i> Download QR Code
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="w-64 h-64 flex items-center justify-center bg-gray-100 text-gray-400 mx-auto">
+                        <p>QR Code image not available</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card shadow mb-4 transition-all hover:shadow-lg stagger-item">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ qr_code.url }}" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-external-link-alt me-1"></i> Open Survey URL
+                    </a>
+                    <a href="{% url 'surveys:survey_detail' pk=qr_code.survey.pk %}" class="btn btn-info">
+                        <i class="fas fa-clipboard-list me-1"></i> View Survey
+                    </a>
+                    {% if qr_code.is_active %}
+                    <button class="btn btn-warning" disabled>
+                        <i class="fas fa-ban me-1"></i> Deactivate QR Code
+                    </button>
+                    {% else %}
+                    <button class="btn btn-success" disabled>
+                        <i class="fas fa-check-circle me-1"></i> Activate QR Code
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

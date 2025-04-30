@@ -1,0 +1,75 @@
+<footer class="footer mt-auto py-4 bg-light border-top">
+    <div class="container-fluid">
+        <div class="row g-4">
+            <div class="col-md-4 col-lg-4 mb-3 mb-md-0">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="logo-icon bg-primary text-white rounded p-1 me-2">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h5 class="mb-0 fw-bold">MindTrack</h5>
+                </div>
+                <p class="text-muted small mb-3">
+                    MindTrack is a comprehensive platform for creating, managing, and analyzing questionnaires and surveys.
+                </p>
+                <div class="d-flex gap-2">
+                    <a href="#" class="btn btn-sm btn-outline-secondary rounded-circle" aria-label="Twitter">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="btn btn-sm btn-outline-secondary rounded-circle" aria-label="LinkedIn">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                    <a href="#" class="btn btn-sm btn-outline-secondary rounded-circle" aria-label="GitHub">
+                        <i class="fab fa-github"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-2 col-lg-2 mb-3 mb-md-0">
+                <h6 class="fw-bold mb-3">Quick Links</h6>
+                <ul class="nav flex-column">
+                    <li class="nav-item mb-2"><a href="{% url 'dashboard:user_dashboard' %}" class="nav-link p-0 text-muted small">Dashboard</a></li>
+                    <li class="nav-item mb-2"><a href="{% url 'surveys:survey_list' %}" class="nav-link p-0 text-muted small">Questionnaires</a></li>
+                    <li class="nav-item mb-2"><a href="{% url 'feedback:response_list' %}" class="nav-link p-0 text-muted small">Responses</a></li>
+                    <li class="nav-item mb-2"><a href="{% url 'analytics:dashboard' %}" class="nav-link p-0 text-muted small">Analytics</a></li>
+                </ul>
+            </div>
+
+            <div class="col-6 col-md-2 col-lg-2 mb-3 mb-md-0">
+                <h6 class="fw-bold mb-3">Resources</h6>
+                <ul class="nav flex-column">
+                    <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted small">Documentation</a></li>
+                    <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted small">API Reference</a></li>
+                    <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted small">Help Center</a></li>
+                    <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-muted small">Blog</a></li>
+                </ul>
+            </div>
+
+            <div class="col-md-4 col-lg-4">
+                <h6 class="fw-bold mb-3">Stay Updated</h6>
+                <p class="text-muted small mb-3">Subscribe to our newsletter for the latest updates and features.</p>
+                <div class="input-group mb-3">
+                    <input type="email" class="form-control" placeholder="Email address" aria-label="Email address">
+                    <button class="btn btn-primary" type="button">Subscribe</button>
+                </div>
+                <p class="text-muted small">We respect your privacy. Unsubscribe at any time.</p>
+            </div>
+        </div>
+
+        <hr class="my-4">
+
+        <div class="row">
+            <div class="col-md-6 text-center text-md-start">
+                <p class="mb-0 text-muted small">&copy; {% now "Y" %} MindTrack. All rights reserved.</p>
+            </div>
+            <div class="col-md-6 text-center text-md-end">
+                <p class="mb-0 text-muted small">
+                    <span>Version 1.0.0</span>
+                    <span class="mx-2">|</span>
+                    <a href="#" class="text-decoration-none text-muted">Privacy Policy</a>
+                    <span class="mx-2">|</span>
+                    <a href="#" class="text-decoration-none text-muted">Terms of Service</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>

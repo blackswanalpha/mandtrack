@@ -1,0 +1,172 @@
+/* Enhanced Form Input Styles */
+.enhanced-input {
+    @apply border-2 border-gray-300 rounded-md shadow-sm;
+    transition: all 0.3s ease;
+}
+
+.enhanced-input:focus {
+    @apply border-primary-500 ring-2 ring-primary-200;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.enhanced-input:hover:not(:focus) {
+    @apply border-gray-400;
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.enhanced-select {
+    @apply border-2 border-gray-300 rounded-md shadow-sm;
+    transition: all 0.3s ease;
+    background-position: right 0.5rem center;
+}
+
+.enhanced-select:focus {
+    @apply border-primary-500 ring-2 ring-primary-200;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.enhanced-select:hover:not(:focus) {
+    @apply border-gray-400;
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.enhanced-checkbox {
+    @apply text-primary-600 border-2 border-gray-300 rounded;
+    transition: all 0.2s ease;
+}
+
+.enhanced-checkbox:checked {
+    @apply border-primary-500 bg-primary-500;
+    animation: checkbox-pop 0.2s ease-in-out;
+}
+
+.enhanced-checkbox:focus {
+    @apply ring-2 ring-primary-200 ring-offset-2;
+}
+
+@keyframes checkbox-pop {
+    0% {
+        transform: scale(0.8);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Enhanced Card Styles */
+.enhanced-card {
+    @apply bg-white rounded-lg border-2 border-gray-200;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.enhanced-card:hover {
+    @apply border-primary-300;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.enhanced-card-header {
+    @apply p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg;
+    transition: background-color 0.3s ease;
+}
+
+.enhanced-card:hover .enhanced-card-header {
+    @apply bg-primary-50;
+}
+
+.enhanced-card-body {
+    @apply p-5;
+}
+
+.enhanced-card-footer {
+    @apply p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg;
+}
+
+/* Grid Card Styles */
+.grid-card {
+    @apply bg-white rounded-lg border-2 border-gray-200 overflow-hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.grid-card:hover {
+    @apply border-primary-300;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.grid-card-header {
+    @apply p-4 border-b border-gray-200;
+    transition: background-color 0.3s ease;
+}
+
+.grid-card:hover .grid-card-header {
+    @apply bg-primary-50;
+}
+
+.grid-card-body {
+    @apply p-4;
+}
+
+.grid-card-footer {
+    @apply p-3 border-t border-gray-200 bg-gray-50;
+}
+
+/* Button Animations */
+.btn-animated {
+    transition: all 0.3s ease;
+}
+
+.btn-animated:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.btn-animated:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Tab Styles */
+.tab-container {
+    @apply border-b border-gray-200;
+}
+
+.tab {
+    @apply py-3 px-4 text-sm font-medium border-b-2 border-transparent;
+    transition: all 0.2s ease;
+}
+
+.tab:hover {
+    @apply text-primary-600 border-primary-300;
+}
+
+.tab.active {
+    @apply text-primary-700 border-primary-500;
+}
+
+.tab-content {
+    @apply py-4;
+}
+
+/* Fade-in Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}

@@ -1,0 +1,155 @@
+{% extends "base/base.html" %}
+{% load i18n %}
+{% load account %}
+{% load socialaccount %}
+
+{% block title %}{% trans "Sign In" %} - MindTrack{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gray-50">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="text-center">
+            <a href="{% url 'core:home' %}" class="inline-block">
+                <h2 class="text-center text-3xl font-display font-bold">
+                    <span class="text-primary-600">Mind</span><span class="text-gray-900">Track</span>
+                </h2>
+            </a>
+            <h2 class="mt-6 text-center text-2xl font-bold tracking-tight text-gray-900">
+                {% trans "Sign in to your account" %}
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                {% trans "Or" %}
+                <a href="{% url 'account_signup' %}" class="font-medium text-primary-600 hover:text-primary-500">
+                    {% trans "create a new account" %}
+                </a>
+            </p>
+        </div>
+
+        <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+                <form class="space-y-6" method="POST" action="{% url 'account_login' %}">
+                    {% csrf_token %}
+
+                    {% if form.errors %}
+                    <div class="rounded-md bg-red-50 p-4 mb-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle text-red-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-800">
+                                    {% trans "There was a problem with your login attempt" %}
+                                </h3>
+                                <div class="mt-2 text-sm text-red-700">
+                                    <ul class="list-disc pl-5 space-y-1">
+                                        {% for error in form.non_field_errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div>
+                        <label for="id_login" class="block text-sm font-medium text-gray-700">
+                            {% trans "Email address" %}
+                        </label>
+                        <div class="mt-1">
+                            <input id="id_login" name="login" type="email" autocomplete="email" required
+                                class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm">
+                        </div>
+                        {% if form.login.errors %}
+                        <p class="mt-2 text-sm text-red-600">
+                            {% for error in form.login.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="id_password" class="block text-sm font-medium text-gray-700">
+                            {% trans "Password" %}
+                        </label>
+                        <div class="mt-1">
+                            <input id="id_password" name="password" type="password" autocomplete="current-password" required
+                                class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm">
+                        </div>
+                        {% if form.password.errors %}
+                        <p class="mt-2 text-sm text-red-600">
+                            {% for error in form.password.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="id_remember" name="remember" type="checkbox"
+                                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+                            <label for="id_remember" class="ml-2 block text-sm text-gray-900">
+                                {% trans "Remember me" %}
+                            </label>
+                        </div>
+
+                        <div class="text-sm">
+                            <a href="{% url 'account_reset_password' %}" class="font-medium text-primary-600 hover:text-primary-500">
+                                {% trans "Forgot your password?" %}
+                            </a>
+                        </div>
+                    </div>
+
+                    {% if redirect_field_value %}
+                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                    {% endif %}
+
+                    <div>
+                        <button type="submit" class="flex w-full justify-center rounded-md border border-transparent bg-primary-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
+                            {% trans "Sign in" %}
+                        </button>
+                    </div>
+                </form>
+
+                {% if socialaccount_providers %}
+                <div class="mt-6">
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="bg-white px-2 text-gray-500">{% trans "Or continue with" %}</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 grid grid-cols-3 gap-3">
+                        {% for provider in socialaccount_providers %}
+                        <div>
+                            <a href="{% provider_login_url provider.id process='login' %}"
+                                class="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-500 shadow-sm hover:bg-gray-50">
+                                {% if provider.name == 'Google' %}
+                                <i class="fab fa-google text-red-500"></i>
+                                {% elif provider.name == 'Facebook' %}
+                                <i class="fab fa-facebook text-blue-600"></i>
+                                {% elif provider.name == 'Twitter' %}
+                                <i class="fab fa-twitter text-blue-400"></i>
+                                {% elif provider.name == 'Apple' %}
+                                <i class="fab fa-apple text-gray-800"></i>
+                                {% elif provider.name == 'Microsoft' %}
+                                <i class="fab fa-microsoft text-blue-500"></i>
+                                {% else %}
+                                <i class="fas fa-external-link-alt"></i>
+                                {% endif %}
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

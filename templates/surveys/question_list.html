@@ -1,0 +1,163 @@
+{% extends 'admin_portal/modern_base.html' %}
+
+{% block title %}Questions for {{ questionnaire.title }} - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <div class="flex items-center">
+                    <a href="{% url 'surveys:survey_detail' pk=questionnaire.pk %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <h1 class="text-3xl font-display font-bold text-gray-900">Questions</h1>
+                </div>
+                <p class="mt-2 text-gray-600">Manage questions for "{{ questionnaire.title }}"</p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <a href="{% url 'surveys:question_create' survey_pk=questionnaire.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-plus mr-2"></i> Add Question
+                </a>
+            </div>
+        </div>
+
+        {% if questions %}
+            <div class="bg-white shadow overflow-hidden sm:rounded-md">
+                <ul class="divide-y divide-gray-200" id="sortable-questions">
+                    {% for question in questions %}
+                        <li class="question-item" data-id="{{ question.id }}">
+                            <div class="px-4 py-4 sm:px-6 hover:bg-gray-50">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center cursor-move handle">
+                                            <span class="text-primary-800 font-medium">{{ question.order }}</span>
+                                        </div>
+                                        <div class="ml-4 flex-1">
+                                            <a href="{% url 'surveys:question_detail' survey_pk=questionnaire.pk pk=question.pk %}" class="text-sm font-medium text-primary-600 hover:text-primary-900">
+                                                {{ question.text }}
+                                            </a>
+                                            {% if question.description %}
+                                                <p class="text-sm text-gray-500 mt-1">{{ question.description }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-4">
+                                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                            {{ question.get_question_type_display }}
+                                        </span>
+                                        {% if question.required %}
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                Required
+                                            </span>
+                                        {% endif %}
+                                        <div class="flex space-x-2">
+                                            <a href="{% url 'surveys:question_edit' survey_pk=questionnaire.pk pk=question.pk %}" class="text-gray-500 hover:text-gray-700">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'surveys:question_delete' survey_pk=questionnaire.pk pk=question.pk %}" class="text-red-500 hover:text-red-700">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {% if question.question_type in 'radio,checkbox,dropdown' and question.choices.exists %}
+                                    <div class="mt-3 ml-12">
+                                        <h4 class="text-xs font-medium text-gray-500 mb-2">Choices:</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                            {% for choice in question.choices.all %}
+                                                <div class="flex items-center">
+                                                    <span class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 text-xs">
+                                                        {{ choice.order }}
+                                                    </span>
+                                                    <span class="ml-2 text-sm text-gray-600">{{ choice.text }}</span>
+                                                    {% if choice.score != 0 %}
+                                                        <span class="ml-2 px-1.5 py-0.5 text-xs rounded bg-blue-100 text-blue-800">
+                                                            Score: {{ choice.score }}
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% else %}
+            <div class="bg-white shadow overflow-hidden sm:rounded-md">
+                <div class="px-4 py-8 text-center">
+                    <div class="text-gray-500">
+                        <i class="fas fa-question-circle text-4xl mb-4"></i>
+                        <p class="text-lg font-medium">No questions yet</p>
+                        <p class="mt-1">Add questions to your survey to get started</p>
+                        <a href="{% url 'surveys:question_create' survey_pk=questionnaire.pk %}" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <i class="fas fa-plus mr-2"></i> Add First Question
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="mt-8">
+            <a href="{% url 'surveys:survey_detail' pk=questionnaire.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Survey
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if questions %}
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sortableList = document.getElementById('sortable-questions');
+
+            // Initialize Sortable
+            new Sortable(sortableList, {
+                handle: '.handle',
+                animation: 150,
+                onEnd: function(evt) {
+                    // Update the order numbers visually
+                    const items = sortableList.querySelectorAll('.question-item');
+                    items.forEach((item, index) => {
+                        const orderSpan = item.querySelector('.handle span');
+                        orderSpan.textContent = index + 1;
+                    });
+
+                    // Prepare data for the server
+                    const questionIds = Array.from(items).map(item => item.dataset.id);
+
+                    // Send the new order to the server
+                    // This would be implemented in a real app
+                    console.log('New order:', questionIds);
+
+                    // In a real app, you'd make an AJAX request to update the order
+                    /*
+                    fetch('/surveys/{{ questionnaire.pk }}/questions/reorder/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        },
+                        body: JSON.stringify({
+                            question_ids: questionIds
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Success:', data);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                    */
+                }
+            });
+        });
+    </script>
+{% endif %}
+{% endblock %}

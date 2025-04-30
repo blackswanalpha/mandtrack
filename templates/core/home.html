@@ -1,0 +1,182 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}MindTrack - Mental Health Questionnaire Management{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-gradient-to-r from-primary-600 to-primary-800 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-24">
+        <div class="flex flex-col md:flex-row items-center">
+            <div class="md:w-1/2 md:pr-8 mb-8 md:mb-0 text-center md:text-left">
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-display font-bold mb-4 sm:mb-6 animate-[fadeIn_1s_ease-in-out] leading-tight">
+                    Streamline Mental Health Assessments
+                </h1>
+                <p class="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 opacity-90 animate-[fadeIn_1s_ease-in-out_0.3s_both]">
+                    MindTrack is a comprehensive platform designed to help healthcare professionals create, distribute, collect, analyze, and follow up on mental health assessments.
+                </p>
+                <div class="flex flex-col sm:flex-row justify-center md:justify-start space-y-3 sm:space-y-0 sm:space-x-4 animate-[fadeIn_1s_ease-in-out_0.6s_both]">
+                    <a href="{% url 'account_signup' %}" class="inline-flex justify-center items-center px-5 sm:px-6 py-2 sm:py-3 border border-transparent text-sm sm:text-base font-medium rounded-md text-primary-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-700 focus:ring-white shadow-md transition-all">
+                        Get Started
+                    </a>
+                    <a href="{% url 'core:about' %}" class="inline-flex justify-center items-center px-5 sm:px-6 py-2 sm:py-3 border border-white text-sm sm:text-base font-medium rounded-md text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-700 focus:ring-white transition-all">
+                        Learn More
+                    </a>
+                    <a href="{% url 'admin_login' %}" class="inline-flex justify-center items-center px-5 sm:px-6 py-2 sm:py-3 border border-white text-sm sm:text-base font-medium rounded-md text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-700 focus:ring-white transition-all">
+                        <i class="fas fa-user-shield mr-2"></i> Admin Portal
+                    </a>
+                </div>
+            </div>
+            <div class="md:w-1/2 animate-[fadeIn_1s_ease-in-out_0.9s_both] px-4 sm:px-8 md:px-0">
+                <img src="{% static 'images/hero-image.svg' %}" alt="MindTrack Dashboard" class="rounded-lg shadow-2xl w-full max-w-lg mx-auto md:max-w-none">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-12 sm:py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-10 sm:mb-16">
+            <h2 class="text-2xl sm:text-3xl font-display font-bold text-gray-900">Key Features</h2>
+            <p class="mt-3 sm:mt-4 text-base sm:text-xl text-gray-600 max-w-3xl mx-auto">Everything you need to manage mental health questionnaires</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <!-- Feature 1 -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-5 sm:p-6 border border-gray-100 transform hover:-translate-y-1 duration-300">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary-100 flex items-center justify-center mb-3 sm:mb-4">
+                    <i class="fas fa-clipboard-list text-primary-600 text-lg sm:text-xl"></i>
+                </div>
+                <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Questionnaire Creation</h3>
+                <p class="text-sm sm:text-base text-gray-600">Create custom questionnaires or use templates for common mental health assessments like GAD-7, PHQ-9, and more.</p>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-5 sm:p-6 border border-gray-100 transform hover:-translate-y-1 duration-300">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary-100 flex items-center justify-center mb-3 sm:mb-4">
+                    <i class="fas fa-qrcode text-primary-600 text-lg sm:text-xl"></i>
+                </div>
+                <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Easy Distribution</h3>
+                <p class="text-sm sm:text-base text-gray-600">Generate QR codes for questionnaires that patients can scan with their mobile devices for instant access.</p>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-5 sm:p-6 border border-gray-100 transform hover:-translate-y-1 duration-300">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary-100 flex items-center justify-center mb-3 sm:mb-4">
+                    <i class="fas fa-chart-bar text-primary-600 text-lg sm:text-xl"></i>
+                </div>
+                <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Powerful Analytics</h3>
+                <p class="text-sm sm:text-base text-gray-600">Analyze responses with automatic scoring, trend identification, and AI-powered insights.</p>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-5 sm:p-6 border border-gray-100 transform hover:-translate-y-1 duration-300">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary-100 flex items-center justify-center mb-3 sm:mb-4">
+                    <i class="fas fa-envelope text-primary-600 text-lg sm:text-xl"></i>
+                </div>
+                <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Automated Communication</h3>
+                <p class="text-sm sm:text-base text-gray-600">Send automated follow-up emails based on response scores and risk levels.</p>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-5 sm:p-6 border border-gray-100 transform hover:-translate-y-1 duration-300">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary-100 flex items-center justify-center mb-3 sm:mb-4">
+                    <i class="fas fa-users text-primary-600 text-lg sm:text-xl"></i>
+                </div>
+                <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Organization Management</h3>
+                <p class="text-sm sm:text-base text-gray-600">Manage multiple organizations, teams, and user roles with granular permissions.</p>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-5 sm:p-6 border border-gray-100 transform hover:-translate-y-1 duration-300">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary-100 flex items-center justify-center mb-3 sm:mb-4">
+                    <i class="fas fa-shield-alt text-primary-600 text-lg sm:text-xl"></i>
+                </div>
+                <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Secure & Compliant</h3>
+                <p class="text-sm sm:text-base text-gray-600">Built with security and privacy in mind, compliant with healthcare data regulations.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-12 sm:py-16 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-10 sm:mb-16">
+            <h2 class="text-2xl sm:text-3xl font-display font-bold text-gray-900">How It Works</h2>
+            <p class="mt-3 sm:mt-4 text-base sm:text-xl text-gray-600 max-w-3xl mx-auto">Simple process, powerful results</p>
+        </div>
+
+        <div class="max-w-4xl mx-auto">
+            <div class="space-y-4 sm:space-y-8">
+                <!-- Step 1 -->
+                <div class="flex flex-col md:flex-row bg-white rounded-xl shadow-md p-5 sm:p-6 border border-gray-100 transform hover:shadow-lg transition-all duration-300">
+                    <div class="flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary-100 text-primary-600 font-bold text-lg mx-auto md:mx-0 mb-3 md:mb-0 md:mr-6">
+                        1
+                    </div>
+                    <div class="text-center md:text-left">
+                        <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Create</h3>
+                        <p class="text-sm sm:text-base text-gray-600">Create custom questionnaires or use pre-built templates for common mental health assessments.</p>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="flex flex-col md:flex-row bg-white rounded-xl shadow-md p-5 sm:p-6 border border-gray-100 transform hover:shadow-lg transition-all duration-300">
+                    <div class="flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary-100 text-primary-600 font-bold text-lg mx-auto md:mx-0 mb-3 md:mb-0 md:mr-6">
+                        2
+                    </div>
+                    <div class="text-center md:text-left">
+                        <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Distribute</h3>
+                        <p class="text-sm sm:text-base text-gray-600">Generate QR codes or links to share with patients for easy access to questionnaires.</p>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="flex flex-col md:flex-row bg-white rounded-xl shadow-md p-5 sm:p-6 border border-gray-100 transform hover:shadow-lg transition-all duration-300">
+                    <div class="flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary-100 text-primary-600 font-bold text-lg mx-auto md:mx-0 mb-3 md:mb-0 md:mr-6">
+                        3
+                    </div>
+                    <div class="text-center md:text-left">
+                        <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Collect</h3>
+                        <p class="text-sm sm:text-base text-gray-600">Patients complete questionnaires on any device, with responses securely stored in your account.</p>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="flex flex-col md:flex-row bg-white rounded-xl shadow-md p-5 sm:p-6 border border-gray-100 transform hover:shadow-lg transition-all duration-300">
+                    <div class="flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary-100 text-primary-600 font-bold text-lg mx-auto md:mx-0 mb-3 md:mb-0 md:mr-6">
+                        4
+                    </div>
+                    <div class="text-center md:text-left">
+                        <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Analyze</h3>
+                        <p class="text-sm sm:text-base text-gray-600">View automatic scoring, trends, and AI-powered insights from the responses.</p>
+                    </div>
+                </div>
+
+                <!-- Step 5 -->
+                <div class="flex flex-col md:flex-row bg-white rounded-xl shadow-md p-5 sm:p-6 border border-gray-100 transform hover:shadow-lg transition-all duration-300">
+                    <div class="flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary-100 text-primary-600 font-bold text-lg mx-auto md:mx-0 mb-3 md:mb-0 md:mr-6">
+                        5
+                    </div>
+                    <div class="text-center md:text-left">
+                        <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Follow Up</h3>
+                        <p class="text-sm sm:text-base text-gray-600">Send automated or personalized follow-up communications based on response data.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="bg-gradient-to-r from-primary-600 to-primary-800 text-white py-12 sm:py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="text-2xl sm:text-3xl font-display font-bold mb-4 sm:mb-6 leading-tight">Ready to streamline your mental health assessments?</h2>
+        <p class="text-base sm:text-xl mb-6 sm:mb-8 max-w-3xl mx-auto opacity-90">Join thousands of healthcare professionals using MindTrack to improve patient care.</p>
+        <a href="{% url 'account_signup' %}" class="inline-flex justify-center items-center px-6 sm:px-8 py-2 sm:py-3 border border-transparent text-sm sm:text-base font-medium rounded-md text-primary-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-700 focus:ring-white shadow-md transition-all transform hover:scale-105 duration-300">
+            Get Started Today
+        </a>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Organizations - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Organizations</h1>
+                <p class="mt-2 text-gray-600">Manage your organizations and teams</p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <a href="{% url 'groups:organization_create' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-plus mr-2"></i> Create Organization
+                </a>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-gray-50 rounded-lg p-4 mb-8">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Filters</h2>
+            <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <select id="type" name="type" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                        <option value="">All Types</option>
+                        {% for value, label in types %}
+                            <option value="{{ value }}" {% if request.GET.type == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="role" class="block text-sm font-medium text-gray-700 mb-1">Your Role</label>
+                    <select id="role" name="role" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                        <option value="">Any Role</option>
+                        {% for value, label in roles %}
+                            <option value="{{ value }}" {% if request.GET.role == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <i class="fas fa-filter mr-2"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'groups:organization_list' %}" class="ml-2 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <i class="fas fa-times mr-2"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Organizations List -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% if organizations %}
+                {% for organization in organizations %}
+                    <div class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="p-5">
+                            <div class="flex items-center mb-4">
+                                {% if organization.logo %}
+                                    <img src="{{ organization.logo.url }}" alt="{{ organization.name }}" class="h-12 w-12 rounded-full object-cover">
+                                {% else %}
+                                    <div class="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center">
+                                        <span class="text-primary-800 font-bold text-lg">{{ organization.name|slice:":1" }}</span>
+                                    </div>
+                                {% endif %}
+                                <div class="ml-3">
+                                    <h3 class="text-lg font-medium text-gray-900">{{ organization.name }}</h3>
+                                    <p class="text-sm text-gray-500">{{ organization.get_type_display }}</p>
+                                </div>
+                            </div>
+
+                            <p class="text-gray-600 mb-4">{{ organization.description|truncatechars:120 }}</p>
+
+                            <div class="flex items-center text-sm text-gray-500 mb-4">
+                                <i class="fas fa-users mr-1.5 text-gray-400"></i>
+                                <p>{{ organization.get_member_count }} members</p>
+
+                                <span class="mx-2 text-gray-300">|</span>
+
+                                <i class="fas fa-clipboard-list mr-1.5 text-gray-400"></i>
+                                <p>{{ organization.get_survey_count }} surveys</p>
+                            </div>
+
+                            <div class="flex justify-between items-center">
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-primary-100 text-primary-800">
+                                    {% for membership in organization.members.all %}
+                                        {% if membership.user == request.user %}
+                                            {{ membership.get_role_display }}
+                                        {% endif %}
+                                    {% endfor %}
+                                </span>
+                                <a href="{% url 'groups:organization_detail' pk=organization.pk|default:organization.id %}" class="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-900">
+                                    View Details <i class="fas fa-arrow-right ml-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-span-full bg-white rounded-lg border border-gray-200 shadow-sm p-8 text-center">
+                    <div class="text-gray-500">
+                        <i class="fas fa-building text-4xl mb-4"></i>
+                        <p class="text-lg font-medium">No organizations found</p>
+                        <p class="mt-1">Create your first organization to get started</p>
+                        <a href="{% url 'groups:organization_create' %}" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <i class="fas fa-plus mr-2"></i> Create Organization
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Invitations Section -->
+        {% if invitations %}
+            <div class="mt-12">
+                <h2 class="text-xl font-display font-bold text-gray-900 mb-4">Pending Invitations</h2>
+                <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                    <ul class="divide-y divide-gray-200">
+                        {% for invitation in invitations %}
+                            <li class="px-4 py-4 sm:px-6">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        {% if invitation.organization.logo %}
+                                            <img src="{{ invitation.organization.logo.url }}" alt="{{ invitation.organization.name }}" class="h-10 w-10 rounded-full object-cover">
+                                        {% else %}
+                                            <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                                                <span class="text-primary-800 font-bold">{{ invitation.organization.name|slice:":1" }}</span>
+                                            </div>
+                                        {% endif %}
+                                        <div class="ml-4">
+                                            <p class="text-sm font-medium text-gray-900">{{ invitation.organization.name }}</p>
+                                            <p class="text-sm text-gray-500">Invited as: {{ invitation.get_role_display }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <form method="post" action="{% url 'groups:accept_invitation' pk=invitation.pk|default:invitation.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                                Accept
+                                            </button>
+                                        </form>
+                                        <form method="post" action="{% url 'groups:decline_invitation' pk=invitation.pk|default:invitation.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                                Decline
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

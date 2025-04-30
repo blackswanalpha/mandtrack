@@ -1,0 +1,242 @@
+# MindTrack Animation Guidelines
+
+## Animation Principles
+
+### 1. Purposeful Motion
+- Every animation should serve a purpose (feedback, guidance, delight)
+- Avoid animations that distract from the core experience
+- Use motion to create a sense of hierarchy and flow
+
+### 2. Natural and Fluid
+- Animations should feel natural and follow the laws of physics
+- Use appropriate easing functions to create realistic motion
+- Maintain continuity between states
+
+### 3. Subtle and Efficient
+- Subtle animations are often more effective than dramatic ones
+- Keep animations short and efficient (150-350ms)
+- Respect user preferences for reduced motion
+
+### 4. Consistent System
+- Create a consistent animation language across the application
+- Reuse animation patterns for similar interactions
+- Maintain predictable behavior
+
+## Animation Timing
+
+### Duration
+- **Micro Interactions**: 100-150ms (button clicks, toggles)
+- **Standard Transitions**: 200-300ms (page transitions, modals)
+- **Complex Animations**: 300-500ms (elaborate reveals, celebrations)
+
+### Easing Functions
+- **Default**: cubic-bezier(0.4, 0, 0.2, 1) - smooth acceleration and deceleration
+- **Entrance**: cubic-bezier(0, 0, 0.2, 1) - quick start, gentle end
+- **Exit**: cubic-bezier(0.4, 0, 1, 1) - gentle start, quick end
+- **Sharp**: cubic-bezier(0.4, 0, 0.6, 1) - quick acceleration and deceleration
+
+## Core Animations
+
+### Page Transitions
+- **Enter**: Fade in (opacity 0 → 1) with slight upward movement (-10px → 0)
+- **Exit**: Fade out (opacity 1 → 0) with slight downward movement (0 → 10px)
+- **Duration**: 300ms
+- **Staggered Content**: Stagger child elements by 50ms
+
+### Component Transitions
+
+#### Modal/Dialog
+- **Open**: Fade in with scale (0.95 → 1)
+- **Close**: Fade out with scale (1 → 0.95)
+- **Backdrop**: Fade in/out
+- **Duration**: 250ms
+
+#### Drawer/Sidebar
+- **Open**: Slide in from edge
+- **Close**: Slide out to edge
+- **Backdrop**: Fade in/out
+- **Duration**: 300ms
+
+#### Dropdown/Popover
+- **Open**: Fade in with slight scale (0.95 → 1) and origin at trigger point
+- **Close**: Fade out with slight scale (1 → 0.95)
+- **Duration**: 200ms
+
+#### Accordion/Collapse
+- **Open**: Content height 0 → auto with fade in
+- **Close**: Content height auto → 0 with fade out
+- **Duration**: 250ms
+- **Icon Rotation**: 180° for open/close indicator
+
+### Feedback Animations
+
+#### Button States
+- **Hover**: Slight background color change (150ms)
+- **Active/Pressed**: Scale down slightly to 0.98 (100ms)
+- **Loading**: Spinner rotation (continuous)
+- **Success**: Checkmark appearance with slight bounce
+
+#### Form Interactions
+- **Focus**: Smooth border color change (150ms)
+- **Validation**: Gentle shake for errors (300ms)
+- **Success**: Subtle pulse or glow effect (300ms)
+
+#### Notifications
+- **Toast**: Slide in from top-right, pause, slide out
+- **Alert**: Fade in with slight downward movement
+- **Badge**: Pulse effect when value changes
+
+### Data Visualization Animations
+
+#### Charts
+- **Initial Load**: Progressive reveal of elements (staggered)
+- **Data Updates**: Smooth transition between values (500ms)
+- **Hover States**: Highlight with scale or opacity changes
+- **Filtering**: Smooth transition when data changes
+
+#### Progress Indicators
+- **Linear Progress**: Smooth width change
+- **Circular Progress**: Continuous rotation or arc growth
+- **Skeleton Screens**: Subtle pulse effect (1.5s cycle)
+
+## Advanced Techniques
+
+### Staggered Animations
+- Apply a delay between animating multiple elements
+- Typical stagger: 30-50ms between items
+- Direction: Start from the most important element
+
+### Choreography
+- Coordinate multiple animations to create a cohesive experience
+- Use sequential animations for related actions
+- Maintain focus on the primary action
+
+### Micro-interactions
+- Small, delightful animations that provide feedback
+- Examples: Button ripples, checkbox toggles, hover effects
+- Duration: 100-200ms
+
+### Scroll-based Animations
+- Parallax effects for depth
+- Reveal animations as content enters viewport
+- Progress indicators tied to scroll position
+
+## Implementation with Framer Motion
+
+### Basic Transitions
+```jsx
+<motion.div
+  initial={{ opacity: 0, y: 10 }}
+  animate={{ opacity: 1, y: 0 }}
+  exit={{ opacity: 0, y: -10 }}
+  transition={{ duration: 0.3, ease: "easeOut" }}
+>
+  Content here
+</motion.div>
+```
+
+### Variants for Coordinated Animations
+```jsx
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
+
+// Usage
+<motion.ul
+  variants={containerVariants}
+  initial="hidden"
+  animate="visible"
+>
+  {items.map(item => (
+    <motion.li key={item.id} variants={itemVariants}>
+      {item.content}
+    </motion.li>
+  ))}
+</motion.ul>
+```
+
+### Gesture Animations
+```jsx
+<motion.button
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  transition={{ duration: 0.2 }}
+>
+  Click me
+</motion.button>
+```
+
+### Page Transitions
+```jsx
+// In Layout component
+<AnimatePresence mode="wait">
+  <motion.div
+    key={router.pathname}
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    transition={{ duration: 0.3 }}
+  >
+    {children}
+  </motion.div>
+</AnimatePresence>
+```
+
+## Accessibility Considerations
+
+### Respecting User Preferences
+```jsx
+// Check for reduced motion preference
+const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Adjust animation based on preference
+const animationSettings = prefersReducedMotion
+  ? { duration: 0 }
+  : { duration: 0.3, ease: "easeOut" };
+
+// In Framer Motion
+<motion.div
+  animate={{ opacity: 1 }}
+  transition={animationSettings}
+>
+  Content
+</motion.div>
+```
+
+### Alternative Animations
+- Provide simpler alternatives for complex animations
+- Focus on opacity changes rather than movement for reduced motion
+- Ensure all animated content is accessible via keyboard
+
+### ARIA Considerations
+- Use `aria-live` for dynamically updating content
+- Ensure animations don't interfere with screen readers
+- Provide ways to pause or disable animations
+
+## Performance Optimization
+
+### CSS Properties to Animate
+- Prefer animating `opacity` and `transform` properties
+- Avoid animating layout properties like `width`, `height`, or `top`
+- Use `will-change` sparingly for complex animations
+
+### Reducing Jank
+- Keep animations at 60fps
+- Use hardware acceleration when appropriate
+- Debounce animations triggered by frequent events (scroll, resize)
+
+### Testing Performance
+- Monitor performance with browser dev tools
+- Test on lower-end devices
+- Optimize animations that cause frame drops

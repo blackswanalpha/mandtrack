@@ -1,0 +1,210 @@
+{% extends 'reports/base.html' %}
+{% load static %}
+
+{% block reports_content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold">Schedule New Export</h1>
+    <p class="text-gray-600 mt-1">Set up automated exports of reports and dashboards</p>
+</div>
+
+<form method="post" class="space-y-6">
+    {% csrf_token %}
+    
+    <!-- Basic Information -->
+    <div class="bg-gray-50 p-4 rounded-lg">
+        <h2 class="text-lg font-semibold mb-4">Basic Information</h2>
+        <div class="grid grid-cols-1 gap-4">
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Export Name *</label>
+                <input type="text" name="name" id="name" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+            </div>
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea name="description" id="description" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"></textarea>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Export Source -->
+    <div class="bg-gray-50 p-4 rounded-lg" x-data="{ sourceType: 'report' }">
+        <h2 class="text-lg font-semibold mb-4">Export Source</h2>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Source Type *</label>
+            <div class="flex space-x-4">
+                <div class="flex items-center">
+                    <input type="radio" name="source_type" id="source_type_report" value="report" x-model="sourceType" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                    <label for="source_type_report" class="ml-2 block text-sm text-gray-700">Report</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="radio" name="source_type" id="source_type_dashboard" value="dashboard" x-model="sourceType" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                    <label for="source_type_dashboard" class="ml-2 block text-sm text-gray-700">Dashboard</label>
+                </div>
+            </div>
+        </div>
+        
+        <div x-show="sourceType === 'report'">
+            <label for="report_id" class="block text-sm font-medium text-gray-700 mb-1">Select Report *</label>
+            <select name="report_id" id="report_id" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50" x-bind:required="sourceType === 'report'">
+                <option value="">Select a report</option>
+                {% for report in reports %}
+                <option value="{{ report.id }}">{{ report.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div x-show="sourceType === 'dashboard'">
+            <label for="dashboard_id" class="block text-sm font-medium text-gray-700 mb-1">Select Dashboard *</label>
+            <select name="dashboard_id" id="dashboard_id" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50" x-bind:required="sourceType === 'dashboard'">
+                <option value="">Select a dashboard</option>
+                {% for dashboard in dashboards %}
+                <option value="{{ dashboard.id }}">{{ dashboard.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+    <!-- Export Format -->
+    <div class="bg-gray-50 p-4 rounded-lg">
+        <h2 class="text-lg font-semibold mb-4">Export Format</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="format" class="block text-sm font-medium text-gray-700 mb-1">Format *</label>
+                <select name="format" id="format" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                    {% for format_code, format_name in export_formats %}
+                    <option value="{{ format_code }}">{{ format_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-end">
+                <div class="flex items-center">
+                    <input type="checkbox" name="include_filters" id="include_filters" checked class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                    <label for="include_filters" class="ml-2 block text-sm text-gray-700">Include filter information in export</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Schedule Settings -->
+    <div class="bg-gray-50 p-4 rounded-lg" x-data="{ scheduleType: 'daily' }">
+        <h2 class="text-lg font-semibold mb-4">Schedule Settings</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <label for="schedule_type" class="block text-sm font-medium text-gray-700 mb-1">Schedule Type *</label>
+                <select name="schedule_type" id="schedule_type" required x-model="scheduleType" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                    {% for type_code, type_name in schedule_types %}
+                    <option value="{{ type_code }}">{{ type_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="time_of_day" class="block text-sm font-medium text-gray-700 mb-1">Time of Day *</label>
+                <input type="time" name="time_of_day" id="time_of_day" required value="08:00" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+            </div>
+        </div>
+        
+        <div x-show="scheduleType === 'weekly'" class="mb-4">
+            <label for="weekday" class="block text-sm font-medium text-gray-700 mb-1">Day of Week *</label>
+            <select name="weekday" id="weekday" x-bind:required="scheduleType === 'weekly'" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                {% for day_code, day_name in weekdays %}
+                <option value="{{ day_code }}">{{ day_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div x-show="scheduleType === 'monthly'" class="mb-4">
+            <label for="day_of_month" class="block text-sm font-medium text-gray-700 mb-1">Day of Month *</label>
+            <select name="day_of_month" id="day_of_month" x-bind:required="scheduleType === 'monthly'" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                {% for i in "123456789101112131415161718192021222324252627282930"|make_list %}
+                <option value="{{ i }}">{{ i }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div x-show="scheduleType === 'custom'" class="mb-4">
+            <label for="custom_cron" class="block text-sm font-medium text-gray-700 mb-1">Custom Cron Expression *</label>
+            <input type="text" name="custom_cron" id="custom_cron" x-bind:required="scheduleType === 'custom'" placeholder="* * * * *" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+            <p class="text-sm text-gray-500 mt-1">Format: minute hour day-of-month month day-of-week</p>
+        </div>
+        
+        <div class="flex items-center mt-4">
+            <input type="checkbox" name="is_active" id="is_active" checked class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+            <label for="is_active" class="ml-2 block text-sm text-gray-700">Enable this scheduled export</label>
+        </div>
+    </div>
+    
+    <!-- Delivery Settings -->
+    <div class="bg-gray-50 p-4 rounded-lg" x-data="{ emailDelivery: true, storageDelivery: false }">
+        <h2 class="text-lg font-semibold mb-4">Delivery Settings</h2>
+        
+        <div class="mb-4">
+            <div class="flex items-center mb-2">
+                <input type="checkbox" id="email_delivery" x-model="emailDelivery" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                <label for="email_delivery" class="ml-2 block text-sm font-medium text-gray-700">Email Delivery</label>
+            </div>
+            
+            <div x-show="emailDelivery" class="pl-6 space-y-4">
+                <div>
+                    <label for="email_to" class="block text-sm font-medium text-gray-700 mb-1">Email Recipients *</label>
+                    <input type="text" name="email_to" id="email_to" x-bind:required="emailDelivery" placeholder="Enter email addresses separated by commas" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                </div>
+                <div>
+                    <label for="email_subject" class="block text-sm font-medium text-gray-700 mb-1">Email Subject</label>
+                    <input type="text" name="email_subject" id="email_subject" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                </div>
+                <div>
+                    <label for="email_body" class="block text-sm font-medium text-gray-700 mb-1">Email Body</label>
+                    <textarea name="email_body" id="email_body" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <div>
+            <div class="flex items-center mb-2">
+                <input type="checkbox" name="save_to_storage" id="save_to_storage" x-model="storageDelivery" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                <label for="save_to_storage" class="ml-2 block text-sm font-medium text-gray-700">Save to Storage</label>
+            </div>
+            
+            <div x-show="storageDelivery" class="pl-6">
+                <label for="storage_path" class="block text-sm font-medium text-gray-700 mb-1">Storage Path *</label>
+                <input type="text" name="storage_path" id="storage_path" x-bind:required="storageDelivery" placeholder="/exports/" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Submit Buttons -->
+    <div class="flex justify-end space-x-3">
+        <a href="{% url 'scheduled_export_list' %}" class="bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-md hover:bg-gray-50 transition duration-300">
+            Cancel
+        </a>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300">
+            Schedule Export
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block reports_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle email recipients input
+        const emailToInput = document.getElementById('email_to');
+        if (emailToInput) {
+            emailToInput.addEventListener('blur', function() {
+                // Convert comma-separated emails to JSON array on form submit
+                const emails = this.value.split(',').map(email => email.trim()).filter(email => email);
+                this.value = emails.join(', ');
+                
+                // Store as JSON array in a hidden field
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'email_to';
+                hiddenInput.value = JSON.stringify(emails);
+                this.parentNode.appendChild(hiddenInput);
+                
+                // Change the original input name to avoid duplicate form data
+                this.name = 'email_to_display';
+            });
+        }
+    });
+</script>
+{% endblock %}

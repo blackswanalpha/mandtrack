@@ -1,0 +1,419 @@
+{% extends 'base/base.html' %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/sidebar-animations.css' %}">
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Dark Mode Variables */
+    :root {
+        --bg-light: #f8f9fa;
+        --text-light: #212529;
+        --border-light: #dee2e6;
+        --card-bg-light: #ffffff;
+        --sidebar-bg-light: #f8f9fa;
+        --hover-bg-light: #f1f3f5;
+
+        --bg-dark: #212529;
+        --text-dark: #f8f9fa;
+        --border-dark: #495057;
+        --card-bg-dark: #343a40;
+        --sidebar-bg-dark: #343a40;
+        --hover-bg-dark: #495057;
+    }
+
+    /* Dark Mode Styles */
+    body.dark-mode {
+        background-color: var(--bg-dark);
+        color: var(--text-dark);
+    }
+
+    body.dark-mode .bg-light {
+        background-color: var(--sidebar-bg-dark) !important;
+    }
+
+    body.dark-mode .card {
+        background-color: var(--card-bg-dark);
+        border-color: var(--border-dark);
+    }
+
+    body.dark-mode .table {
+        color: var(--text-dark);
+    }
+
+    body.dark-mode .table-bordered {
+        border-color: var(--border-dark);
+    }
+
+    body.dark-mode .border-bottom {
+        border-color: var(--border-dark) !important;
+    }
+
+    body.dark-mode .text-muted {
+        color: #adb5bd !important;
+    }
+
+    body.dark-mode .hover\:bg-gray-50:hover {
+        background-color: var(--hover-bg-dark) !important;
+    }
+
+    body.dark-mode .nav-link {
+        color: #adb5bd;
+    }
+
+    body.dark-mode .nav-link:hover,
+    body.dark-mode .nav-link.active {
+        color: #ffffff;
+    }
+
+    body.dark-mode .dropdown-menu {
+        background-color: var(--card-bg-dark);
+        border-color: var(--border-dark);
+    }
+
+    body.dark-mode .dropdown-item {
+        color: var(--text-dark);
+    }
+
+    body.dark-mode .dropdown-item:hover {
+        background-color: var(--hover-bg-dark);
+    }
+
+    body.dark-mode .form-control,
+    body.dark-mode .input-group-text {
+        background-color: var(--card-bg-dark);
+        border-color: var(--border-dark);
+        color: var(--text-dark);
+    }
+
+    /* Animations and Transitions */
+    .transition-all {
+        transition: all 0.3s ease-in-out;
+    }
+
+    .transition-colors {
+        transition: background-color 0.2s ease-in-out;
+    }
+
+    .hover\:shadow-lg:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .hover\:bg-gray-50:hover {
+        background-color: #f9fafb;
+    }
+
+    /* Card animations */
+    .card {
+        transform: translateY(0);
+        transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+
+    /* Button animations */
+    .btn {
+        transition: all 0.2s ease-in-out;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+
+    /* Page transitions with HTMX */
+    .htmx-indicator {
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+    }
+
+    .htmx-request .htmx-indicator {
+        opacity: 1;
+    }
+
+    .htmx-request.htmx-indicator {
+        opacity: 1;
+    }
+
+    /* Fade in animation */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    /* Slide in animation */
+    @keyframes slideInFromRight {
+        from { transform: translateX(30px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    .slide-in-right {
+        animation: slideInFromRight 0.5s ease-in-out;
+    }
+
+    /* Staggered animations for list items */
+    .stagger-item {
+        opacity: 0;
+        animation: fadeIn 0.5s ease-in-out forwards;
+    }
+
+    .stagger-item:nth-child(1) { animation-delay: 0.1s; }
+    .stagger-item:nth-child(2) { animation-delay: 0.2s; }
+    .stagger-item:nth-child(3) { animation-delay: 0.3s; }
+    .stagger-item:nth-child(4) { animation-delay: 0.4s; }
+    .stagger-item:nth-child(5) { animation-delay: 0.5s; }
+    .stagger-item:nth-child(6) { animation-delay: 0.6s; }
+    .stagger-item:nth-child(7) { animation-delay: 0.7s; }
+    .stagger-item:nth-child(8) { animation-delay: 0.8s; }
+    .stagger-item:nth-child(9) { animation-delay: 0.9s; }
+    .stagger-item:nth-child(10) { animation-delay: 1.0s; }
+
+    /* Nav link hover effect */
+    .nav-link {
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .nav-link:before {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background-color: var(--bs-primary);
+        transition: width 0.3s ease;
+    }
+
+    .nav-link:hover:before {
+        width: 100%;
+    }
+
+    .nav-link.active:before {
+        width: 100%;
+    }
+
+    /* Page transition animations */
+    .page-enter {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    .page-enter-active {
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity 0.3s, transform 0.3s;
+    }
+
+    .page-exit {
+        opacity: 1;
+    }
+
+    .page-exit-active {
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+</style>
+{% endblock %}
+
+{% block header %}
+    {% include 'dashboard/header.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid fade-in p-0">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse transition-all" id="sidebarMenu" style="z-index: 1000;">
+            {% include 'dashboard/sidebar.html' %}
+        </div>
+
+        <!-- Main Content -->
+        <main class="col-12 col-md-9 col-lg-10 ms-sm-auto px-md-4 py-4 slide-in-right transition-all">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+                <div>
+                    <h1 class="h2 mb-0">{% block page_title %}Dashboard{% endblock %}</h1>
+                    <nav aria-label="breadcrumb" class="d-none d-md-block">
+                        <ol class="breadcrumb mb-0 mt-1">
+                            <li class="breadcrumb-item"><a href="{% url 'dashboard:user_dashboard' %}">Home</a></li>
+                            {% block breadcrumbs %}
+                            <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+                            {% endblock %}
+                        </ol>
+                    </nav>
+                </div>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    {% block page_actions %}{% endblock %}
+                </div>
+            </div>
+
+            <!-- Loading indicator for HTMX -->
+            <div id="loading-indicator" class="htmx-indicator position-fixed top-50 start-50 translate-middle bg-white bg-opacity-75 p-4 rounded shadow-lg" style="z-index: 2000;">
+                <div class="d-flex flex-column align-items-center">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mb-0 fw-semibold">Loading content...</p>
+                </div>
+            </div>
+
+            <!-- Page Content -->
+            <div id="dashboard-content" class="page-enter" hx-target="this" hx-indicator="#loading-indicator">
+                {% block dashboard_content %}{% endblock %}
+            </div>
+
+            <!-- Back to Top Button -->
+            <button id="backToTopBtn" class="btn btn-primary rounded-circle position-fixed bottom-0 end-0 m-4 d-none" style="width: 45px; height: 45px; z-index: 1000;">
+                <i class="fas fa-arrow-up"></i>
+            </button>
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+    {% include 'dashboard/footer.html' %}
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/sidebar.js' %}"></script>
+<script>
+    // Dark mode toggle functionality
+    function initDarkMode() {
+        const darkModeSwitch = document.getElementById('darkModeSwitch');
+        if (!darkModeSwitch) return;
+
+        // Check for saved theme preference or respect OS preference
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        // Set initial state
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+            document.body.classList.add('dark-mode');
+            darkModeSwitch.checked = true;
+        }
+
+        // Toggle dark mode on switch change
+        darkModeSwitch.addEventListener('change', function() {
+            if (this.checked) {
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+    }
+
+    // Add HTMX event listeners for animations
+    document.addEventListener('htmx:beforeSwap', function(evt) {
+        // Add exit animations if needed
+        const target = evt.detail.target;
+        if (target) {
+            target.classList.add('page-exit-active');
+        }
+    });
+
+    document.addEventListener('htmx:afterSwap', function(evt) {
+        // Trigger entrance animations
+        const newContent = evt.detail.target;
+        newContent.classList.add('fade-in');
+        newContent.classList.add('page-enter-active');
+
+        // Initialize any components that need JavaScript
+        const tooltips = newContent.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltips.forEach(tooltip => {
+            new bootstrap.Tooltip(tooltip);
+        });
+
+        // Reinitialize dark mode switch if it exists in the new content
+        initDarkMode();
+    });
+
+    // Back to top button functionality
+    function initBackToTopButton() {
+        const backToTopBtn = document.getElementById('backToTopBtn');
+        if (!backToTopBtn) return;
+
+        // Show/hide button based on scroll position
+        window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 300) {
+                backToTopBtn.classList.remove('d-none');
+                backToTopBtn.classList.add('d-flex', 'justify-content-center', 'align-items-center', 'animate__animated', 'animate__fadeIn');
+            } else {
+                backToTopBtn.classList.remove('d-flex', 'justify-content-center', 'align-items-center', 'animate__animated', 'animate__fadeIn');
+                backToTopBtn.classList.add('d-none');
+            }
+        });
+
+        // Scroll to top when clicked
+        backToTopBtn.addEventListener('click', function() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    }
+
+    // Initialize components on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltips.forEach(tooltip => {
+            new bootstrap.Tooltip(tooltip);
+        });
+
+        // Initialize dark mode
+        initDarkMode();
+
+        // Initialize back to top button
+        initBackToTopButton();
+
+        // Add staggered animation to cards
+        const cards = document.querySelectorAll('.card:not(.stagger-item)');
+        cards.forEach((card, index) => {
+            card.style.animationDelay = `${0.1 * (index + 1)}s`;
+            card.classList.add('stagger-item');
+        });
+
+        // Initialize popovers
+        const popovers = document.querySelectorAll('[data-bs-toggle="popover"]');
+        popovers.forEach(popover => {
+            new bootstrap.Popover(popover);
+        });
+
+        // Initialize collapse elements
+        const collapseElements = document.querySelectorAll('.collapse');
+        collapseElements.forEach(collapse => {
+            new bootstrap.Collapse(collapse, {
+                toggle: false
+            });
+        });
+
+        // Add smooth scrolling to all links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href !== "#" && href.startsWith('#')) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base/base.html" %}
+
+{% block title %}Enter Email{% endblock %}
+
+{% block extra_css %}
+<style>
+    .qr-email-container {
+        max-width: 500px;
+        margin: 80px auto;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        background-color: white;
+    }
+    .qr-email-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .qr-email-header h1 {
+        color: #007bff;
+        font-weight: 600;
+    }
+    .qr-email-form .btn-primary {
+        width: 100%;
+        padding: 10px;
+        font-weight: 500;
+    }
+    .qr-email-footer {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="qr-email-container">
+        <div class="qr-email-header">
+            <h1 class="h3">Enter Your Email</h1>
+            <p class="text-muted">Please enter your email to access the questionnaire</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="alert alert-info">
+            <p><strong>QR Code Detected:</strong> {{ qr_code }}</p>
+            <p>Please enter your email address to continue.</p>
+        </div>
+
+        <div class="qr-email-form">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="email-input" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="email-input" name="email" placeholder="Enter your email" required>
+                    <div class="form-text">We'll use this email to identify you and send your results.</div>
+                </div>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Continue to Questionnaire</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="qr-email-footer">
+            <p>Already have an account? <a href="/client-portal/login/">Sign In</a></p>
+            <p><a href="/client-portal/qr-scan/">Scan a different QR code</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

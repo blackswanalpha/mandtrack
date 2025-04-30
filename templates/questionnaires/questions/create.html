@@ -1,0 +1,711 @@
+{% extends 'questionnaires/base.html' %}
+{% load static %}
+
+{% block questionnaires_content %}
+<!-- Header with animations -->
+<div class="flex justify-between items-center mb-6"
+     x-data="{}"
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 100)"
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+    <div>
+        <a href="{% url 'question_list' id=questionnaire.id|default:1 %}" class="text-indigo-600 hover:text-indigo-800 flex items-center mb-2 group">
+            <i class="fas fa-arrow-left mr-2 transform group-hover:-translate-x-1 transition-transform duration-300"></i>
+            <span>Back to Questions</span>
+        </a>
+        <h1 class="text-2xl font-bold text-gray-800">Add Question</h1>
+        <p class="text-gray-600">For: {{ questionnaire.title|default:"Untitled Questionnaire" }}</p>
+    </div>
+</div>
+
+<!-- Question Type Selection -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6"
+     x-data="{ selectedType: 'multiple_choice' }"
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 200)"
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+
+    <h2 class="text-lg font-medium text-gray-800 mb-4">Select Question Type</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- Basic Question Types -->
+        <div @click="selectedType = 'multiple_choice'"
+             :class="{'bg-purple-50 border-purple-200 ring-2 ring-purple-500': selectedType === 'multiple_choice', 'hover:bg-gray-50': selectedType !== 'multiple_choice'}"
+             class="p-4 border border-gray-200 rounded-lg cursor-pointer transition-all duration-200">
+            <div class="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full mx-auto mb-3 text-purple-600">
+                <i class="fas fa-check-square text-xl"></i>
+            </div>
+            <h3 class="text-center font-medium text-gray-800">Multiple Choice</h3>
+            <p class="text-center text-xs text-gray-500 mt-1">Select multiple options</p>
+        </div>
+
+        <div @click="selectedType = 'single_choice'"
+             :class="{'bg-blue-50 border-blue-200 ring-2 ring-blue-500': selectedType === 'single_choice', 'hover:bg-gray-50': selectedType !== 'single_choice'}"
+             class="p-4 border border-gray-200 rounded-lg cursor-pointer transition-all duration-200">
+            <div class="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mx-auto mb-3 text-blue-600">
+                <i class="fas fa-dot-circle text-xl"></i>
+            </div>
+            <h3 class="text-center font-medium text-gray-800">Single Choice</h3>
+            <p class="text-center text-xs text-gray-500 mt-1">Select one option</p>
+        </div>
+
+        <div @click="selectedType = 'text'"
+             :class="{'bg-green-50 border-green-200 ring-2 ring-green-500': selectedType === 'text', 'hover:bg-gray-50': selectedType !== 'text'}"
+             class="p-4 border border-gray-200 rounded-lg cursor-pointer transition-all duration-200">
+            <div class="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mx-auto mb-3 text-green-600">
+                <i class="fas fa-font text-xl"></i>
+            </div>
+            <h3 class="text-center font-medium text-gray-800">Text</h3>
+            <p class="text-center text-xs text-gray-500 mt-1">Free text response</p>
+        </div>
+
+        <div @click="selectedType = 'scale'"
+             :class="{'bg-amber-50 border-amber-200 ring-2 ring-amber-500': selectedType === 'scale', 'hover:bg-gray-50': selectedType !== 'scale'}"
+             class="p-4 border border-gray-200 rounded-lg cursor-pointer transition-all duration-200">
+            <div class="flex items-center justify-center w-12 h-12 bg-amber-100 rounded-full mx-auto mb-3 text-amber-600">
+                <i class="fas fa-sliders-h text-xl"></i>
+            </div>
+            <h3 class="text-center font-medium text-gray-800">Scale</h3>
+            <p class="text-center text-xs text-gray-500 mt-1">Rating scale</p>
+        </div>
+    </div>
+
+    <!-- Advanced Question Types -->
+    <h3 class="text-md font-medium text-gray-700 mt-6 mb-3">Advanced Question Types</h3>
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div @click="selectedType = 'ranking'"
+             :class="{'bg-indigo-50 border-indigo-200 ring-2 ring-indigo-500': selectedType === 'ranking', 'hover:bg-gray-50': selectedType !== 'ranking'}"
+             class="p-4 border border-gray-200 rounded-lg cursor-pointer transition-all duration-200">
+            <div class="flex items-center justify-center w-10 h-10 bg-indigo-100 rounded-full mx-auto mb-2 text-indigo-600">
+                <i class="fas fa-sort-amount-down text-lg"></i>
+            </div>
+            <h3 class="text-center font-medium text-gray-800 text-sm">Ranking</h3>
+            <p class="text-center text-xs text-gray-500 mt-1">Rank items in order</p>
+        </div>
+
+        <div @click="selectedType = 'matrix'"
+             :class="{'bg-teal-50 border-teal-200 ring-2 ring-teal-500': selectedType === 'matrix', 'hover:bg-gray-50': selectedType !== 'matrix'}"
+             class="p-4 border border-gray-200 rounded-lg cursor-pointer transition-all duration-200">
+            <div class="flex items-center justify-center w-10 h-10 bg-teal-100 rounded-full mx-auto mb-2 text-teal-600">
+                <i class="fas fa-table text-lg"></i>
+            </div>
+            <h3 class="text-center font-medium text-gray-800 text-sm">Matrix</h3>
+            <p class="text-center text-xs text-gray-500 mt-1">Grid of questions</p>
+        </div>
+
+        <div @click="selectedType = 'date'"
+             :class="{'bg-red-50 border-red-200 ring-2 ring-red-500': selectedType === 'date', 'hover:bg-gray-50': selectedType !== 'date'}"
+             class="p-4 border border-gray-200 rounded-lg cursor-pointer transition-all duration-200">
+            <div class="flex items-center justify-center w-10 h-10 bg-red-100 rounded-full mx-auto mb-2 text-red-600">
+                <i class="fas fa-calendar-alt text-lg"></i>
+            </div>
+            <h3 class="text-center font-medium text-gray-800 text-sm">Date</h3>
+            <p class="text-center text-xs text-gray-500 mt-1">Date selection</p>
+        </div>
+
+        <div @click="selectedType = 'file_upload'"
+             :class="{'bg-cyan-50 border-cyan-200 ring-2 ring-cyan-500': selectedType === 'file_upload', 'hover:bg-gray-50': selectedType !== 'file_upload'}"
+             class="p-4 border border-gray-200 rounded-lg cursor-pointer transition-all duration-200">
+            <div class="flex items-center justify-center w-10 h-10 bg-cyan-100 rounded-full mx-auto mb-2 text-cyan-600">
+                <i class="fas fa-file-upload text-lg"></i>
+            </div>
+            <h3 class="text-center font-medium text-gray-800 text-sm">File Upload</h3>
+            <p class="text-center text-xs text-gray-500 mt-1">Upload documents</p>
+        </div>
+
+        <div @click="selectedType = 'slider'"
+             :class="{'bg-orange-50 border-orange-200 ring-2 ring-orange-500': selectedType === 'slider', 'hover:bg-gray-50': selectedType !== 'slider'}"
+             class="p-4 border border-gray-200 rounded-lg cursor-pointer transition-all duration-200">
+            <div class="flex items-center justify-center w-10 h-10 bg-orange-100 rounded-full mx-auto mb-2 text-orange-600">
+                <i class="fas fa-sliders-h text-lg"></i>
+            </div>
+            <h3 class="text-center font-medium text-gray-800 text-sm">Slider</h3>
+            <p class="text-center text-xs text-gray-500 mt-1">Visual slider input</p>
+        </div>
+    </div>
+
+    <!-- Hidden input to track the selected type -->
+    <input type="hidden" id="selected_type" name="selected_type" x-model="selectedType">
+</div>
+
+<!-- Question Form -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+     x-data="{
+        type: 'multiple_choice',
+        updateType(newType) {
+            this.type = newType;
+            document.getElementById('type').value = newType;
+        }
+     }"
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 300); $watch('$el.previousElementSibling.querySelector(\'[x-data]\')._x_dataStack[0].selectedType', value => updateType(value))"
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        <div class="space-y-4">
+            <div>
+                <label for="text" class="block text-sm font-medium text-gray-700 mb-1">Question Text</label>
+                <input type="text" name="text" id="text" required
+                       class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200"
+                       placeholder="Enter your question here...">
+            </div>
+
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                <textarea name="description" id="description" rows="2"
+                          class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200"
+                          placeholder="Add additional context or instructions for this question"></textarea>
+            </div>
+
+            <!-- Hidden field for question type -->
+            <input type="hidden" name="type" id="type" x-model="type">
+
+            <!-- Question Type Specific Options -->
+            <div>
+                <!-- Multiple Choice Options -->
+                <div x-show="type === 'multiple_choice' || type === 'single_choice'"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform translate-y-4"
+                     x-transition:enter-end="opacity-100 transform translate-y-0">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                        <span x-text="type === 'multiple_choice' ? 'Multiple Choice Options' : 'Single Choice Options'"></span>
+                    </label>
+                    <div class="space-y-3" x-data="{ options: ['', ''] }">
+                        <template x-for="(option, index) in options" :key="index">
+                            <div class="flex items-center group">
+                                <div class="flex-shrink-0 mr-3">
+                                    <div class="w-6 h-6 flex items-center justify-center rounded-full" :class="{
+                                        'bg-purple-100 text-purple-600': type === 'multiple_choice',
+                                        'bg-blue-100 text-blue-600': type === 'single_choice'
+                                    }">
+                                        <i class="fas" :class="{
+                                            'fa-check-square': type === 'multiple_choice',
+                                            'fa-dot-circle': type === 'single_choice'
+                                        }"></i>
+                                    </div>
+                                </div>
+                                <input type="text" :name="'option_' + index" x-model="options[index]"
+                                       class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200"
+                                       placeholder="Option text">
+                                <button type="button" @click="options.splice(index, 1)"
+                                        class="ml-2 p-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                        x-show="options.length > 2">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </template>
+                        <button type="button" @click="options.push('')"
+                                class="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center transition-colors duration-200">
+                            <i class="fas fa-plus mr-1"></i> Add Option
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Scale Options -->
+                <div x-show="type === 'scale'"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform translate-y-4"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     class="space-y-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Scale Options</label>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="min_value" class="block text-sm font-medium text-gray-700 mb-1">Minimum Value</label>
+                            <input type="number" name="min_value" id="min_value" value="1"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        </div>
+                        <div>
+                            <label for="max_value" class="block text-sm font-medium text-gray-700 mb-1">Maximum Value</label>
+                            <input type="number" name="max_value" id="max_value" value="5"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="min_label" class="block text-sm font-medium text-gray-700 mb-1">Minimum Label</label>
+                            <input type="text" name="min_label" id="min_label" placeholder="e.g., Not at all"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        </div>
+                        <div>
+                            <label for="max_label" class="block text-sm font-medium text-gray-700 mb-1">Maximum Label</label>
+                            <input type="text" name="max_label" id="max_label" placeholder="e.g., Extremely"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        </div>
+                    </div>
+
+                    <!-- Scale Preview -->
+                    <div class="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h3 class="text-sm font-medium text-gray-700 mb-3">Preview</h3>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-500" x-text="document.getElementById('min_label').value || 'Min'"></span>
+                            <div class="flex space-x-4">
+                                <template x-for="i in parseInt(document.getElementById('max_value').value) - parseInt(document.getElementById('min_value').value) + 1" :key="i">
+                                    <div class="flex flex-col items-center">
+                                        <div class="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center text-gray-500">
+                                            <span x-text="parseInt(document.getElementById('min_value').value) + i - 1"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            <span class="text-sm text-gray-500" x-text="document.getElementById('max_label').value || 'Max'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Text Response Preview -->
+                <div x-show="type === 'text'"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform translate-y-4"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     class="space-y-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Text Response Options</label>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="rows" class="block text-sm font-medium text-gray-700 mb-1">Number of Rows</label>
+                            <select name="rows" id="rows" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                                <option value="1">Single Line</option>
+                                <option value="3" selected>3 Lines</option>
+                                <option value="5">5 Lines</option>
+                                <option value="7">7 Lines</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="placeholder" class="block text-sm font-medium text-gray-700 mb-1">Placeholder Text</label>
+                            <input type="text" name="placeholder" id="placeholder" placeholder="e.g., Type your answer here..."
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        </div>
+                    </div>
+
+                    <!-- Text Preview -->
+                    <div class="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h3 class="text-sm font-medium text-gray-700 mb-3">Preview</h3>
+                        <textarea :rows="document.getElementById('rows').value"
+                                  class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200"
+                                  :placeholder="document.getElementById('placeholder').value || 'Type your answer here...'"></textarea>
+                    </div>
+                </div>
+
+                <!-- Ranking Options -->
+                <div x-show="type === 'ranking'"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform translate-y-4"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     class="space-y-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Ranking Items</label>
+
+                    <div class="space-y-3" x-data="{ items: ['', ''] }">
+                        <template x-for="(item, index) in items" :key="index">
+                            <div class="flex items-center group">
+                                <div class="flex-shrink-0 mr-3">
+                                    <div class="w-6 h-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                                        <span class="text-xs font-medium" x-text="index + 1"></span>
+                                    </div>
+                                </div>
+                                <input type="text" :name="'rank_item_' + index" x-model="items[index]"
+                                       class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200"
+                                       placeholder="Item to rank">
+                                <button type="button" @click="items.splice(index, 1)"
+                                        class="ml-2 p-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                        x-show="items.length > 2">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </template>
+                        <button type="button" @click="items.push('')"
+                                class="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center transition-colors duration-200">
+                            <i class="fas fa-plus mr-1"></i> Add Item
+                        </button>
+                    </div>
+
+                    <!-- Ranking Preview -->
+                    <div class="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h3 class="text-sm font-medium text-gray-700 mb-3">Preview</h3>
+                        <div class="space-y-2" x-data="{ items: ['Item 1', 'Item 2', 'Item 3'] }">
+                            <template x-for="(item, index) in items" :key="index">
+                                <div class="flex items-center p-2 bg-white border border-gray-200 rounded-md group hover:border-indigo-300 transition-all duration-200">
+                                    <div class="flex-shrink-0 mr-3">
+                                        <div class="w-6 h-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                                            <span class="text-xs font-medium" x-text="index + 1"></span>
+                                        </div>
+                                    </div>
+                                    <span class="text-gray-700" x-text="item"></span>
+                                    <div class="ml-auto flex space-x-1">
+                                        <button type="button" class="p-1 text-gray-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200" x-show="index > 0">
+                                            <i class="fas fa-arrow-up"></i>
+                                        </button>
+                                        <button type="button" class="p-1 text-gray-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200" x-show="index < items.length - 1">
+                                            <i class="fas fa-arrow-down"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Matrix Options -->
+                <div x-show="type === 'matrix'"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform translate-y-4"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     class="space-y-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Matrix/Grid Question</label>
+
+                    <div class="space-y-4" x-data="{ rows: ['', ''], columns: ['', ''] }">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Rows (Questions)</label>
+                            <div class="space-y-2">
+                                <template x-for="(row, index) in rows" :key="index">
+                                    <div class="flex items-center group">
+                                        <div class="flex-shrink-0 mr-3">
+                                            <div class="w-6 h-6 flex items-center justify-center rounded-full bg-teal-100 text-teal-600">
+                                                <i class="fas fa-question text-xs"></i>
+                                            </div>
+                                        </div>
+                                        <input type="text" :name="'matrix_row_' + index" x-model="rows[index]"
+                                               class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200"
+                                               placeholder="Row question text">
+                                        <button type="button" @click="rows.splice(index, 1)"
+                                                class="ml-2 p-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                                x-show="rows.length > 2">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </template>
+                                <button type="button" @click="rows.push('')"
+                                        class="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center transition-colors duration-200">
+                                    <i class="fas fa-plus mr-1"></i> Add Row
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Columns (Options)</label>
+                            <div class="space-y-2">
+                                <template x-for="(column, index) in columns" :key="index">
+                                    <div class="flex items-center group">
+                                        <div class="flex-shrink-0 mr-3">
+                                            <div class="w-6 h-6 flex items-center justify-center rounded-full bg-teal-100 text-teal-600">
+                                                <i class="fas fa-check text-xs"></i>
+                                            </div>
+                                        </div>
+                                        <input type="text" :name="'matrix_column_' + index" x-model="columns[index]"
+                                               class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200"
+                                               placeholder="Column option text">
+                                        <button type="button" @click="columns.splice(index, 1)"
+                                                class="ml-2 p-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                                x-show="columns.length > 2">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </template>
+                                <button type="button" @click="columns.push('')"
+                                        class="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center transition-colors duration-200">
+                                    <i class="fas fa-plus mr-1"></i> Add Column
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Matrix Preview -->
+                    <div class="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h3 class="text-sm font-medium text-gray-700 mb-3">Preview</h3>
+                        <div x-data="{
+                            previewRows: ['How satisfied are you with our service?', 'How likely are you to recommend us?'],
+                            previewColumns: ['Very Dissatisfied', 'Neutral', 'Very Satisfied']
+                        }">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full bg-white border border-gray-200">
+                                    <thead>
+                                        <tr>
+                                            <th class="py-2 px-3 border-b border-r border-gray-200 bg-gray-50"></th>
+                                            <template x-for="(column, index) in previewColumns" :key="index">
+                                                <th class="py-2 px-3 border-b border-r border-gray-200 bg-gray-50 text-sm font-medium text-gray-700 text-center" x-text="column"></th>
+                                            </template>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="(row, rowIndex) in previewRows" :key="rowIndex">
+                                            <tr>
+                                                <td class="py-2 px-3 border-b border-r border-gray-200 text-sm text-gray-700" x-text="row"></td>
+                                                <template x-for="(column, colIndex) in previewColumns" :key="colIndex">
+                                                    <td class="py-2 px-3 border-b border-r border-gray-200 text-center">
+                                                        <div class="inline-flex items-center justify-center">
+                                                            <input type="radio" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                                                        </div>
+                                                    </td>
+                                                </template>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date Options -->
+                <div x-show="type === 'date'"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform translate-y-4"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     class="space-y-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Date Options</label>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="date_format" class="block text-sm font-medium text-gray-700 mb-1">Date Format</label>
+                            <select name="date_format" id="date_format" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="date_type" class="block text-sm font-medium text-gray-700 mb-1">Date Type</label>
+                            <select name="date_type" id="date_type" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                                <option value="date">Date Only</option>
+                                <option value="datetime">Date and Time</option>
+                                <option value="daterange">Date Range</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="min_date" class="block text-sm font-medium text-gray-700 mb-1">Minimum Date (Optional)</label>
+                            <input type="date" name="min_date" id="min_date"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        </div>
+                        <div>
+                            <label for="max_date" class="block text-sm font-medium text-gray-700 mb-1">Maximum Date (Optional)</label>
+                            <input type="date" name="max_date" id="max_date"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        </div>
+                    </div>
+
+                    <!-- Date Preview -->
+                    <div class="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h3 class="text-sm font-medium text-gray-700 mb-3">Preview</h3>
+                        <div x-data="{ dateType: document.getElementById('date_type').value }" x-init="$watch('dateType', value => dateType = value)">
+                            <div x-show="dateType === 'date'" class="bg-white p-3 rounded-md border border-gray-200">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Select a date:</label>
+                                <input type="date" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                            </div>
+
+                            <div x-show="dateType === 'datetime'" class="bg-white p-3 rounded-md border border-gray-200">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Select date and time:</label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <input type="date" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                                    <input type="time" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                                </div>
+                            </div>
+
+                            <div x-show="dateType === 'daterange'" class="bg-white p-3 rounded-md border border-gray-200">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Select date range:</label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 mb-1">Start Date</label>
+                                        <input type="date" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 mb-1">End Date</label>
+                                        <input type="date" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Upload Options -->
+                <div x-show="type === 'file_upload'"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform translate-y-4"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     class="space-y-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">File Upload Options</label>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="allowed_types" class="block text-sm font-medium text-gray-700 mb-1">Allowed File Types</label>
+                            <select name="allowed_types" id="allowed_types" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200" multiple>
+                                <option value="image/*" selected>Images</option>
+                                <option value="application/pdf">PDF Documents</option>
+                                <option value="application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">Word Documents</option>
+                                <option value="text/plain">Text Files</option>
+                                <option value="application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">Excel Spreadsheets</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple types</p>
+                        </div>
+                        <div>
+                            <label for="max_file_size" class="block text-sm font-medium text-gray-700 mb-1">Maximum File Size (MB)</label>
+                            <input type="number" name="max_file_size" id="max_file_size" value="5" min="1" max="50"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="max_files" class="block text-sm font-medium text-gray-700 mb-1">Maximum Number of Files</label>
+                        <input type="number" name="max_files" id="max_files" value="1" min="1" max="10"
+                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                    </div>
+
+                    <!-- File Upload Preview -->
+                    <div class="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h3 class="text-sm font-medium text-gray-700 mb-3">Preview</h3>
+                        <div class="bg-white p-4 rounded-md border border-gray-200 border-dashed">
+                            <div class="flex flex-col items-center justify-center py-4">
+                                <i class="fas fa-cloud-upload-alt text-3xl text-indigo-400 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-700">Drag and drop files here, or</p>
+                                <button type="button" class="mt-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                                    Browse Files
+                                </button>
+                                <p class="mt-2 text-xs text-gray-500" x-data="{ maxSize: document.getElementById('max_file_size').value }">
+                                    Allowed file types: Images, PDFs, etc. (Max: <span x-text="maxSize"></span> MB)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slider Options -->
+                <div x-show="type === 'slider'"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform translate-y-4"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     class="space-y-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Slider Options</label>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="slider_min" class="block text-sm font-medium text-gray-700 mb-1">Minimum Value</label>
+                            <input type="number" name="slider_min" id="slider_min" value="0"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        </div>
+                        <div>
+                            <label for="slider_max" class="block text-sm font-medium text-gray-700 mb-1">Maximum Value</label>
+                            <input type="number" name="slider_max" id="slider_max" value="100"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="slider_step" class="block text-sm font-medium text-gray-700 mb-1">Step Size</label>
+                            <input type="number" name="slider_step" id="slider_step" value="1" min="1"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        </div>
+                        <div>
+                            <label for="slider_default" class="block text-sm font-medium text-gray-700 mb-1">Default Value</label>
+                            <input type="number" name="slider_default" id="slider_default" value="50"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="slider_min_label" class="block text-sm font-medium text-gray-700 mb-1">Minimum Label</label>
+                            <input type="text" name="slider_min_label" id="slider_min_label" placeholder="e.g., Low"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        </div>
+                        <div>
+                            <label for="slider_max_label" class="block text-sm font-medium text-gray-700 mb-1">Maximum Label</label>
+                            <input type="text" name="slider_max_label" id="slider_max_label" placeholder="e.g., High"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="show_value" class="flex items-center">
+                            <input type="checkbox" name="show_value" id="show_value" checked
+                                   class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50">
+                            <span class="ml-2 text-sm text-gray-700">Show value</span>
+                        </label>
+                    </div>
+
+                    <!-- Slider Preview -->
+                    <div class="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h3 class="text-sm font-medium text-gray-700 mb-3">Preview</h3>
+                        <div class="bg-white p-4 rounded-md border border-gray-200" x-data="{
+                            sliderValue: document.getElementById('slider_default').value,
+                            min: document.getElementById('slider_min').value,
+                            max: document.getElementById('slider_max').value,
+                            step: document.getElementById('slider_step').value,
+                            minLabel: document.getElementById('slider_min_label').value || 'Low',
+                            maxLabel: document.getElementById('slider_max_label').value || 'High',
+                            showValue: document.getElementById('show_value').checked
+                        }" x-init="
+                            $watch('min', value => min = value);
+                            $watch('max', value => max = value);
+                            $watch('step', value => step = value);
+                            $watch('minLabel', value => minLabel = value || 'Low');
+                            $watch('maxLabel', value => maxLabel = value || 'High');
+                            $watch('showValue', value => showValue = value);
+                        ">
+                            <div class="mb-2 flex justify-between">
+                                <span class="text-sm text-gray-600" x-text="minLabel"></span>
+                                <span class="text-sm text-gray-600" x-text="maxLabel"></span>
+                            </div>
+                            <div class="relative">
+                                <input type="range"
+                                       :min="min"
+                                       :max="max"
+                                       :step="step"
+                                       x-model="sliderValue"
+                                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                <div class="absolute inset-0 pointer-events-none">
+                                    <div class="absolute top-6 left-0 right-0 flex justify-center" x-show="showValue">
+                                        <span class="px-2 py-1 bg-indigo-600 text-white text-xs font-medium rounded-md" x-text="sliderValue"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-gray-100">
+                <label for="required" class="flex items-center">
+                    <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="required" id="required" checked
+                               class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-gray-300 appearance-none cursor-pointer transition-transform duration-200 ease-in-out"
+                               style="right: 0; transform: translateX(0);">
+                        <label for="required" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700">Required Question</span>
+                </label>
+                <style>
+                    .toggle-checkbox:checked {
+                        right: 0;
+                        transform: translateX(100%);
+                        border-color: #6366F1;
+                    }
+                    .toggle-checkbox:checked + .toggle-label {
+                        background-color: #6366F1;
+                    }
+                </style>
+            </div>
+        </div>
+
+        <div class="flex justify-between pt-5 border-t border-gray-200">
+            <a href="{% url 'question_list' id=questionnaire.id|default:1 %}" class="bg-white border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-50 transition-all duration-200 flex items-center">
+                Cancel
+            </a>
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 hover:shadow-md flex items-center">
+                <i class="fas fa-plus mr-2"></i> Add Question
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block questionnaires_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        // Alpine.js initialization if needed
+    });
+</script>
+{% endblock %}

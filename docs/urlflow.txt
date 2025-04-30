@@ -1,0 +1,439 @@
+# MindTrack Application - Frontend URL Flow
+
+## 1. URL Structure Overview
+
+The MindTrack application follows a logical and hierarchical URL structure that reflects the application's information architecture. This document outlines the complete URL flow, navigation patterns, and routing structure for the frontend application.
+
+### 1.1 Base URL Structure
+
+```
+https://127.0.0.1/[area]/[resource]/[action]/[id]
+```
+
+- **area**: Main application area (e.g., admin, client, auth)
+- **resource**: The primary resource being accessed (e.g., questionnaires, responses)
+- **action**: The action being performed on the resource (e.g., create, edit, view)
+- **id**: Identifier for a specific resource instance
+
+### 1.2 URL Naming Conventions
+
+- Use lowercase for all URL segments
+- Use hyphens (-) to separate words in URL segments
+- Use descriptive and concise names for resources and actions
+- Maintain consistency in naming patterns across similar resources
+- Follow RESTful URL patterns where appropriate
+
+## 2. Public Routes
+
+### 2.1 Landing Page
+- `/` - Main landing page
+
+### 2.2 Authentication Routes
+- `/auth/login` - User login
+- `/auth/register` - User registration
+- `/auth/forgot-password` - Password recovery request
+- `/auth/reset-password` - Password reset with token
+- `/auth/verify-email` - Email verification
+
+### 2.3 Public Questionnaire Routes
+- `/q/:code` - Public questionnaire access via unique code
+- `/q/:code/complete` - Questionnaire completion confirmation page
+- `/q/:code/results` - Public results page (if enabled)
+
+## 3. Protected Routes
+
+### 3.1 Dashboard Routes
+- `/dashboard` - Main user dashboard
+- `/dashboard` - Admin dashboard
+
+### 3.2 Questionnaire Management
+- `/questionnaires` - List all questionnaires
+- `/questionnaires/create` - Create new questionnaire
+- `/questionnaires/:id` - View questionnaire details
+- `/questionnaires/:id/edit` - Edit questionnaire
+- `/questionnaires/:id/preview` - Preview questionnaire
+- `/questionnaires/:id/settings` - Questionnaire settings
+- `/questionnaires/:id/share` - Sharing options
+- `/questionnaires/:id/duplicate` - Duplicate questionnaire
+- `/questionnaires/:id/archive` - Archive questionnaire
+
+### 3.3 Question Management
+- `/questionnaires/:id/questions` - List questions for questionnaire
+- `/questionnaires/:id/questions/create` - Add new question
+- `/questionnaires/:id/questions/:questionId` - View question details
+- `/questionnaires/:id/questions/:questionId/edit` - Edit question
+
+### 3.4 Response Management
+- `/responses` - List all responses
+- `/responses/:id` - View response details
+- `/responses/:id/score` - Score a response
+- `/responses/:id/analyze` - Analyze a response
+- `/questionnaires/:id/responses` - List responses for a questionnaire
+
+### 3.5 Organization Management
+- `/organizations` - List all organizations
+- `/organizations/create` - Create new organization
+- `/organizations/:id` - View organization details
+- `/organizations/:id/edit` - Edit organization
+- `/organizations/:id/members` - Manage organization members
+- `/organizations/:id/questionnaires` - View organization questionnaires
+
+### 3.6 User Management
+- `/users` - List all users
+- `/users/create` - Create new user
+- `/users/:id` - View user details
+- `/users/:id/edit` - Edit user
+- `/users/:id/permissions` - Manage user permissions
+
+### 3.7 QR Code Management
+- `/qr-codes` - List all QR codes
+- `/qr-codes/create` - Create new QR code
+- `/qr-codes/:id` - View QR code details
+- `/questionnaires/:id/qr-code` - Generate QR code for questionnaire
+
+### 3.8 Analysis and Reporting
+- `/analytics` - Analytics dashboard
+- `/analytics/questionnaires` - Questionnaire analytics
+- `/analytics/responses` - Response analytics
+- `/analytics/users` - User analytics
+- `/reports` - Reports dashboard
+- `/reports/create` - Create new report
+- `/reports/:id` - View report details
+
+### 3.9 Email Management
+- `/emails` - Email dashboard
+- `/emails/templates` - Email templates
+- `/emails/templates/create` - Create email template
+- `/emails/templates/:id` - View template details
+- `/emails/templates/:id/edit` - Edit email template
+- `/emails/logs` - Email sending logs
+
+### 3.10 Settings
+- `/settings` - General settings
+- `/settings/account` - Account settings
+- `/settings/profile` - Profile settings
+- `/settings/notifications` - Notification settings
+- `/settings/api` - API settings
+- `/settings/security` - Security settings
+- `/settings/billing` - Billing settings
+
+## 4. User Profile Routes
+
+### 4.1 Profile Management
+- `/profile` - User profile overview
+- `/profile/edit` - Edit user profile
+- `/profile/security` - Security settings
+- `/profile/notifications` - Notification preferences
+- `/profile/api-keys` - API key management
+
+### 4.2 User Content
+- `/profile/questionnaires` - User's questionnaires
+- `/profile/responses` - User's responses
+- `/profile/organizations` - User's organizations
+
+## 5. Client Routes
+
+### 5.1 Client Dashboard
+- `/client/dashboard` - Client dashboard
+
+### 5.2 Client Questionnaires
+- `/client/questionnaires` - Available questionnaires
+- `/client/questionnaires/:id` - Take a questionnaire
+- `/client/questionnaires/:id/results` - View questionnaire results
+
+### 5.3 Client Responses
+- `/client/responses` - Client's responses
+- `/client/responses/:id` - View response details
+
+## 6. Navigation Flows
+
+### 6.1 Authentication Flow
+1. `/` (Landing Page)
+2. `/auth/login` or `/auth/register`
+3. `/dashboard` (on successful authentication)
+
+### 6.2 Questionnaire Creation Flow
+1. `/questionnaires`
+2. `/questionnaires/create`
+3. `/questionnaires/:id/questions/create` (multiple times)
+4. `/questionnaires/:id/preview`
+5. `/questionnaires/:id/settings`
+6. `/questionnaires/:id/share`
+
+### 6.3 Response Collection Flow
+1. `/q/:code` (Public questionnaire access)
+2. Complete questionnaire
+3. `/q/:code/complete` (Completion confirmation)
+4. (Optional) `/q/:code/results` (If immediate results are enabled)
+
+### 6.4 Response Analysis Flow
+1. `/responses`
+2. `/responses/:id` (View response details)
+3. `/responses/:id/score` (Score the response)
+4. `/responses/:id/analyze` (Analyze the response)
+
+### 6.5 Organization Management Flow
+1. `/organizations`
+2. `/organizations/create` or `/organizations/:id`
+3. `/organizations/:id/members` (Manage members)
+4. `/organizations/:id/questionnaires` (View questionnaires)
+
+## 7. Dynamic Routes and Parameters
+
+### 7.1 Route Parameters
+- `:id` - Resource identifier (UUID)
+- `:code` - Unique code for public access (alphanumeric)
+- `:questionId` - Question identifier (UUID)
+- `:templateId` - Template identifier (UUID)
+
+### 7.2 Query Parameters
+- `?page=1` - Pagination
+- `?limit=10` - Items per page
+- `?sort=createdAt` - Sorting field
+- `?order=desc` - Sorting order
+- `?search=keyword` - Search term
+- `?filter=status:active` - Filtering
+- `?view=grid` - View type
+
+## 8. Special Routes
+
+### 8.1 Error Pages
+- `/404` - Not found
+- `/500` - Server error
+- `/403` - Forbidden
+- `/maintenance` - Maintenance mode
+
+### 8.2 Utility Pages
+- `/sitemap` - Site map
+- `/help` - Help center
+- `/contact` - Contact page
+- `/privacy` - Privacy policy
+- `/terms` - Terms of service
+
+## 9. Route Guards and Access Control
+
+### 9.1 Authentication Guards
+- Public routes: No authentication required
+- Protected routes: Authentication required
+- Admin routes: Authentication and admin role required
+
+### 9.2 Role-Based Access Control
+- Admin routes: Accessible only to users with admin role
+- Organization routes: Accessible to organization members
+- User-specific routes: Accessible only to the specific user
+
+### 9.3 Permission-Based Access Control
+- Create operations: Requires create permission
+- Edit operations: Requires edit permission
+- Delete operations: Requires delete permission
+- View operations: Requires view permission
+
+## 10. URL Handling Implementation
+
+### 10.1 Next.js Routing Implementation
+```javascript
+// Example of Next.js page structure for routes
+/pages
+  /index.js                              // Landing page
+  /dashboard.js                          // Dashboard
+  /auth
+    /login.js                            // Login page
+    /register.js                         // Registration page
+    /forgot-password.js                  // Password recovery
+    /reset-password.js                   // Password reset
+  
+    /dashboard.js                        // Admin dashboard
+    /questionnaires
+      /index.js                          // List questionnaires
+      /create.js                         // Create questionnaire
+      /[id]
+        /index.js                        // View questionnaire
+        /edit.js                         // Edit questionnaire
+        /questions
+          /index.js                      // List questions
+          /create.js                     // Create question
+          /[questionId]
+            /index.js                    // View question
+            /edit.js                     // Edit question
+    /responses
+      /index.js                          // List responses
+      /[id]
+        /index.js                        // View response
+        /score.js                        // Score response
+        /analyze.js                      // Analyze response
+  /q
+    /[code].js                           // Public questionnaire
+    /[code]
+      /complete.js                       // Completion page
+      /results.js                        // Results page
+```
+
+### 10.2 Route Configuration
+```javascript
+// Example of route configuration with Next.js
+// pages/_app.js
+import { useRouter } from 'next/router';
+import { useAuth } from '../hooks/useAuth';
+
+function MyApp({ Component, pageProps }) {
+  const router = useRouter();
+  const { user, loading } = useAuth();
+  
+  // Check if the route requires authentication
+  const isAuthRequired = !publicRoutes.includes(router.pathname);
+  
+  // Check if the route requires admin role
+  const isAdminRequired = router.pathname.startsWith('');
+  
+  // Redirect if authentication is required but user is not logged in
+  if (isAuthRequired && !loading && !user) {
+    router.push('/auth/login');
+    return null;
+  }
+  
+  // Redirect if admin role is required but user is not an admin
+  if (isAdminRequired && !loading && user && user.role !== 'admin') {
+    router.push('/dashboard');
+    return null;
+  }
+  
+  return <Component {...pageProps} />;
+}
+
+// List of public routes that don't require authentication
+const publicRoutes = [
+  '/',
+  '/auth/login',
+  '/auth/register',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/q/[code]',
+  '/q/[code]/complete',
+  '/q/[code]/results',
+];
+
+export default MyApp;
+```
+
+## 11. URL Patterns for API Integration
+
+### 11.1 API URL Structure
+```
+/api/v1/[resource]/[id]/[action]
+```
+
+### 11.2 Frontend-to-API Mapping
+- Frontend: `/questionnaires` → API: `GET /api/v1/questionnaires`
+- Frontend: `/questionnaires/create` → API: `POST /api/v1/questionnaires`
+- Frontend: `/questionnaires/:id` → API: `GET /api/v1/questionnaires/:id`
+- Frontend: `/questionnaires/:id/edit` → API: `PUT /api/v1/questionnaires/:id`
+- Frontend: `/responses` → API: `GET /api/v1/responses`
+- Frontend: `/responses/:id` → API: `GET /api/v1/responses/:id`
+
+## 12. SEO Considerations
+
+### 12.1 SEO-Friendly URLs
+- Use descriptive, keyword-rich URLs
+- Keep URLs short and readable
+- Use hyphens to separate words
+- Avoid query parameters for important pages
+- Implement canonical URLs for duplicate content
+
+### 12.2 Meta Tags and Open Graph
+- Implement dynamic meta tags based on route
+- Include Open Graph tags for social sharing
+- Add Twitter Card tags for Twitter sharing
+- Implement structured data where appropriate
+
+## 13. URL Tracking and Analytics
+
+### 13.1 Page View Tracking
+- Track page views for all routes
+- Implement custom events for important user actions
+- Track conversion funnels based on URL flows
+
+### 13.2 Performance Monitoring
+- Monitor page load times by route
+- Track client-side navigation performance
+- Identify slow-loading routes for optimization
+
+## 14. Mobile Considerations
+
+### 14.1 Deep Linking
+- Support deep linking to specific routes in mobile app
+- Maintain consistent URL structure between web and mobile
+- Implement universal links for iOS and app links for Android
+
+### 14.2 Responsive Routing
+- Adapt navigation patterns for mobile devices
+- Simplify URL structure for mobile when appropriate
+- Ensure consistent user experience across devices
+
+## 15. Future URL Structure Considerations
+
+### 15.1 Internationalization
+- `/[locale]/[area]/[resource]/[action]/[id]`
+- Example: `/en/questionnaires`
+- Example: `/fr/questionnaires`
+
+### 15.2 Versioning
+- Support for multiple versions of the application
+- URL patterns for feature flagging
+- Backward compatibility for bookmarked URLs
+
+## 16. URL Flow Diagrams
+
+### 16.1 Main Navigation Flow
+```
+Landing Page (/)
+├── Login (/auth/login)
+│   └── Dashboard (/dashboard)
+│       ├── Admin Dashboard (/dashboard)
+│       │   ├── Questionnaires (/questionnaires)
+│       │   ├── Responses (/responses)
+│       │   ├── Organizations (/organizations)
+│       │   ├── Users (/users)
+│       │   ├── Analytics (/analytics)
+│       │   └── Settings (/settings)
+│       └── Client Dashboard (/client/dashboard)
+│           ├── Questionnaires (/client/questionnaires)
+│           └── Responses (/client/responses)
+└── Register (/auth/register)
+    └── Dashboard (/dashboard)
+```
+
+### 16.2 Questionnaire Management Flow
+```
+Questionnaires (/questionnaires)
+├── Create Questionnaire (/questionnaires/create)
+│   └── New Questionnaire (/questionnaires/:id)
+│       ├── Edit Questionnaire (/questionnaires/:id/edit)
+│       ├── Questions (/questionnaires/:id/questions)
+│       │   ├── Create Question (/questionnaires/:id/questions/create)
+│       │   └── Edit Question (/questionnaires/:id/questions/:questionId/edit)
+│       ├── Preview (/questionnaires/:id/preview)
+│       ├── Settings (/questionnaires/:id/settings)
+│       ├── Share (/questionnaires/:id/share)
+│       │   └── QR Code (/questionnaires/:id/qr-code)
+│       └── Responses (/questionnaires/:id/responses)
+│           └── Response Details (/responses/:id)
+│               ├── Score Response (/responses/:id/score)
+│               └── Analyze Response (/responses/:id/analyze)
+└── Questionnaire Details (/questionnaires/:id)
+```
+
+### 16.3 Response Collection Flow
+```
+Public Questionnaire (/q/:code)
+├── Complete Questionnaire
+│   └── Completion Page (/q/:code/complete)
+│       └── Results Page (/q/:code/results)
+└── Admin View Responses (/questionnaires/:id/responses)
+    └── Response Details (/responses/:id)
+```
+
+## 17. Conclusion
+
+This URL flow documentation provides a comprehensive overview of the frontend routing structure for the MindTrack application. It serves as a guide for developers implementing the navigation system and ensures consistency in URL patterns across the application.
+
+The URL structure is designed to be intuitive, descriptive, and aligned with the application's information architecture. It follows best practices for SEO, accessibility, and user experience while providing a solid foundation for future expansion and internationalization.

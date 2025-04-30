@@ -1,0 +1,277 @@
+{% extends 'questionnaires/base.html' %}
+{% load static %}
+
+{% block questionnaires_content %}
+<!-- Header with animations -->
+<div class="flex justify-between items-center mb-6"
+     x-data="{}" 
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 100)" 
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+    <div>
+        <a href="{% url 'questionnaire_detail' id=questionnaire.id|default:1 %}" class="text-indigo-600 hover:text-indigo-800 flex items-center mb-2 group">
+            <i class="fas fa-arrow-left mr-2 transform group-hover:-translate-x-1 transition-transform duration-300"></i> 
+            <span>Back to Questionnaire</span>
+        </a>
+        <h1 class="text-2xl font-bold text-gray-800">Settings: {{ questionnaire.title|default:"Untitled Questionnaire" }}</h1>
+    </div>
+</div>
+
+<!-- Settings Form -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6"
+     x-data="{}" 
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 200)" 
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+    
+    <form method="post" class="space-y-8">
+        {% csrf_token %}
+        
+        <!-- Basic Settings Section -->
+        <div>
+            <h2 class="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-cog mr-2 text-indigo-500"></i> Basic Settings
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Questionnaire Title</label>
+                    <input type="text" id="title" name="title" value="{{ questionnaire.title|default:'Untitled Questionnaire' }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                </div>
+                
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select id="status" name="status" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        <option value="draft" {% if questionnaire.status == 'draft' or not questionnaire.status %}selected{% endif %}>Draft</option>
+                        <option value="active" {% if questionnaire.status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="archived" {% if questionnaire.status == 'archived' %}selected{% endif %}>Archived</option>
+                    </select>
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="description" name="description" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">{{ questionnaire.description|default:"" }}</textarea>
+                </div>
+                
+                <div>
+                    <label for="estimated_time" class="block text-sm font-medium text-gray-700 mb-1">Estimated Completion Time (minutes)</label>
+                    <input type="number" id="estimated_time" name="estimated_time" value="{{ questionnaire.estimated_time|default:'10' }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                </div>
+                
+                <div>
+                    <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select id="category" name="category" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        <option value="mental_health">Mental Health</option>
+                        <option value="satisfaction">Satisfaction</option>
+                        <option value="feedback">Feedback</option>
+                        <option value="assessment">Assessment</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Display Settings Section -->
+        <div x-data="{ expanded: true }" class="border-t border-gray-200 pt-6">
+            <div class="flex justify-between items-center cursor-pointer mb-4" @click="expanded = !expanded">
+                <h2 class="text-lg font-medium text-gray-800 flex items-center">
+                    <i class="fas fa-desktop mr-2 text-indigo-500"></i> Display Settings
+                </h2>
+                <button type="button" class="text-gray-500 hover:text-indigo-600 transition-colors duration-200">
+                    <i class="fas" :class="expanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </button>
+            </div>
+            
+            <div x-show="expanded" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform -translate-y-4"
+                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 transform translate-y-0"
+                 x-transition:leave-end="opacity-0 transform -translate-y-4"
+                 class="space-y-4">
+                
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="show_progress" name="show_progress" type="checkbox" {% if questionnaire.settings.show_progress %}checked{% endif %} class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded transition-all duration-200">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="show_progress" class="font-medium text-gray-700">Show Progress Bar</label>
+                        <p class="text-gray-500">Display a progress bar to show users how far they are in the questionnaire.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="show_question_numbers" name="show_question_numbers" type="checkbox" checked class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded transition-all duration-200">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="show_question_numbers" class="font-medium text-gray-700">Show Question Numbers</label>
+                        <p class="text-gray-500">Display question numbers (e.g., "Question 1 of 10").</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="one_question_per_page" name="one_question_per_page" type="checkbox" checked class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded transition-all duration-200">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="one_question_per_page" class="font-medium text-gray-700">One Question Per Page</label>
+                        <p class="text-gray-500">Show one question at a time instead of all questions on a single page.</p>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="theme" class="block text-sm font-medium text-gray-700 mb-1">Theme</label>
+                    <select id="theme" name="theme" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                        <option value="default">Default</option>
+                        <option value="minimal">Minimal</option>
+                        <option value="professional">Professional</option>
+                        <option value="friendly">Friendly</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="logo" class="block text-sm font-medium text-gray-700 mb-1">Logo</label>
+                    <div class="flex items-center">
+                        <input type="file" id="logo" name="logo" class="hidden">
+                        <label for="logo" class="cursor-pointer bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                            <i class="fas fa-upload mr-2"></i> Upload Logo
+                        </label>
+                        <span class="ml-3 text-sm text-gray-500">No file selected</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Behavior Settings Section -->
+        <div x-data="{ expanded: true }" class="border-t border-gray-200 pt-6">
+            <div class="flex justify-between items-center cursor-pointer mb-4" @click="expanded = !expanded">
+                <h2 class="text-lg font-medium text-gray-800 flex items-center">
+                    <i class="fas fa-sliders-h mr-2 text-indigo-500"></i> Behavior Settings
+                </h2>
+                <button type="button" class="text-gray-500 hover:text-indigo-600 transition-colors duration-200">
+                    <i class="fas" :class="expanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </button>
+            </div>
+            
+            <div x-show="expanded" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform -translate-y-4"
+                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 transform translate-y-0"
+                 x-transition:leave-end="opacity-0 transform -translate-y-4"
+                 class="space-y-4">
+                
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="allow_anonymous" name="allow_anonymous" type="checkbox" {% if questionnaire.settings.allow_anonymous %}checked{% endif %} class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded transition-all duration-200">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="allow_anonymous" class="font-medium text-gray-700">Allow Anonymous Responses</label>
+                        <p class="text-gray-500">Allow users to complete the questionnaire without logging in.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="collect_email" name="collect_email" type="checkbox" {% if questionnaire.settings.collect_email %}checked{% endif %} class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded transition-all duration-200">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="collect_email" class="font-medium text-gray-700">Collect Email Addresses</label>
+                        <p class="text-gray-500">Ask respondents for their email address before starting the questionnaire.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="randomize_questions" name="randomize_questions" type="checkbox" {% if questionnaire.settings.randomize_questions %}checked{% endif %} class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded transition-all duration-200">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="randomize_questions" class="font-medium text-gray-700">Randomize Questions</label>
+                        <p class="text-gray-500">Present questions in a random order for each respondent.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="allow_save_and_continue" name="allow_save_and_continue" type="checkbox" checked class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded transition-all duration-200">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="allow_save_and_continue" class="font-medium text-gray-700">Allow Save and Continue</label>
+                        <p class="text-gray-500">Allow respondents to save their progress and continue later.</p>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="confirmation_message" class="block text-sm font-medium text-gray-700 mb-1">Confirmation Message</label>
+                    <textarea id="confirmation_message" name="confirmation_message" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">{{ questionnaire.settings.confirmation_message|default:"Thank you for completing the questionnaire!" }}</textarea>
+                    <p class="mt-1 text-sm text-gray-500">This message will be shown to respondents after they complete the questionnaire.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notification Settings Section -->
+        <div x-data="{ expanded: false }" class="border-t border-gray-200 pt-6">
+            <div class="flex justify-between items-center cursor-pointer mb-4" @click="expanded = !expanded">
+                <h2 class="text-lg font-medium text-gray-800 flex items-center">
+                    <i class="fas fa-bell mr-2 text-indigo-500"></i> Notification Settings
+                </h2>
+                <button type="button" class="text-gray-500 hover:text-indigo-600 transition-colors duration-200">
+                    <i class="fas" :class="expanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </button>
+            </div>
+            
+            <div x-show="expanded" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform -translate-y-4"
+                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 transform translate-y-0"
+                 x-transition:leave-end="opacity-0 transform -translate-y-4"
+                 class="space-y-4">
+                
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="notify_on_response" name="notify_on_response" type="checkbox" checked class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded transition-all duration-200">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="notify_on_response" class="font-medium text-gray-700">Notify on New Response</label>
+                        <p class="text-gray-500">Receive an email notification when someone completes the questionnaire.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="send_response_confirmation" name="send_response_confirmation" type="checkbox" checked class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded transition-all duration-200">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="send_response_confirmation" class="font-medium text-gray-700">Send Response Confirmation</label>
+                        <p class="text-gray-500">Send a confirmation email to respondents after they complete the questionnaire.</p>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="notification_email" class="block text-sm font-medium text-gray-700 mb-1">Notification Email</label>
+                    <input type="email" id="notification_email" name="notification_email" value="{{ user.email|default:'user@example.com' }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                    <p class="mt-1 text-sm text-gray-500">Email address where notifications will be sent.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Save Button -->
+        <div class="pt-5 flex justify-end border-t border-gray-200">
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 hover:shadow-md flex items-center">
+                <i class="fas fa-save mr-2"></i> Save Settings
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block questionnaires_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        // Alpine.js initialization if needed
+    });
+</script>
+{% endblock %}

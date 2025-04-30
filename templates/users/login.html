@@ -1,0 +1,71 @@
+{% extends "base/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Client Login{% endblock %}
+
+{% block extra_css %}
+<style>
+    .client-login-container {
+        max-width: 450px;
+        margin: 80px auto;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        background-color: white;
+    }
+    .client-login-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .client-login-header h1 {
+        color: #007bff;
+        font-weight: 600;
+    }
+    .client-login-form .btn-primary {
+        width: 100%;
+        padding: 10px;
+        font-weight: 500;
+    }
+    .client-login-footer {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="client-login-container">
+        <div class="client-login-header">
+            <h1 class="h3">Client Portal</h1>
+            <p class="text-muted">Sign in to access your account</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="client-login-form">
+            <form method="post">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Sign In</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="client-login-footer">
+            <p>Don't have an account? <a href="/client-portal/register/">Register</a></p>
+            <p><a href="#">Forgot Password?</a></p>
+            <p>Are you an admin? <a href="/admin-portal/login/">Go to Admin Portal</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

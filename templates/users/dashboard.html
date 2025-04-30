@@ -1,0 +1,146 @@
+{% extends "users/base.html" %}
+
+{% block title %}Client Dashboard{% endblock %}
+
+{% block client_content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">Client Dashboard</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body">
+                <h5 class="card-title">My Questionnaires</h5>
+                <p class="card-text display-4">{{ questionnaires_count|default:"0" }}</p>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a href="#" class="text-white">View Details</a>
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <h5 class="card-title">Completed</h5>
+                <p class="card-text display-4">{{ completed_count|default:"0" }}</p>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a href="#" class="text-white">View Details</a>
+                <i class="fas fa-check-circle"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card bg-warning text-white h-100">
+            <div class="card-body">
+                <h5 class="card-title">Pending</h5>
+                <p class="card-text display-4">{{ pending_count|default:"0" }}</p>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a href="#" class="text-white">View Details</a>
+                <i class="fas fa-clock"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body">
+                <h5 class="card-title">Available</h5>
+                <p class="card-text display-4">{{ available_count|default:"0" }}</p>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a href="#" class="text-white">View Details</a>
+                <i class="fas fa-list-alt"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                {% if login_history %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date/Time</th>
+                                <th>Activity</th>
+                                <th>Device</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for login in login_history %}
+                            <tr>
+                                <td>{{ login.login_time }}</td>
+                                <td>
+                                    {% if login.success %}
+                                    <span class="badge bg-success">Login</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Failed Login</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ login.user_agent|truncatechars:30 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No recent activity available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-3">
+                    <a href="#" class="btn btn-primary">
+                        <i class="fas fa-clipboard-list me-2"></i> Take a Questionnaire
+                    </a>
+                    <a href="#" class="btn btn-outline-primary">
+                        <i class="fas fa-history me-2"></i> View Response History
+                    </a>
+                    <a href="{% url 'client_profile_edit' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-user-edit me-2"></i> Update Profile
+                    </a>
+                    <a href="#" class="btn btn-outline-primary">
+                        <i class="fas fa-qrcode me-2"></i> Scan QR Code
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Questionnaires</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    No recent questionnaires available. <a href="#">Take a questionnaire</a> to get started.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

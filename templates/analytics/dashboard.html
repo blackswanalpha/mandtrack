@@ -1,0 +1,564 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Analytics Dashboard - MindTrack{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white py-4 sm:py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 sm:mb-8">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-display font-bold text-gray-900">Analytics Dashboard</h1>
+                <p class="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">Insights and statistics from your surveys and responses</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex flex-wrap gap-2 sm:gap-0 sm:space-x-3">
+                <a href="#" class="inline-flex items-center px-3 sm:px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-plus mr-1 sm:mr-2"></i> <span class="hidden sm:inline">Custom</span> Dashboard
+                </a>
+                <a href="#" class="inline-flex items-center px-3 sm:px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-file-export mr-1 sm:mr-2"></i> Generate Report
+                </a>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-gray-50 rounded-lg p-3 sm:p-4 mb-6 sm:mb-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
+                <h2 class="text-base sm:text-lg font-medium text-gray-900">Filters</h2>
+                <button type="button" id="toggle-filters" class="sm:hidden mt-2 text-sm text-primary-600 flex items-center">
+                    <span id="filter-text">Show Filters</span>
+                    <i id="filter-icon" class="fas fa-chevron-down ml-1 transition-transform"></i>
+                </button>
+            </div>
+            <form method="get" id="filter-form" class="hidden sm:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
+                  hx-get="{% url 'analytics:dashboard' %}"
+                  hx-target="#dashboard-content"
+                  hx-swap="innerHTML"
+                  hx-indicator="#loading-indicator"
+                  hx-trigger="change delay:500ms from:#date-range, change from:#organization, change from:#survey">
+                <div>
+                    <label for="date-range" class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                    <select id="date-range" name="date_range" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm">
+                        <option value="7" {% if date_range == '7' %}selected{% endif %}>Last 7 days</option>
+                        <option value="30" {% if date_range == '30' %}selected{% endif %}>Last 30 days</option>
+                        <option value="90" {% if date_range == '90' %}selected{% endif %}>Last 90 days</option>
+                        <option value="365" {% if date_range == '365' %}selected{% endif %}>Last year</option>
+                        <option value="all" {% if date_range == 'all' %}selected{% endif %}>All time</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="organization" class="block text-sm font-medium text-gray-700 mb-1">Organization</label>
+                    <select id="organization" name="organization" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm">
+                        <option value="">All Organizations</option>
+                        {% for org in organizations %}
+                            <option value="{{ org.id }}" {% if selected_organization == org.id %}selected{% endif %}>{{ org.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="survey" class="block text-sm font-medium text-gray-700 mb-1">Survey</label>
+                    <select id="survey" name="survey" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm">
+                        <option value="">All Surveys</option>
+                        {% for survey in surveys %}
+                            <option value="{{ survey.id }}" {% if selected_survey == survey.id %}selected{% endif %}>{{ survey.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+            <!-- Loading indicator for HTMX -->
+            <div id="loading-indicator" class="htmx-indicator flex justify-center mt-4 hidden">
+                <div class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm rounded-md text-primary-800 bg-primary-100">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Updating dashboard...
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboard-content">
+            <!-- Summary Stats -->
+            <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                <div class="bg-white rounded-lg shadow p-3 sm:p-4">
+                    <h3 class="text-xs sm:text-sm font-medium text-gray-500">Total Responses</h3>
+                    <p class="mt-1 text-xl sm:text-3xl font-semibold text-gray-900">{{ total_responses }}</p>
+                    <p class="mt-1 text-xs sm:text-sm text-gray-500">
+                        {% if response_change > 0 %}
+                            <span class="text-green-600"><i class="fas fa-arrow-up mr-1"></i> {{ response_change }}%</span> <span class="hidden sm:inline">from previous period</span>
+                        {% elif response_change < 0 %}
+                            <span class="text-red-600"><i class="fas fa-arrow-down mr-1"></i> {{ response_change|default:0|floatformat:0|cut:"-" }}%</span> <span class="hidden sm:inline">from previous period</span>
+                        {% else %}
+                            No change
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-3 sm:p-4">
+                    <h3 class="text-xs sm:text-sm font-medium text-gray-500">Completion Rate</h3>
+                    <p class="mt-1 text-xl sm:text-3xl font-semibold text-primary-600">{{ completion_rate }}%</p>
+                    <div class="mt-1 w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-primary-600 h-2 rounded-full" style="width: {{ completion_rate }}%"></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-3 sm:p-4">
+                    <h3 class="text-xs sm:text-sm font-medium text-gray-500">Average Score</h3>
+                    <p class="mt-1 text-xl sm:text-3xl font-semibold text-gray-900">{{ average_score|floatformat:1 }}</p>
+                    <p class="mt-1 text-xs sm:text-sm text-gray-500">
+                        {% if score_change > 0 %}
+                            <span class="text-green-600"><i class="fas fa-arrow-up mr-1"></i> {{ score_change|floatformat:1 }}</span>
+                        {% elif score_change < 0 %}
+                            <span class="text-red-600"><i class="fas fa-arrow-down mr-1"></i> {{ score_change|default:0|floatformat:1|cut:"-" }}</span>
+                        {% else %}
+                            No change
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-3 sm:p-4">
+                    <h3 class="text-xs sm:text-sm font-medium text-gray-500">High Risk</h3>
+                    <p class="mt-1 text-xl sm:text-3xl font-semibold text-red-600">{{ high_risk_count }}</p>
+                    <p class="mt-1 text-xs sm:text-sm text-gray-500">{{ high_risk_percentage }}% of total</p>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                <!-- Response Trend Chart -->
+                <div class="bg-white rounded-lg shadow p-3 sm:p-4">
+                    <h3 class="text-sm sm:text-base font-medium text-gray-900 mb-2 sm:mb-4">Response Trend</h3>
+                    <div class="h-48 sm:h-64">
+                        <canvas id="responseTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Risk Level Distribution Chart -->
+                <div class="bg-white rounded-lg shadow p-3 sm:p-4">
+                    <h3 class="text-sm sm:text-base font-medium text-gray-900 mb-2 sm:mb-4">Risk Level Distribution</h3>
+                    <div class="h-48 sm:h-64">
+                        <canvas id="riskDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row 2 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                <!-- Survey Completion Chart -->
+                <div class="bg-white rounded-lg shadow p-3 sm:p-4">
+                    <h3 class="text-sm sm:text-base font-medium text-gray-900 mb-2 sm:mb-4">Survey Completion Rates</h3>
+                    <div class="h-48 sm:h-64">
+                        <canvas id="surveyCompletionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Score Distribution Chart -->
+                <div class="bg-white rounded-lg shadow p-3 sm:p-4">
+                    <h3 class="text-sm sm:text-base font-medium text-gray-900 mb-2 sm:mb-4">Score Distribution</h3>
+                    <div class="h-48 sm:h-64">
+                        <canvas id="scoreDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Responses -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6 sm:mb-8">
+                <div class="px-3 py-4 sm:px-6 sm:py-5 flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                    <div>
+                        <h2 class="text-base sm:text-lg font-medium text-gray-900">Recent Responses</h2>
+                        <p class="mt-1 text-xs sm:text-sm text-gray-500">The latest survey responses.</p>
+                    </div>
+                    <a href="{% url 'feedback:response_list' %}" class="mt-2 sm:mt-0 text-sm text-primary-600 hover:text-primary-900">
+                        View all <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+
+                <!-- Mobile Response Cards (visible on small screens) -->
+                <div class="sm:hidden border-t border-gray-200">
+                    <div class="divide-y divide-gray-200">
+                        {% for response in recent_responses %}
+                            <div class="p-4 hover:bg-gray-50">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-primary-600 font-medium">
+                                        {% if response.respondent_name %}
+                                            {{ response.respondent_name }}
+                                        {% elif response.respondent %}
+                                            {{ response.respondent.get_full_name|default:response.respondent.email }}
+                                        {% elif response.respondent_email %}
+                                            {{ response.respondent_email }}
+                                        {% else %}
+                                            Anonymous
+                                        {% endif %}
+                                    </span>
+                                    <div class="flex items-center space-x-2">
+                                        {% if response.risk_level != 'none' %}
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                                {% if response.risk_level == 'critical' %}bg-red-100 text-red-800
+                                                {% elif response.risk_level == 'high' %}bg-orange-100 text-orange-800
+                                                {% elif response.risk_level == 'medium' %}bg-yellow-100 text-yellow-800
+                                                {% elif response.risk_level == 'low' %}bg-green-100 text-green-800
+                                                {% endif %}">
+                                                {{ response.get_risk_level_display }}
+                                            </span>
+                                        {% endif %}
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                            {% if response.status == 'completed' %}bg-green-100 text-green-800
+                                            {% elif response.status == 'in_progress' %}bg-yellow-100 text-yellow-800
+                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {{ response.get_status_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="text-sm text-gray-500 mb-1">
+                                    <a href="{% url 'surveys:survey_detail' pk=response.survey.pk|default:response.survey.id %}" class="text-primary-600 hover:text-primary-900">
+                                        {{ response.survey.title|truncatechars:30 }}
+                                    </a>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-500">
+                                    <span>{{ response.completed_at|default:response.started_at|date:"M d, Y" }}</span>
+                                    {% if response.total_score is not None %}
+                                        <span class="font-medium">Score: {{ response.total_score }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="p-4 text-center text-sm text-gray-500">
+                                No responses found.
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Desktop Table (hidden on small screens) -->
+                <div class="hidden sm:block border-t border-gray-200">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Respondent</th>
+                                    <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Survey</th>
+                                    <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk Level</th>
+                                    <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for response in recent_responses %}
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                            <span class="text-primary-600">
+                                                {% if response.respondent_name %}
+                                                    {{ response.respondent_name }}
+                                                {% elif response.respondent %}
+                                                    {{ response.respondent.get_full_name|default:response.respondent.email }}
+                                                {% elif response.respondent_email %}
+                                                    {{ response.respondent_email }}
+                                                {% else %}
+                                                    Anonymous
+                                                {% endif %}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                            <span class="text-primary-600">
+                                                {{ response.survey.title|truncatechars:30 }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ response.completed_at|default:response.started_at|date:"M d, Y" }}
+                                        </td>
+                                        <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                                {% if response.status == 'completed' %}bg-green-100 text-green-800
+                                                {% elif response.status == 'in_progress' %}bg-yellow-100 text-yellow-800
+                                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                {{ response.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                            {% if response.risk_level != 'none' %}
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                                    {% if response.risk_level == 'critical' %}bg-red-100 text-red-800
+                                                    {% elif response.risk_level == 'high' %}bg-orange-100 text-orange-800
+                                                    {% elif response.risk_level == 'medium' %}bg-yellow-100 text-yellow-800
+                                                    {% elif response.risk_level == 'low' %}bg-green-100 text-green-800
+                                                    {% endif %}">
+                                                    {{ response.get_risk_level_display }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-gray-500">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {% if response.total_score is not None %}
+                                                {{ response.total_score }}
+                                            {% else %}
+                                                <span class="text-gray-500">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="px-4 sm:px-6 py-4 text-center text-sm text-gray-500">
+                                            No responses found.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle filters on mobile
+        const toggleFiltersBtn = document.getElementById('toggle-filters');
+        const filterForm = document.getElementById('filter-form');
+        const filterIcon = document.getElementById('filter-icon');
+        const filterText = document.getElementById('filter-text');
+
+        if (toggleFiltersBtn) {
+            toggleFiltersBtn.addEventListener('click', function() {
+                filterForm.classList.toggle('hidden');
+                filterIcon.classList.toggle('rotate-180');
+                filterText.textContent = filterForm.classList.contains('hidden') ? 'Show Filters' : 'Hide Filters';
+            });
+        }
+
+        // Response Trend Chart
+        const responseTrendCtx = document.getElementById('responseTrendChart').getContext('2d');
+        const responseTrendChart = new Chart(responseTrendCtx, {
+            type: 'line',
+            data: {
+                labels: {{ response_trend_labels|safe }},
+                datasets: [{
+                    label: 'Responses',
+                    data: {{ response_trend_data|safe }},
+                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    pointBackgroundColor: 'rgba(79, 70, 229, 1)',
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0,
+                            font: {
+                                size: window.innerWidth < 768 ? 10 : 12
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: window.innerWidth < 768 ? 8 : 12
+                            },
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        titleColor: '#111827',
+                        bodyColor: '#111827',
+                        borderColor: '#e5e7eb',
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: false,
+                        titleFont: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Risk Level Distribution Chart
+        const riskDistributionCtx = document.getElementById('riskDistributionChart').getContext('2d');
+        const riskDistributionChart = new Chart(riskDistributionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Low', 'Medium', 'High', 'Critical', 'None'],
+                datasets: [{
+                    data: {{ risk_distribution_data|safe }},
+                    backgroundColor: [
+                        'rgba(34, 197, 94, 0.7)',
+                        'rgba(234, 179, 8, 0.7)',
+                        'rgba(249, 115, 22, 0.7)',
+                        'rgba(239, 68, 68, 0.7)',
+                        'rgba(156, 163, 175, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(34, 197, 94, 1)',
+                        'rgba(234, 179, 8, 1)',
+                        'rgba(249, 115, 22, 1)',
+                        'rgba(239, 68, 68, 1)',
+                        'rgba(156, 163, 175, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: window.innerWidth < 768 ? 'bottom' : 'right',
+                        labels: {
+                            font: {
+                                size: window.innerWidth < 768 ? 10 : 12
+                            },
+                            boxWidth: window.innerWidth < 768 ? 10 : 15
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        titleColor: '#111827',
+                        bodyColor: '#111827',
+                        borderColor: '#e5e7eb',
+                        borderWidth: 1,
+                        padding: 10
+                    }
+                }
+            }
+        });
+
+        // Survey Completion Chart
+        const surveyCompletionCtx = document.getElementById('surveyCompletionChart').getContext('2d');
+        const surveyCompletionChart = new Chart(surveyCompletionCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ survey_completion_labels|safe }},
+                datasets: [{
+                    label: 'Completion Rate (%)',
+                    data: {{ survey_completion_data|safe }},
+                    backgroundColor: 'rgba(79, 70, 229, 0.7)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            },
+                            font: {
+                                size: window.innerWidth < 768 ? 10 : 12
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: window.innerWidth < 768 ? 8 : 12
+                            },
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        titleColor: '#111827',
+                        bodyColor: '#111827',
+                        borderColor: '#e5e7eb',
+                        borderWidth: 1,
+                        padding: 10
+                    }
+                }
+            }
+        });
+
+        // Score Distribution Chart
+        const scoreDistributionCtx = document.getElementById('scoreDistributionChart').getContext('2d');
+        const scoreDistributionChart = new Chart(scoreDistributionCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ score_distribution_labels|safe }},
+                datasets: [{
+                    label: 'Number of Responses',
+                    data: {{ score_distribution_data|safe }},
+                    backgroundColor: 'rgba(79, 70, 229, 0.7)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0,
+                            font: {
+                                size: window.innerWidth < 768 ? 10 : 12
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: window.innerWidth < 768 ? 10 : 12
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        titleColor: '#111827',
+                        bodyColor: '#111827',
+                        borderColor: '#e5e7eb',
+                        borderWidth: 1,
+                        padding: 10
+                    }
+                }
+            }
+        });
+
+        // Handle HTMX events
+        document.body.addEventListener('htmx:afterSwap', function(event) {
+            if (event.detail.target.id === 'dashboard-content') {
+                // Reinitialize charts after content is updated via HTMX
+                setTimeout(function() {
+                    // The charts will be reinitialized when the page content is updated
+                    // This is handled by the DOMContentLoaded event that fires again
+                }, 100);
+            }
+        });
+    });
+</script>
+{% endblock %}

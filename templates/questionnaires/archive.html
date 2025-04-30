@@ -1,0 +1,245 @@
+{% extends 'questionnaires/base.html' %}
+{% load static %}
+
+{% block questionnaires_content %}
+<!-- Header with animations -->
+<div class="flex justify-between items-center mb-6"
+     x-data="{}" 
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 100)" 
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+    <div>
+        <a href="{% url 'questionnaire_detail' id=questionnaire.id|default:1 %}" class="text-indigo-600 hover:text-indigo-800 flex items-center mb-2 group">
+            <i class="fas fa-arrow-left mr-2 transform group-hover:-translate-x-1 transition-transform duration-300"></i> 
+            <span>Back to Questionnaire</span>
+        </a>
+        <h1 class="text-2xl font-bold text-gray-800">Archive: {{ questionnaire.title|default:"Untitled Questionnaire" }}</h1>
+    </div>
+</div>
+
+<!-- Archive Form -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6"
+     x-data="{}" 
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 200)" 
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+    
+    <div class="flex items-start mb-6">
+        <div class="flex-shrink-0 mt-1">
+            <i class="fas fa-archive text-amber-500 text-2xl"></i>
+        </div>
+        <div class="ml-4">
+            <h2 class="text-lg font-medium text-gray-800">Archive this questionnaire?</h2>
+            <p class="text-gray-600 mt-1">
+                Archiving a questionnaire will make it inactive and hide it from the main questionnaire list.
+                You can unarchive it at any time. All data and responses will be preserved.
+            </p>
+        </div>
+    </div>
+    
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        <div>
+            <label for="archive_reason" class="block text-sm font-medium text-gray-700 mb-1">Reason for archiving (optional)</label>
+            <select id="archive_reason" name="archive_reason" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                <option value="">Select a reason...</option>
+                <option value="completed">Data collection completed</option>
+                <option value="outdated">Questionnaire is outdated</option>
+                <option value="replaced">Replaced by a new version</option>
+                <option value="temporary">Temporary pause in data collection</option>
+                <option value="other">Other reason</option>
+            </select>
+        </div>
+        
+        <div x-data="{ showOtherReason: false }" x-init="$watch('$el.previousElementSibling.querySelector(\'select\').value', value => showOtherReason = value === 'other')">
+            <div x-show="showOtherReason" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform -translate-y-4"
+                 x-transition:enter-end="opacity-100 transform translate-y-0">
+                <label for="other_reason" class="block text-sm font-medium text-gray-700 mb-1">Please specify</label>
+                <textarea id="other_reason" name="other_reason" rows="2" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200"></textarea>
+            </div>
+        </div>
+        
+        <div>
+            <label for="archive_notes" class="block text-sm font-medium text-gray-700 mb-1">Additional notes (optional)</label>
+            <textarea id="archive_notes" name="archive_notes" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200"></textarea>
+            <p class="mt-1 text-sm text-gray-500">These notes will be visible only to you and your team.</p>
+        </div>
+        
+        <div class="flex items-start">
+            <div class="flex items-center h-5">
+                <input id="notify_respondents" name="notify_respondents" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded transition-all duration-200">
+            </div>
+            <div class="ml-3 text-sm">
+                <label for="notify_respondents" class="font-medium text-gray-700">Notify active respondents</label>
+                <p class="text-gray-500">Send an email notification to users who have started but not completed this questionnaire.</p>
+            </div>
+        </div>
+        
+        <div x-data="{ showNotificationMessage: false }" x-init="$watch('$el.previousElementSibling.querySelector(\'input\').checked', value => showNotificationMessage = value)">
+            <div x-show="showNotificationMessage" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform -translate-y-4"
+                 x-transition:enter-end="opacity-100 transform translate-y-0">
+                <label for="notification_message" class="block text-sm font-medium text-gray-700 mb-1">Notification message</label>
+                <textarea id="notification_message" name="notification_message" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">The questionnaire "{{ questionnaire.title|default:'Untitled Questionnaire' }}" is no longer available. Thank you for your interest.</textarea>
+            </div>
+        </div>
+        
+        <!-- Archive Button -->
+        <div class="pt-5 flex justify-end border-t border-gray-200">
+            <div class="flex space-x-3">
+                <a href="{% url 'questionnaire_detail' id=questionnaire.id|default:1 %}" class="bg-white border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-50 transition-all duration-200 flex items-center">
+                    Cancel
+                </a>
+                <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 hover:shadow-md flex items-center">
+                    <i class="fas fa-archive mr-2"></i> Archive Questionnaire
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- What Happens When You Archive -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6"
+     x-data="{ expanded: true }" 
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 300)" 
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+    
+    <div class="flex justify-between items-center cursor-pointer mb-4" @click="expanded = !expanded">
+        <h2 class="text-lg font-medium text-gray-800 flex items-center">
+            <i class="fas fa-info-circle mr-2 text-indigo-500"></i> What happens when you archive?
+        </h2>
+        <button type="button" class="text-gray-500 hover:text-indigo-600 transition-colors duration-200">
+            <i class="fas" :class="expanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+        </button>
+    </div>
+    
+    <div x-show="expanded" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform -translate-y-4"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform translate-y-0"
+         x-transition:leave-end="opacity-0 transform -translate-y-4">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h3 class="text-base font-medium text-gray-800 mb-2 flex items-center">
+                    <i class="fas fa-check text-green-500 mr-2"></i> What's preserved
+                </h3>
+                <ul class="space-y-2 text-sm text-gray-600">
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-0.5 mr-2"></i>
+                        <span>All questionnaire data and settings</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-0.5 mr-2"></i>
+                        <span>All collected responses and analytics</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-0.5 mr-2"></i>
+                        <span>Reports and exported data</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-0.5 mr-2"></i>
+                        <span>Ability to unarchive at any time</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h3 class="text-base font-medium text-gray-800 mb-2 flex items-center">
+                    <i class="fas fa-times text-red-500 mr-2"></i> What's affected
+                </h3>
+                <ul class="space-y-2 text-sm text-gray-600">
+                    <li class="flex items-start">
+                        <i class="fas fa-times-circle text-red-500 mt-0.5 mr-2"></i>
+                        <span>The questionnaire will no longer be active for new responses</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-times-circle text-red-500 mt-0.5 mr-2"></i>
+                        <span>It will be moved to the "Archived" section in your questionnaire list</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-times-circle text-red-500 mt-0.5 mr-2"></i>
+                        <span>Shared links will no longer work (unless you unarchive)</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-times-circle text-red-500 mt-0.5 mr-2"></i>
+                        <span>Scheduled exports and notifications will be paused</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alternative Options -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+     x-data="{}" 
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 400)" 
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+    
+    <h2 class="text-lg font-medium text-gray-800 mb-4">Alternative options</h2>
+    
+    <div class="space-y-4">
+        <div class="flex items-start">
+            <div class="flex-shrink-0 mt-1">
+                <i class="fas fa-clock text-indigo-500"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="text-base font-medium text-gray-800">Set an expiration date</h3>
+                <p class="text-gray-600 mt-1">
+                    Instead of archiving now, you can set an expiration date to automatically close the questionnaire in the future.
+                </p>
+                <a href="{% url 'questionnaire_settings' id=questionnaire.id|default:1 %}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mt-2 inline-block">
+                    Go to Settings <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="flex items-start">
+            <div class="flex-shrink-0 mt-1">
+                <i class="fas fa-copy text-indigo-500"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="text-base font-medium text-gray-800">Create a duplicate</h3>
+                <p class="text-gray-600 mt-1">
+                    Create a copy of this questionnaire to preserve the original while making changes to the new version.
+                </p>
+                <a href="{% url 'questionnaire_duplicate' id=questionnaire.id|default:1 %}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mt-2 inline-block">
+                    Duplicate Questionnaire <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="flex items-start">
+            <div class="flex-shrink-0 mt-1">
+                <i class="fas fa-trash-alt text-indigo-500"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="text-base font-medium text-gray-800">Delete permanently</h3>
+                <p class="text-gray-600 mt-1">
+                    If you no longer need this questionnaire and its data, you can delete it permanently.
+                    <span class="text-red-600 font-medium">This action cannot be undone.</span>
+                </p>
+                <form method="post" action="{% url 'questionnaire_delete' id=questionnaire.id|default:1 %}" class="inline" onsubmit="return confirm('Are you sure you want to permanently delete this questionnaire? This action cannot be undone.');">
+                    {% csrf_token %}
+                    <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium mt-2 inline-flex items-center">
+                        Delete Permanently <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block questionnaires_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        // Alpine.js initialization if needed
+    });
+</script>
+{% endblock %}

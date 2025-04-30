@@ -1,0 +1,175 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Contact Us - MindTrack{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<section class="bg-gradient-to-r from-primary-600 to-primary-800 text-white py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h1 class="text-3xl md:text-4xl font-display font-bold mb-4">Contact Us</h1>
+        <p class="text-xl opacity-90 max-w-3xl mx-auto">Have questions or feedback? We'd love to hear from you.</p>
+    </div>
+</section>
+
+<!-- Contact Form Section -->
+<section class="py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl mx-auto">
+            <div class="bg-white rounded-xl shadow-xl overflow-hidden">
+                <div class="p-6 md:p-8">
+                    <div id="form-response-container">
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="mb-6 rounded-md bg-green-50 p-4">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-check-circle text-green-400"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-green-800">{{ message }}</p>
+                                        </div>
+                                        <div class="ml-auto pl-3">
+                                            <div class="-mx-1.5 -my-1.5">
+                                                <button type="button" class="inline-flex rounded-md p-1.5 text-green-500 hover:bg-green-100 focus:outline-none"
+                                                        onclick="this.parentElement.parentElement.parentElement.parentElement.remove()">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <form hx-post="{% url 'core:contact' %}"
+                          hx-target="#form-response-container"
+                          hx-swap="innerHTML"
+                          class="space-y-6">
+                        {% csrf_token %}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+                                <input type="text" id="name" name="name" required
+                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                                <div class="hidden mt-1 text-sm text-red-600" id="name-error">Please provide your name.</div>
+                            </div>
+                            <div>
+                                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                                <input type="email" id="email" name="email" required
+                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                                <div class="hidden mt-1 text-sm text-red-600" id="email-error">Please provide a valid email address.</div>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="subject" class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                            <input type="text" id="subject" name="subject" required
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                            <div class="hidden mt-1 text-sm text-red-600" id="subject-error">Please provide a subject.</div>
+                        </div>
+                        <div>
+                            <label for="message" class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                            <textarea id="message" name="message" rows="5" required
+                                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"></textarea>
+                            <div class="hidden mt-1 text-sm text-red-600" id="message-error">Please provide a message.</div>
+                        </div>
+                        <div>
+                            <button type="submit"
+                                    class="w-full md:w-auto inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 shadow-sm transition-colors">
+                                <span>Send Message</span>
+                                <span class="htmx-indicator ml-2">
+                                    <i class="fas fa-circle-notch fa-spin"></i>
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Info Section -->
+<section class="py-12 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Location -->
+            <div class="bg-white rounded-xl shadow-md p-6 text-center">
+                <div class="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-map-marker-alt text-primary-600 text-xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Our Location</h3>
+                <p class="text-gray-600">
+                    123 Health Avenue<br>
+                    San Francisco, CA 94103<br>
+                    United States
+                </p>
+            </div>
+
+            <!-- Email -->
+            <div class="bg-white rounded-xl shadow-md p-6 text-center">
+                <div class="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-envelope text-primary-600 text-xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Email Us</h3>
+                <p class="text-gray-600 mb-2">
+                    General Inquiries:<br>
+                    <a href="mailto:info@mindtrack.com" class="text-primary-600 hover:text-primary-800 transition-colors">info@mindtrack.com</a>
+                </p>
+                <p class="text-gray-600">
+                    Support:<br>
+                    <a href="mailto:support@mindtrack.com" class="text-primary-600 hover:text-primary-800 transition-colors">support@mindtrack.com</a>
+                </p>
+            </div>
+
+            <!-- Phone -->
+            <div class="bg-white rounded-xl shadow-md p-6 text-center">
+                <div class="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-phone-alt text-primary-600 text-xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Call Us</h3>
+                <p class="text-gray-600 mb-2">
+                    Toll-Free:<br>
+                    <a href="tel:+18005551234" class="text-primary-600 hover:text-primary-800 transition-colors">+1 (800) 555-1234</a>
+                </p>
+                <p class="text-gray-600">
+                    International:<br>
+                    <a href="tel:+14155551234" class="text-primary-600 hover:text-primary-800 transition-colors">+1 (415) 555-1234</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Map Section -->
+<section class="h-96">
+    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.7462082224106!2d-122.41941548468173!3d37.77492997975903!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8085809c6c8f4459%3A0xb10ed6d9b5050fa5!2sSan%20Francisco%2C%20CA!5e0!3m2!1sen!2sus!4v1653384347916!5m2!1sen!2sus"
+            class="w-full h-full border-0"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+    </iframe>
+</section>
+
+<!-- HTMX Template for Form Success Response -->
+<template id="form-success-template">
+    <div class="mb-6 rounded-md bg-green-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-check-circle text-green-400"></i>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-green-800">Your message has been sent successfully! We'll get back to you soon.</p>
+            </div>
+            <div class="ml-auto pl-3">
+                <div class="-mx-1.5 -my-1.5">
+                    <button type="button" class="inline-flex rounded-md p-1.5 text-green-500 hover:bg-green-100 focus:outline-none"
+                            onclick="this.parentElement.parentElement.parentElement.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+{% endblock %}

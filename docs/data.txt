@@ -1,0 +1,1972 @@
+# MindTrack Database Schema and Data Generation
+
+## 1. Users and Authentication
+
+### 1.1 User Model (PostgreSQL)
+
+The User model extends Django's AbstractUser and serves as the primary authentication model.
+
+#### Schema:
+```
+User:
+  - id: UUID (Primary Key)
+  - email: EmailField (unique)
+  - username: CharField
+  - first_name: CharField
+  - last_name: CharField
+  - profile_image: ImageField
+  - phone_number: CharField (optional)
+  - role: CharField (choices: admin, staff, user)
+  - email_verified: BooleanField
+  - email_verification_token: CharField (optional)
+  - email_verification_sent_at: DateTimeField (optional)
+  - password_reset_token: CharField (optional)
+  - password_reset_sent_at: DateTimeField (optional)
+  - failed_login_attempts: PositiveIntegerField
+  - last_failed_login: DateTimeField (optional)
+  - account_locked_until: DateTimeField (optional)
+  - last_login: DateTimeField (optional)
+  - last_password_change: DateTimeField (optional)
+  - force_password_change: BooleanField
+  - is_active: BooleanField
+  - is_staff: BooleanField
+  - is_superuser: BooleanField
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- One-to-One with UserProfile
+- One-to-Many with Questionnaire (created_by)
+- One-to-Many with Response (user)
+- Many-to-Many with Organization (through OrganizationMember)
+
+#### Indexes:
+- Primary Key: id
+- Unique: email
+- Index: is_active
+- Index: role
+
+### 1.2 UserProfile Model (PostgreSQL)
+
+Extended profile information for users.
+
+#### Schema:
+```
+UserProfile:
+  - id: UUID (Primary Key)
+  - user: ForeignKey (User, one-to-one)
+  - bio: TextField (optional)
+  - date_of_birth: DateField (optional)
+  - address: TextField (optional)
+  - city: CharField (optional)
+  - state: CharField (optional)
+  - country: CharField (optional)
+  - postal_code: CharField (optional)
+  - preferences: JSONField
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- One-to-One with User
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: user_id
+
+### 1.3 Sample Data Generation
+
+#### Admin Users:
+```python
+# Create admin user
+admin_user = User.objects.create_superuser(
+    email='admin@mindtrack.com',
+    username='admin',
+    password='securepassword123',
+    first_name='Admin',
+    last_name='User',
+    role='admin',
+    email_verified=True,
+    is_active=True
+)
+
+# Create admin profile
+UserProfile.objects.create(
+    user=admin_user,
+    bio='System administrator',
+    country='United States'
+)
+```
+
+#### Staff Users:
+```python
+# Create staff users
+staff_roles = ['Clinical Director', 'Research Lead', 'Therapist', 'Counselor']
+for i in range(5):
+    staff_user = User.objects.create_user(
+        email=f'staff{i+1}@mindtrack.com',
+        username=f'staff{i+1}',
+        password=f'staffpass{i+1}',
+        first_name=f'Staff{i+1}',
+        last_name=f'User',
+        role='staff',
+        email_verified=True,
+        is_active=True,
+        is_staff=True
+    )
+
+    UserProfile.objects.create(
+        user=staff_user,
+        bio=f'{staff_roles[i % len(staff_roles)]} at MindTrack',
+        country='United States'
+    )
+```
+
+#### Regular Users:
+```python
+# Create regular users
+first_names = ['John', 'Jane', 'Michael', 'Emily', 'David', 'Sarah', 'Robert', 'Lisa']
+last_names = ['Smith', 'Johnson', 'Williams', 'Jones', 'Brown', 'Davis', 'Miller', 'Wilson']
+cities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego']
+states = ['NY', 'CA', 'IL', 'TX', 'AZ', 'PA', 'TX', 'CA']
+
+for i in range(20):
+    first_name = random.choice(first_names)
+    last_name = random.choice(last_names)
+    city_idx = random.randint(0, len(cities)-1)
+
+    user = User.objects.create_user(
+        email=f'{first_name.lower()}.{last_name.lower()}{i+1}@example.com',
+        username=f'{first_name.lower()}{last_name.lower()}{i+1}',
+        password=f'userpass{i+1}',
+        first_name=first_name,
+        last_name=last_name,
+        role='user',
+        email_verified=True,
+        is_active=True
+    )
+
+    UserProfile.objects.create(
+        user=user,
+        date_of_birth=timezone.now() - timedelta(days=365*random.randint(18, 65)),
+        city=cities[city_idx],
+        state=states[city_idx],
+        country='United States',
+        postal_code=f'{random.randint(10000, 99999)}',
+        preferences={
+            'notifications': {
+                'email': True,
+                'sms': random.choice([True, False])
+            },
+            'theme': random.choice(['light', 'dark', 'system']),
+            'language': 'en'
+        }
+    )
+```
+
+### 1.4 API Endpoints
+
+#### Authentication:
+- `POST /api/token/` - Obtain JWT token with email and password
+- `POST /api/token/refresh/` - Refresh JWT token
+
+#### User Management:
+- `GET /api/v1/users/` - List all users (admin only)
+- `POST /api/v1/users/` - Create a new user
+- `GET /api/v1/users/{id}/` - Get user details
+- `PUT /api/v1/users/{id}/` - Update user details
+- `DELETE /api/v1/users/{id}/` - Delete a user
+- `GET /api/v1/users/me/` - Get current user profile
+
+### 1.5 Data Validation Rules
+
+#### User:
+- Email must be unique and valid format
+- Password must be at least 8 characters with a mix of letters, numbers, and special characters
+- Username must be unique and contain only alphanumeric characters and underscores
+- Phone number must be in valid format (if provided)
+
+#### UserProfile:
+- Date of birth must be in the past
+- Postal code must be in valid format for the specified country
+
+## 2. Questionnaires and Questions
+
+### 2.1 Questionnaire Model (PostgreSQL)
+
+The Questionnaire model stores metadata about questionnaires.
+
+#### Schema:
+```
+Questionnaire:
+  - id: UUID (Primary Key)
+  - title: CharField
+  - description: TextField (optional)
+  - type: CharField (choices: standard, assessment, screening, feedback, survey, clinical, research, educational, other)
+  - category: CharField (optional)
+  - estimated_time: PositiveIntegerField (minutes, optional)
+  - is_active: BooleanField
+  - is_adaptive: BooleanField
+  - is_qr_enabled: BooleanField
+  - is_template: BooleanField
+  - is_public: BooleanField
+  - allow_anonymous: BooleanField
+  - requires_auth: BooleanField
+  - max_responses: PositiveIntegerField (optional)
+  - expires_at: DateTimeField (optional)
+  - version: PositiveIntegerField
+  - parent: ForeignKey (self, optional)
+  - tags: JSONField
+  - organization: ForeignKey (Organization, optional)
+  - created_by: ForeignKey (User)
+  - custom_header: TextField (optional)
+  - custom_footer: TextField (optional)
+  - access_code: CharField (optional)
+  - language: CharField
+  - time_limit: PositiveIntegerField (minutes)
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- Many-to-One with User (created_by)
+- Many-to-One with Organization (optional)
+- One-to-Many with Question
+- One-to-Many with Response
+- One-to-Many with ScoringConfig
+- One-to-Many with QRCode
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: created_by_id
+- Foreign Key: organization_id
+- Foreign Key: parent_id
+- Index: is_active
+- Index: is_public
+- Index: is_template
+
+### 2.2 Question Model (PostgreSQL)
+
+The Question model stores information about individual questions within questionnaires.
+
+#### Schema:
+```
+Question:
+  - id: UUID (Primary Key)
+  - questionnaire: ForeignKey (Questionnaire)
+  - text: CharField
+  - description: TextField (optional)
+  - type: CharField (choices: text, textarea, number, single_choice, multiple_choice, scale, date, time, file, etc.)
+  - required: BooleanField
+  - order: PositiveIntegerField
+  - options: JSONField (optional)
+  - conditional_logic: JSONField (optional)
+  - validation_rules: JSONField (optional)
+  - scoring_weight: FloatField
+  - category: CharField (optional)
+  - max_score: FloatField
+  - is_scored: BooleanField
+  - is_visible: BooleanField
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- Many-to-One with Questionnaire
+- One-to-Many with Answer
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: questionnaire_id
+- Index: order
+- Index: type
+
+### 2.3 QRCode Model (PostgreSQL)
+
+The QRCode model stores QR codes for questionnaire access.
+
+#### Schema:
+```
+QRCode:
+  - id: UUID (Primary Key)
+  - questionnaire: ForeignKey (Questionnaire)
+  - name: CharField
+  - description: TextField (optional)
+  - image: ImageField (optional)
+  - url: URLField
+  - access_count: PositiveIntegerField
+  - is_active: BooleanField
+  - expires_at: DateTimeField (optional)
+  - created_by: ForeignKey (User)
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- Many-to-One with Questionnaire
+- Many-to-One with User (created_by)
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: questionnaire_id
+- Foreign Key: created_by_id
+- Index: is_active
+
+### 2.4 ScoringConfig Model (PostgreSQL)
+
+The ScoringConfig model stores scoring configurations for questionnaires.
+
+#### Schema:
+```
+ScoringConfig:
+  - id: UUID (Primary Key)
+  - questionnaire: ForeignKey (Questionnaire)
+  - name: CharField
+  - description: TextField (optional)
+  - scoring_method: CharField (choices: sum, average, weighted_sum, weighted_average, formula, conditional, custom)
+  - max_score: FloatField (optional)
+  - passing_score: FloatField (optional)
+  - is_active: BooleanField
+  - is_default: BooleanField
+  - rules: JSONField
+  - formula: TextField (optional)
+  - created_by: ForeignKey (User)
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- Many-to-One with Questionnaire
+- Many-to-One with User (created_by)
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: questionnaire_id
+- Foreign Key: created_by_id
+- Index: is_active
+- Index: is_default
+
+### 2.5 Sample Data Generation
+
+#### Questionnaires:
+```python
+# Create questionnaire types and categories
+questionnaire_types = ['standard', 'assessment', 'screening', 'feedback', 'survey', 'clinical', 'research', 'educational']
+questionnaire_categories = ['mental_health', 'physical_health', 'education', 'customer_satisfaction', 'employee_feedback', 'research', 'clinical_assessment']
+
+# Create questionnaires
+for i in range(10):
+    q_type = random.choice(questionnaire_types)
+    q_category = random.choice(questionnaire_categories)
+
+    questionnaire = Questionnaire.objects.create(
+        title=f"{q_type.title()} {q_category.replace('_', ' ').title()} Questionnaire {i+1}",
+        description=f"A {q_type} questionnaire for {q_category.replace('_', ' ')}.",
+        type=q_type,
+        category=q_category,
+        estimated_time=random.randint(5, 30),
+        is_active=True,
+        is_adaptive=random.choice([True, False]),
+        is_qr_enabled=True,
+        is_template=random.choice([True, False]),
+        is_public=random.choice([True, False]),
+        allow_anonymous=random.choice([True, False]),
+        requires_auth=not random.choice([True, False]),
+        version=1,
+        tags=[q_type, q_category, f"v{1}"],
+        organization=random.choice(Organization.objects.all()) if random.choice([True, False]) else None,
+        created_by=random.choice(User.objects.filter(is_staff=True)),
+        language='en',
+        time_limit=0
+    )
+
+    # Create QR code for questionnaire
+    if questionnaire.is_qr_enabled:
+        QRCode.objects.create(
+            questionnaire=questionnaire,
+            name=f"QR Code for {questionnaire.title}",
+            url=f"https://mindtrack.com/q/{questionnaire.id}",
+            access_count=random.randint(0, 100),
+            is_active=True,
+            created_by=questionnaire.created_by
+        )
+
+    # Create scoring config for questionnaire
+    ScoringConfig.objects.create(
+        questionnaire=questionnaire,
+        name=f"Default Scoring for {questionnaire.title}",
+        scoring_method=random.choice(['sum', 'average', 'weighted_sum']),
+        max_score=100,
+        passing_score=70,
+        is_active=True,
+        is_default=True,
+        rules=[],
+        created_by=questionnaire.created_by
+    )
+```
+
+#### Questions:
+```python
+# Question types and their option structures
+question_types = [
+    {
+        'type': 'text',
+        'options': None
+    },
+    {
+        'type': 'textarea',
+        'options': None
+    },
+    {
+        'type': 'number',
+        'options': {'min': 0, 'max': 100}
+    },
+    {
+        'type': 'single_choice',
+        'options': [
+            {'value': 'option1', 'label': 'Option 1', 'score': 1},
+            {'value': 'option2', 'label': 'Option 2', 'score': 2},
+            {'value': 'option3', 'label': 'Option 3', 'score': 3},
+            {'value': 'option4', 'label': 'Option 4', 'score': 4}
+        ]
+    },
+    {
+        'type': 'multiple_choice',
+        'options': [
+            {'value': 'option1', 'label': 'Option 1', 'score': 1},
+            {'value': 'option2', 'label': 'Option 2', 'score': 2},
+            {'value': 'option3', 'label': 'Option 3', 'score': 3},
+            {'value': 'option4', 'label': 'Option 4', 'score': 4}
+        ]
+    },
+    {
+        'type': 'scale',
+        'options': {'min': 1, 'max': 5, 'min_label': 'Not at all', 'max_label': 'Extremely'}
+    },
+    {
+        'type': 'date',
+        'options': None
+    }
+]
+
+# Sample question texts by category
+mental_health_questions = [
+    "How often do you feel anxious?",
+    "Rate your overall mood today.",
+    "Do you have trouble sleeping?",
+    "How often do you feel overwhelmed?",
+    "Rate your stress level.",
+    "Do you have thoughts of harming yourself?",
+    "How would you rate your ability to concentrate?",
+    "Do you feel hopeless about the future?",
+    "How often do you feel sad or down?",
+    "Rate your energy level."
+]
+
+# Create questions for each questionnaire
+for questionnaire in Questionnaire.objects.all():
+    # Determine number of questions based on estimated time
+    num_questions = max(5, min(20, questionnaire.estimated_time // 2))
+
+    for i in range(num_questions):
+        # Select question type and options
+        q_type_data = random.choice(question_types)
+        q_type = q_type_data['type']
+        q_options = q_type_data['options']
+
+        # Select question text based on category
+        if questionnaire.category == 'mental_health':
+            q_text = random.choice(mental_health_questions)
+        else:
+            q_text = f"Question {i+1} for {questionnaire.title}"
+
+        Question.objects.create(
+            questionnaire=questionnaire,
+            text=q_text,
+            description=f"Description for question {i+1}",
+            type=q_type,
+            required=random.choice([True, False, True, True]),  # More likely to be required
+            order=i+1,
+            options=q_options,
+            scoring_weight=random.uniform(0.5, 2.0),
+            max_score=5.0 if q_type in ['single_choice', 'multiple_choice', 'scale'] else 0.0,
+            is_scored=q_type in ['single_choice', 'multiple_choice', 'scale'],
+            is_visible=True
+        )
+```
+
+### 2.6 API Endpoints
+
+#### Questionnaire Endpoints:
+- `GET /api/v1/questionnaires/` - List all questionnaires
+- `POST /api/v1/questionnaires/` - Create a new questionnaire
+- `GET /api/v1/questionnaires/{id}/` - Get questionnaire details
+- `PUT /api/v1/questionnaires/{id}/` - Update questionnaire
+- `DELETE /api/v1/questionnaires/{id}/` - Delete questionnaire
+
+#### Question Endpoints:
+- `GET /api/v1/questionnaires/questions/` - List all questions
+- `POST /api/v1/questionnaires/questions/` - Create a new question
+- `GET /api/v1/questionnaires/questions/{id}/` - Get question details
+- `PUT /api/v1/questionnaires/questions/{id}/` - Update question
+- `DELETE /api/v1/questionnaires/questions/{id}/` - Delete question
+
+#### Scoring Endpoints:
+- `GET /api/v1/questionnaires/scoring/configs/` - List scoring configurations
+- `POST /api/v1/questionnaires/scoring/configs/` - Create scoring configuration
+- `GET /api/v1/questionnaires/scoring/configs/{id}/` - Get scoring configuration
+- `PUT /api/v1/questionnaires/scoring/configs/{id}/` - Update scoring configuration
+- `DELETE /api/v1/questionnaires/scoring/configs/{id}/` - Delete scoring configuration
+
+### 2.7 Data Validation Rules
+
+#### Questionnaire:
+- Title must be unique
+- Estimated time must be positive
+- If requires_auth is True, allow_anonymous must be False
+- If is_template is True, is_public should be True
+
+#### Question:
+- Order must be unique within a questionnaire
+- If type is single_choice or multiple_choice, options must be provided
+- If is_scored is True, max_score must be greater than 0
+
+## 3. Responses and Answers
+
+### 3.1 Response Model (PostgreSQL)
+
+The Response model stores metadata about questionnaire responses.
+
+#### Schema:
+```
+Response:
+  - id: UUID (Primary Key)
+  - questionnaire: ForeignKey (Questionnaire)
+  - user: ForeignKey (User, optional)
+  - patient_identifier: CharField (optional)
+  - patient_name: CharField (optional)
+  - patient_email: EmailField (optional)
+  - patient_age: PositiveIntegerField (optional)
+  - patient_gender: CharField (optional)
+  - score: FloatField (optional)
+  - risk_level: CharField (choices: low, medium, high, unknown)
+  - flagged_for_review: BooleanField
+  - completion_time: PositiveIntegerField (seconds, optional)
+  - completed_at: DateTimeField (optional)
+  - organization: ForeignKey (Organization, optional)
+  - ip_address: GenericIPAddressField (optional)
+  - user_agent: TextField (optional)
+  - metadata: JSONField
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- Many-to-One with Questionnaire
+- Many-to-One with User (optional)
+- Many-to-One with Organization (optional)
+- One-to-Many with Answer
+- One-to-Many with AIAnalysis
+- One-to-Many with Email
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: questionnaire_id
+- Foreign Key: user_id
+- Foreign Key: organization_id
+- Index: patient_identifier
+- Index: patient_email
+- Index: risk_level
+- Index: completed_at
+- Index: created_at
+
+### 3.2 Answer Model (PostgreSQL)
+
+The Answer model stores individual answers to questions.
+
+#### Schema:
+```
+Answer:
+  - id: UUID (Primary Key)
+  - response: ForeignKey (Response)
+  - question: ForeignKey (Question)
+  - value: JSONField
+  - score: FloatField (optional)
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- Many-to-One with Response
+- Many-to-One with Question
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: response_id
+- Foreign Key: question_id
+- Index: created_at
+
+### 3.3 AIAnalysis Model (PostgreSQL)
+
+The AIAnalysis model stores AI-generated analysis of responses.
+
+#### Schema:
+```
+AIAnalysis:
+  - id: UUID (Primary Key)
+  - response: ForeignKey (Response)
+  - prompt: TextField
+  - summary: TextField (optional)
+  - analysis: TextField
+  - recommendations: TextField (optional)
+  - risk_assessment: TextField (optional)
+  - next_steps: TextField (optional)
+  - risk_level: CharField (choices: low, medium, high, unknown)
+  - sentiment_scores: JSONField
+  - key_phrases: JSONField
+  - entities: JSONField
+  - model_used: CharField
+  - model_version: CharField (optional)
+  - processing_time: FloatField
+  - confidence_score: FloatField
+  - is_reviewed: BooleanField
+  - reviewed_by: ForeignKey (User, optional)
+  - reviewed_at: DateTimeField (optional)
+  - review_notes: TextField (optional)
+  - created_by: ForeignKey (User)
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- Many-to-One with Response
+- Many-to-One with User (created_by)
+- Many-to-One with User (reviewed_by, optional)
+- One-to-Many with Email
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: response_id
+- Foreign Key: created_by_id
+- Foreign Key: reviewed_by_id
+- Index: risk_level
+- Index: created_at
+
+### 3.4 Sample Data Generation
+
+#### Responses:
+```python
+# Create responses for questionnaires
+for questionnaire in Questionnaire.objects.all():
+    # Determine number of responses
+    num_responses = random.randint(5, 20)
+
+    for i in range(num_responses):
+        # Decide if response is from a registered user or anonymous
+        if questionnaire.allow_anonymous and random.choice([True, False]):
+            # Anonymous response
+            user = None
+            patient_name = f"Anonymous Patient {i+1}"
+            patient_email = f"patient{i+1}@example.com"
+        else:
+            # Response from registered user
+            user = random.choice(User.objects.filter(role='user'))
+            patient_name = user.get_full_name()
+            patient_email = user.email
+
+        # Determine if response is completed
+        is_completed = random.choice([True, True, True, False])  # 75% completed
+        completed_at = timezone.now() - timedelta(days=random.randint(1, 30)) if is_completed else None
+
+        # Create response
+        response = Response.objects.create(
+            questionnaire=questionnaire,
+            user=user,
+            patient_identifier=f"PT{random.randint(10000, 99999)}",
+            patient_name=patient_name,
+            patient_email=patient_email,
+            patient_age=random.randint(18, 80),
+            patient_gender=random.choice(['male', 'female', 'non-binary', 'prefer not to say']),
+            completion_time=random.randint(300, 1800) if is_completed else None,  # 5-30 minutes
+            completed_at=completed_at,
+            organization=questionnaire.organization,
+            ip_address=f"192.168.1.{random.randint(1, 255)}",
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            metadata={
+                'device': random.choice(['desktop', 'mobile', 'tablet']),
+                'browser': random.choice(['chrome', 'firefox', 'safari', 'edge']),
+                'referrer': random.choice(['direct', 'email', 'qr_code', 'link'])
+            }
+        )
+
+        # Only create answers and analysis for completed responses
+        if is_completed:
+            # Create answers for each question
+            total_score = 0
+            questions = Question.objects.filter(questionnaire=questionnaire)
+
+            for question in questions:
+                # Generate answer based on question type
+                if question.type == 'text':
+                    value = "Sample text answer"
+                    score = None
+                elif question.type == 'textarea':
+                    value = "This is a longer sample answer that provides more detailed information about the question being asked."
+                    score = None
+                elif question.type == 'number':
+                    value = random.randint(0, 100)
+                    score = value / 20  # Scale to 0-5
+                elif question.type == 'single_choice':
+                    option = random.choice(question.options)
+                    value = option['value']
+                    score = option['score']
+                elif question.type == 'multiple_choice':
+                    options = random.sample(question.options, random.randint(1, len(question.options)))
+                    value = [option['value'] for option in options]
+                    score = sum(option['score'] for option in options) / len(options)
+                elif question.type == 'scale':
+                    value = random.randint(question.options['min'], question.options['max'])
+                    score = value
+                elif question.type == 'date':
+                    value = (timezone.now() - timedelta(days=random.randint(1, 365))).strftime('%Y-%m-%d')
+                    score = None
+                else:
+                    value = None
+                    score = None
+
+                # Create answer
+                Answer.objects.create(
+                    response=response,
+                    question=question,
+                    value=value,
+                    score=score
+                )
+
+                # Add to total score if scored
+                if score is not None and question.is_scored:
+                    total_score += score * question.scoring_weight
+
+            # Update response with score and risk level
+            response.score = total_score
+
+            # Determine risk level based on score percentage
+            max_possible_score = sum(q.max_score * q.scoring_weight for q in questions if q.is_scored)
+            if max_possible_score > 0:
+                score_percentage = (total_score / max_possible_score) * 100
+
+                if score_percentage < 30:
+                    response.risk_level = 'low'
+                elif score_percentage < 70:
+                    response.risk_level = 'medium'
+                else:
+                    response.risk_level = 'high'
+            else:
+                response.risk_level = 'unknown'
+
+            response.save()
+
+            # Create AI analysis for some responses
+            if random.choice([True, False, True]):  # 66% chance
+                AIAnalysis.objects.create(
+                    response=response,
+                    prompt=f"Analyze the response for {questionnaire.title}",
+                    summary="This is a summary of the analysis.",
+                    analysis="This is a detailed analysis of the response, highlighting key patterns and concerns.",
+                    recommendations="Based on the analysis, we recommend the following actions...",
+                    risk_assessment="The patient shows signs of...",
+                    next_steps="Follow up with the patient in 2 weeks...",
+                    risk_level=response.risk_level,
+                    sentiment_scores={
+                        'positive': random.uniform(0, 1),
+                        'negative': random.uniform(0, 1),
+                        'neutral': random.uniform(0, 1)
+                    },
+                    key_phrases=["anxiety", "stress", "sleep issues"],
+                    entities=[],
+                    model_used="GPT-4",
+                    model_version="1.0",
+                    processing_time=random.uniform(0.5, 3.0),
+                    confidence_score=random.uniform(0.7, 0.99),
+                    is_reviewed=random.choice([True, False]),
+                    created_by=random.choice(User.objects.filter(is_staff=True))
+                )
+```
+
+### 3.5 API Endpoints
+
+#### Response Endpoints:
+- `GET /api/v1/responses/` - List all responses
+- `POST /api/v1/responses/` - Create a new response
+- `GET /api/v1/responses/{id}/` - Get response details
+- `PUT /api/v1/responses/{id}/` - Update response
+- `DELETE /api/v1/responses/{id}/` - Delete response
+- `GET /api/v1/responses/{id}/answers/` - Get answers for a response
+- `POST /api/v1/responses/{id}/submit/` - Submit a response
+
+#### AI Analysis Endpoints:
+- `GET /api/v1/responses/ai-analyses/` - List AI analyses
+- `POST /api/v1/responses/ai-analyses/` - Create AI analysis
+- `GET /api/v1/responses/ai-analyses/{id}/` - Get AI analysis details
+- `PUT /api/v1/responses/ai-analyses/{id}/` - Update AI analysis
+- `DELETE /api/v1/responses/ai-analyses/{id}/` - Delete AI analysis
+
+### 3.6 Data Validation Rules
+
+#### Response:
+- If completed_at is set, completion_time should be provided
+- If score is provided, risk_level should be set
+- Patient email must be valid format if provided
+
+#### Answer:
+- Each question should have only one answer per response
+- Value must match the expected format for the question type
+- Score must be within the valid range for the question type
+
+#### AIAnalysis:
+- If is_reviewed is True, reviewed_by and reviewed_at must be provided
+- Sentiment scores should sum to approximately 1.0
+
+## 4. Organizations
+
+### 4.1 Organization Model (PostgreSQL)
+
+The Organization model represents organizations that can have multiple users and questionnaires.
+
+#### Schema:
+```
+Organization:
+  - id: UUID (Primary Key)
+  - name: CharField
+  - description: TextField (optional)
+  - type: CharField (choices: healthcare, research, education, corporate, nonprofit, government, other)
+  - contact_email: EmailField (optional)
+  - contact_phone: CharField (optional)
+  - address: TextField (optional)
+  - logo: ImageField (optional)
+  - website: URLField (optional)
+  - settings: JSONField
+  - is_active: BooleanField
+  - created_by: ForeignKey (User)
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- Many-to-One with User (created_by)
+- Many-to-Many with User (through OrganizationMember)
+- One-to-Many with Questionnaire
+- One-to-Many with Response
+- One-to-Many with EmailTemplate
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: created_by_id
+- Index: is_active
+- Index: type
+- Index: name
+
+### 4.2 OrganizationMember Model (PostgreSQL)
+
+The OrganizationMember model represents the membership of users in organizations.
+
+#### Schema:
+```
+OrganizationMember:
+  - id: UUID (Primary Key)
+  - organization: ForeignKey (Organization)
+  - user: ForeignKey (User)
+  - role: CharField (choices: owner, admin, member, guest)
+  - is_active: BooleanField
+  - joined_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- Many-to-One with Organization
+- Many-to-One with User
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: organization_id
+- Foreign Key: user_id
+- Index: role
+- Index: is_active
+- Unique Together: (organization, user)
+
+### 4.3 OrganizationQuestionnaire Model (PostgreSQL)
+
+The OrganizationQuestionnaire model extends questionnaires with organization-specific settings.
+
+#### Schema:
+```
+OrganizationQuestionnaire:
+  - id: UUID (Primary Key)
+  - organization: ForeignKey (Organization)
+  - questionnaire: ForeignKey (Questionnaire)
+  - is_featured: BooleanField
+  - is_private: BooleanField
+  - custom_branding: BooleanField
+  - custom_logo_url: URLField (optional)
+  - custom_header: TextField (optional)
+  - custom_footer: TextField (optional)
+  - custom_css: TextField (optional)
+  - custom_thank_you_message: TextField (optional)
+  - custom_redirect_url: URLField (optional)
+  - access_restrictions: JSONField
+  - allowed_domains: JSONField
+  - allowed_ip_ranges: JSONField
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- Many-to-One with Organization
+- Many-to-One with Questionnaire
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: organization_id
+- Foreign Key: questionnaire_id
+- Index: is_featured
+- Index: is_private
+- Unique Together: (organization, questionnaire)
+
+### 4.4 Sample Data Generation
+
+#### Organizations:
+```python
+# Organization types and names
+organization_types = [
+    ('healthcare', ['General Hospital', 'Medical Center', 'Health Clinic', 'Mental Health Services']),
+    ('research', ['Research Institute', 'University Research Center', 'Clinical Research Organization']),
+    ('education', ['University', 'College', 'School District', 'Training Center']),
+    ('corporate', ['Corporation', 'Enterprise Solutions', 'Business Group', 'Consulting Firm']),
+    ('nonprofit', ['Foundation', 'Nonprofit Organization', 'Charity', 'Community Services']),
+    ('government', ['Government Agency', 'Public Health Department', 'State Services', 'Federal Office'])
+]
+
+# Create organizations
+for i in range(10):
+    # Select random type and name
+    org_type, org_names = random.choice(organization_types)
+    org_name = f"{random.choice(org_names)} {i+1}"
+
+    # Create organization
+    organization = Organization.objects.create(
+        name=org_name,
+        description=f"A {org_type} organization providing services in the field.",
+        type=org_type,
+        contact_email=f"contact@{org_name.lower().replace(' ', '')}.com",
+        contact_phone=f"+1-555-{random.randint(100, 999)}-{random.randint(1000, 9999)}",
+        address=f"{random.randint(100, 999)} Main St, Suite {random.randint(100, 999)}",
+        website=f"https://www.{org_name.lower().replace(' ', '')}.com",
+        settings={
+            'branding': {
+                'primary_color': random.choice(['#007bff', '#28a745', '#dc3545', '#6610f2', '#fd7e14']),
+                'secondary_color': random.choice(['#6c757d', '#20c997', '#e83e8c', '#17a2b8', '#ffc107']),
+                'logo_position': random.choice(['left', 'center', 'right'])
+            },
+            'features': {
+                'ai_analysis': random.choice([True, False]),
+                'custom_reports': random.choice([True, False]),
+                'email_notifications': random.choice([True, False])
+            },
+            'security': {
+                'require_2fa': random.choice([True, False]),
+                'session_timeout': random.randint(15, 120),
+                'password_expiry_days': random.randint(30, 180)
+            }
+        },
+        is_active=True,
+        created_by=random.choice(User.objects.filter(is_staff=True))
+    )
+
+    # Add creator as owner
+    OrganizationMember.objects.create(
+        organization=organization,
+        user=organization.created_by,
+        role='owner',
+        is_active=True
+    )
+
+    # Add some staff members
+    for staff_user in random.sample(list(User.objects.filter(is_staff=True)), min(3, User.objects.filter(is_staff=True).count())):
+        if staff_user != organization.created_by:  # Don't add creator twice
+            OrganizationMember.objects.create(
+                organization=organization,
+                user=staff_user,
+                role=random.choice(['admin', 'member']),
+                is_active=True
+            )
+
+    # Add some regular members
+    for regular_user in random.sample(list(User.objects.filter(role='user')), random.randint(3, 10)):
+        OrganizationMember.objects.create(
+            organization=organization,
+            user=regular_user,
+            role=random.choice(['member', 'guest']),
+            is_active=random.choice([True, True, True, False])  # 75% active
+        )
+```
+
+#### Organization Questionnaires:
+```python
+# Link questionnaires to organizations
+for organization in Organization.objects.all():
+    # Get questionnaires for this organization
+    org_questionnaires = Questionnaire.objects.filter(organization=organization)
+
+    # Create organization-specific settings for each questionnaire
+    for questionnaire in org_questionnaires:
+        OrganizationQuestionnaire.objects.create(
+            organization=organization,
+            questionnaire=questionnaire,
+            is_featured=random.choice([True, False]),
+            is_private=random.choice([True, False]),
+            custom_branding=random.choice([True, False]),
+            custom_header=f"<h1>{organization.name} - {questionnaire.title}</h1>" if random.choice([True, False]) else None,
+            custom_footer=f"<footer>&copy; {organization.name}</footer>" if random.choice([True, False]) else None,
+            custom_thank_you_message=f"Thank you for completing the questionnaire for {organization.name}!" if random.choice([True, False]) else None,
+            access_restrictions={
+                'require_login': random.choice([True, False]),
+                'require_organization_member': random.choice([True, False]),
+                'allowed_roles': random.sample(['owner', 'admin', 'member', 'guest'], random.randint(1, 4))
+            },
+            allowed_domains=[f"{organization.name.lower().replace(' ', '')}.com"],
+            allowed_ip_ranges=[]
+        )
+
+    # Also add some public questionnaires to the organization
+    public_questionnaires = Questionnaire.objects.filter(is_public=True, organization=None)[:3]
+    for questionnaire in public_questionnaires:
+        OrganizationQuestionnaire.objects.create(
+            organization=organization,
+            questionnaire=questionnaire,
+            is_featured=False,
+            is_private=False,
+            custom_branding=False,
+            access_restrictions={
+                'require_login': False,
+                'require_organization_member': False,
+                'allowed_roles': ['owner', 'admin', 'member', 'guest']
+            },
+            allowed_domains=[],
+            allowed_ip_ranges=[]
+        )
+```
+
+### 4.5 API Endpoints
+
+#### Organization Endpoints:
+- `GET /api/v1/organizations/` - List all organizations
+- `POST /api/v1/organizations/` - Create a new organization
+- `GET /api/v1/organizations/{id}/` - Get organization details
+- `PUT /api/v1/organizations/{id}/` - Update organization
+- `DELETE /api/v1/organizations/{id}/` - Delete organization
+- `GET /api/v1/organizations/{id}/members/` - Get organization members
+
+#### Organization Member Endpoints:
+- `GET /api/v1/organizations/members/` - List organization members
+- `POST /api/v1/organizations/members/` - Add member to organization
+- `GET /api/v1/organizations/members/{id}/` - Get member details
+- `PUT /api/v1/organizations/members/{id}/` - Update member
+- `DELETE /api/v1/organizations/members/{id}/` - Remove member from organization
+
+### 4.6 Data Validation Rules
+
+#### Organization:
+- Name must be unique
+- Contact email must be valid format if provided
+- Website must be valid URL if provided
+
+#### OrganizationMember:
+- A user can only be a member of an organization once
+- Owner role can only be assigned to one user per organization
+
+#### OrganizationQuestionnaire:
+- A questionnaire can only be linked to an organization once
+- If is_private is True, access_restrictions should be set
+
+## 5. Communications
+
+### 5.1 Email Model (PostgreSQL)
+
+The Email model stores emails sent to users.
+
+#### Schema:
+```
+Email:
+  - id: UUID (Primary Key)
+  - subject: CharField
+  - message: TextField
+  - from_email: EmailField
+  - to_email: EmailField
+  - cc_email: EmailField (optional)
+  - bcc_email: EmailField (optional)
+  - html_content: TextField (optional)
+  - attachments: JSONField (optional)
+  - response: ForeignKey (Response, optional)
+  - analysis: ForeignKey (AIAnalysis, optional)
+  - status: CharField (choices: draft, sent, failed, scheduled)
+  - sent_at: DateTimeField (auto_now_add)
+  - scheduled_for: DateTimeField (optional)
+  - sent_by: ForeignKey (User, optional)
+```
+
+#### Relationships:
+- Many-to-One with Response (optional)
+- Many-to-One with AIAnalysis (optional)
+- Many-to-One with User (sent_by, optional)
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: response_id
+- Foreign Key: analysis_id
+- Foreign Key: sent_by_id
+- Index: status
+- Index: sent_at
+- Index: to_email
+
+### 5.2 EmailTemplate Model (PostgreSQL)
+
+The EmailTemplate model stores templates for emails.
+
+#### Schema:
+```
+EmailTemplate:
+  - id: UUID (Primary Key)
+  - name: CharField
+  - description: TextField (optional)
+  - subject: CharField
+  - message: TextField
+  - html_content: TextField (optional)
+  - variables: JSONField (optional)
+  - category: CharField (choices: general, welcome, password_reset, verification, response, analysis, notification, reminder)
+  - is_active: BooleanField
+  - is_default: BooleanField
+  - organization: ForeignKey (Organization, optional)
+  - created_by: ForeignKey (User)
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- Many-to-One with Organization (optional)
+- Many-to-One with User (created_by)
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: organization_id
+- Foreign Key: created_by_id
+- Index: category
+- Index: is_active
+- Index: is_default
+- Unique Together: (category, is_default, organization)
+
+### 5.3 Sample Data Generation
+
+#### Email Templates:
+```python
+# Email template categories and subjects
+template_categories = [
+    ('general', 'General Information'),
+    ('welcome', 'Welcome to MindTrack'),
+    ('password_reset', 'Reset Your Password'),
+    ('verification', 'Verify Your Email Address'),
+    ('response', 'Questionnaire Response Received'),
+    ('analysis', 'Your Response Analysis'),
+    ('notification', 'Notification from MindTrack'),
+    ('reminder', 'Reminder: Complete Your Questionnaire')
+]
+
+# Create default email templates
+for category, subject in template_categories:
+    # Create system default template
+    EmailTemplate.objects.create(
+        name=f"Default {category.title()} Template",
+        description=f"System default template for {category} emails",
+        subject=subject,
+        message=f"This is the default message for {category} emails.",
+        html_content=f"""
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background-color: #4A90E2; color: white; padding: 10px 20px; text-align: center; }}
+                .content {{ padding: 20px; }}
+                .footer {{ font-size: 12px; text-align: center; margin-top: 20px; color: #777; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>{subject}</h1>
+                </div>
+                <div class="content">
+                    <p>This is the default message for {category} emails.</p>
+                    <p>You can customize this template for your organization.</p>
+                </div>
+                <div class="footer">
+                    &copy; {timezone.now().year} MindTrack. All rights reserved.
+                </div>
+            </div>
+        </body>
+        </html>
+        """,
+        variables=["user_name", "user_email", "organization_name"],
+        category=category,
+        is_active=True,
+        is_default=True,
+        created_by=User.objects.filter(is_superuser=True).first()
+    )
+
+    # Create some organization-specific templates
+    for organization in random.sample(list(Organization.objects.all()), min(3, Organization.objects.count())):
+        if random.choice([True, False]):  # 50% chance
+            EmailTemplate.objects.create(
+                name=f"{organization.name} {category.title()} Template",
+                description=f"Custom template for {category} emails for {organization.name}",
+                subject=f"{organization.name} - {subject}",
+                message=f"This is a custom message for {category} emails from {organization.name}.",
+                html_content=f"""
+                <html>
+                <head>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ background-color: #4A90E2; color: white; padding: 10px 20px; text-align: center; }}
+                        .content {{ padding: 20px; }}
+                        .footer {{ font-size: 12px; text-align: center; margin-top: 20px; color: #777; }}
+                        .logo {{ text-align: center; margin-bottom: 20px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="logo">
+                            <img src="https://via.placeholder.com/150x50?text={organization.name}" alt="{organization.name} Logo">
+                        </div>
+                        <div class="header">
+                            <h1>{subject}</h1>
+                        </div>
+                        <div class="content">
+                            <p>This is a custom message for {category} emails from {organization.name}.</p>
+                            <p>Thank you for using our services.</p>
+                        </div>
+                        <div class="footer">
+                            &copy; {timezone.now().year} {organization.name}. All rights reserved.
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """,
+                variables=["user_name", "user_email", "organization_name", "questionnaire_title"],
+                category=category,
+                is_active=True,
+                is_default=True,
+                organization=organization,
+                created_by=OrganizationMember.objects.filter(organization=organization, role='owner').first().user
+            )
+```
+
+#### Emails:
+```python
+# Create emails for responses with AI analysis
+for analysis in AIAnalysis.objects.all():
+    response = analysis.response
+    questionnaire = response.questionnaire
+
+    # Find appropriate template
+    if response.organization:
+        template = EmailTemplate.objects.filter(
+            category='analysis',
+            organization=response.organization,
+            is_active=True
+        ).first()
+
+    if not template:
+        template = EmailTemplate.objects.filter(
+            category='analysis',
+            organization=None,
+            is_active=True,
+            is_default=True
+        ).first()
+
+    # Create email
+    if template and response.patient_email:
+        # Replace variables in subject and content
+        subject = template.subject.replace('{questionnaire_title}', questionnaire.title)
+
+        message = template.message
+        message = message.replace('{user_name}', response.patient_name or 'Patient')
+        message = message.replace('{questionnaire_title}', questionnaire.title)
+        message = message.replace('{score}', str(response.score or 'N/A'))
+        message = message.replace('{risk_level}', response.risk_level or 'unknown')
+
+        html_content = template.html_content
+        html_content = html_content.replace('{user_name}', response.patient_name or 'Patient')
+        html_content = html_content.replace('{questionnaire_title}', questionnaire.title)
+        html_content = html_content.replace('{score}', str(response.score or 'N/A'))
+        html_content = html_content.replace('{risk_level}', response.risk_level or 'unknown')
+
+        # Create the email
+        Email.objects.create(
+            subject=subject,
+            message=message,
+            from_email=f"no-reply@{questionnaire.organization.name.lower().replace(' ', '')}.com" if questionnaire.organization else "no-reply@mindtrack.com",
+            to_email=response.patient_email,
+            html_content=html_content,
+            response=response,
+            analysis=analysis,
+            status=random.choice(['draft', 'sent', 'sent', 'sent']),  # 75% sent
+            sent_at=timezone.now() - timedelta(days=random.randint(0, 7)),
+            sent_by=analysis.created_by
+        )
+```
+
+### 5.4 API Endpoints
+
+#### Email Endpoints:
+- `GET /api/v1/communications/emails/` - List emails
+- `POST /api/v1/communications/emails/` - Create and send email
+- `GET /api/v1/communications/emails/{id}/` - Get email details
+- `PUT /api/v1/communications/emails/{id}/` - Update email
+- `DELETE /api/v1/communications/emails/{id}/` - Delete email
+
+#### Email Template Endpoints:
+- `GET /api/v1/communications/templates/` - List email templates
+- `POST /api/v1/communications/templates/` - Create email template
+- `GET /api/v1/communications/templates/{id}/` - Get template details
+- `PUT /api/v1/communications/templates/{id}/` - Update template
+- `DELETE /api/v1/communications/templates/{id}/` - Delete template
+- `GET /api/v1/communications/templates/minimal/` - Get minimal template info
+
+### 5.5 Data Validation Rules
+
+#### Email:
+- To email must be valid format
+- From email must be valid format
+- If status is sent, sent_at must be provided
+- If status is scheduled, scheduled_for must be provided
+
+#### EmailTemplate:
+- Name must be unique within an organization
+- If is_default is True, there should be no other default template for the same category and organization
+- HTML content should be valid HTML
+
+## 6. Analytics and Reporting
+
+### 6.1 UserMetrics Model (PostgreSQL)
+
+The UserMetrics model stores metrics about user activity.
+
+#### Schema:
+```
+UserMetrics:
+  - id: UUID (Primary Key)
+  - user: OneToOneField (User)
+  - questionnaires_created: PositiveIntegerField
+  - questionnaires_completed: PositiveIntegerField
+  - responses_submitted: PositiveIntegerField
+  - total_score: FloatField
+  - average_score: FloatField
+  - last_activity: DateTimeField (optional)
+  - login_count: PositiveIntegerField
+  - active_days: PositiveIntegerField
+  - streak: PositiveIntegerField
+  - longest_streak: PositiveIntegerField
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- One-to-One with User
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: user_id
+- Index: last_activity
+
+### 6.2 OrganizationMetrics Model (PostgreSQL)
+
+The OrganizationMetrics model stores metrics about organization activity.
+
+#### Schema:
+```
+OrganizationMetrics:
+  - id: UUID (Primary Key)
+  - organization: OneToOneField (Organization)
+  - active_members: PositiveIntegerField
+  - total_members: PositiveIntegerField
+  - questionnaires_created: PositiveIntegerField
+  - responses_collected: PositiveIntegerField
+  - average_response_score: FloatField
+  - average_completion_time: FloatField
+  - most_active_questionnaire: ForeignKey (Questionnaire, optional)
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- One-to-One with Organization
+- Many-to-One with Questionnaire (most_active_questionnaire, optional)
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: organization_id
+- Foreign Key: most_active_questionnaire_id
+
+### 6.3 QuestionnaireMetrics Model (PostgreSQL)
+
+The QuestionnaireMetrics model stores metrics about questionnaire activity.
+
+#### Schema:
+```
+QuestionnaireMetrics:
+  - id: UUID (Primary Key)
+  - questionnaire: OneToOneField (Questionnaire)
+  - start_count: PositiveIntegerField
+  - completion_count: PositiveIntegerField
+  - abandonment_count: PositiveIntegerField
+  - completion_rate: FloatField
+  - average_score: FloatField
+  - average_completion_time: FloatField
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- One-to-One with Questionnaire
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: questionnaire_id
+- Index: completion_rate
+- Index: average_score
+
+### 6.4 Report Model (PostgreSQL)
+
+The Report model stores report configurations.
+
+#### Schema:
+```
+Report:
+  - id: UUID (Primary Key)
+  - name: CharField
+  - description: TextField (optional)
+  - type: CharField (choices: questionnaire, response, user, organization, custom)
+  - filters: JSONField (optional)
+  - date_range_start: DateTimeField (optional)
+  - date_range_end: DateTimeField (optional)
+  - questionnaire: ForeignKey (Questionnaire, optional)
+  - organization: ForeignKey (Organization, optional)
+  - is_public: BooleanField
+  - created_by: ForeignKey (User)
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- Many-to-One with Questionnaire (optional)
+- Many-to-One with Organization (optional)
+- Many-to-One with User (created_by)
+- One-to-Many with Chart
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: questionnaire_id
+- Foreign Key: organization_id
+- Foreign Key: created_by_id
+- Index: type
+- Index: is_public
+
+### 6.5 Chart Model (PostgreSQL)
+
+The Chart model stores chart configurations for reports.
+
+#### Schema:
+```
+Chart:
+  - id: UUID (Primary Key)
+  - report: ForeignKey (Report)
+  - title: CharField
+  - description: TextField (optional)
+  - type: CharField (choices: bar, line, pie, doughnut, radar, scatter, bubble, area, heatmap)
+  - data_source: CharField
+  - data_query: JSONField
+  - options: JSONField (optional)
+  - width: IntegerField
+  - height: IntegerField
+  - order: IntegerField
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- Many-to-One with Report
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: report_id
+- Index: type
+- Index: order
+
+### 6.6 Dashboard Model (PostgreSQL)
+
+The Dashboard model stores dashboard configurations.
+
+#### Schema:
+```
+Dashboard:
+  - id: UUID (Primary Key)
+  - name: CharField
+  - description: TextField (optional)
+  - layout: JSONField (optional)
+  - is_public: BooleanField
+  - organization: ForeignKey (Organization, optional)
+  - created_by: ForeignKey (User)
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- Many-to-One with Organization (optional)
+- Many-to-One with User (created_by)
+- Many-to-Many with Report (through DashboardReport)
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: organization_id
+- Foreign Key: created_by_id
+- Index: is_public
+
+### 6.7 DashboardReport Model (PostgreSQL)
+
+The DashboardReport model represents the relationship between dashboards and reports.
+
+#### Schema:
+```
+DashboardReport:
+  - id: UUID (Primary Key)
+  - dashboard: ForeignKey (Dashboard)
+  - report: ForeignKey (Report)
+  - width: IntegerField
+  - height: IntegerField
+  - order: IntegerField
+  - created_at: DateTimeField (auto_now_add)
+  - updated_at: DateTimeField (auto_now)
+```
+
+#### Relationships:
+- Many-to-One with Dashboard
+- Many-to-One with Report
+
+#### Indexes:
+- Primary Key: id
+- Foreign Key: dashboard_id
+- Foreign Key: report_id
+- Index: order
+- Unique Together: (dashboard, report)
+
+### 6.8 Sample Data Generation
+
+#### Metrics:
+```python
+# Update metrics for all users
+for user in User.objects.all():
+    # Get or create user metrics
+    metrics, created = UserMetrics.objects.get_or_create(user=user)
+
+    # Update metrics
+    metrics.questionnaires_created = Questionnaire.objects.filter(created_by=user).count()
+    metrics.responses_submitted = Response.objects.filter(user=user).count()
+    metrics.questionnaires_completed = Response.objects.filter(user=user, completed_at__isnull=False).count()
+
+    # Calculate scores
+    responses = Response.objects.filter(user=user, score__isnull=False)
+    if responses.exists():
+        metrics.total_score = sum(r.score for r in responses)
+        metrics.average_score = metrics.total_score / responses.count()
+
+    # Set activity data
+    metrics.last_activity = user.last_login or timezone.now()
+    metrics.login_count = random.randint(5, 50)
+    metrics.active_days = random.randint(1, 30)
+    metrics.streak = random.randint(0, 10)
+    metrics.longest_streak = max(metrics.streak, random.randint(5, 20))
+
+    metrics.save()
+
+# Update metrics for all organizations
+for organization in Organization.objects.all():
+    # Get or create organization metrics
+    metrics, created = OrganizationMetrics.objects.get_or_create(organization=organization)
+
+    # Update metrics
+    metrics.total_members = OrganizationMember.objects.filter(organization=organization).count()
+    metrics.active_members = OrganizationMember.objects.filter(organization=organization, is_active=True).count()
+    metrics.questionnaires_created = Questionnaire.objects.filter(organization=organization).count()
+
+    # Count responses
+    responses = Response.objects.filter(organization=organization)
+    metrics.responses_collected = responses.count()
+
+    # Calculate average score
+    scored_responses = responses.filter(score__isnull=False)
+    if scored_responses.exists():
+        metrics.average_response_score = scored_responses.aggregate(models.Avg('score'))['score__avg']
+
+    # Calculate average completion time
+    timed_responses = responses.filter(completion_time__isnull=False)
+    if timed_responses.exists():
+        metrics.average_completion_time = timed_responses.aggregate(models.Avg('completion_time'))['completion_time__avg']
+
+    # Find most active questionnaire
+    if Questionnaire.objects.filter(organization=organization).exists():
+        most_active = None
+        max_responses = 0
+
+        for questionnaire in Questionnaire.objects.filter(organization=organization):
+            response_count = Response.objects.filter(questionnaire=questionnaire).count()
+            if response_count > max_responses:
+                max_responses = response_count
+                most_active = questionnaire
+
+        metrics.most_active_questionnaire = most_active
+
+    metrics.save()
+
+# Update metrics for all questionnaires
+for questionnaire in Questionnaire.objects.all():
+    # Get or create questionnaire metrics
+    metrics, created = QuestionnaireMetrics.objects.get_or_create(questionnaire=questionnaire)
+
+    # Count responses
+    responses = Response.objects.filter(questionnaire=questionnaire)
+    metrics.start_count = responses.count()
+    metrics.completion_count = responses.filter(completed_at__isnull=False).count()
+
+    # Calculate abandonment and completion rate
+    metrics.abandonment_count = metrics.start_count - metrics.completion_count
+    if metrics.start_count > 0:
+        metrics.completion_rate = (metrics.completion_count / metrics.start_count) * 100
+
+    # Calculate average score
+    scored_responses = responses.filter(score__isnull=False)
+    if scored_responses.exists():
+        metrics.average_score = scored_responses.aggregate(models.Avg('score'))['score__avg']
+
+    # Calculate average completion time
+    timed_responses = responses.filter(completion_time__isnull=False)
+    if timed_responses.exists():
+        metrics.average_completion_time = timed_responses.aggregate(models.Avg('completion_time'))['completion_time__avg']
+
+    metrics.save()
+```
+
+#### Reports and Charts:
+```python
+# Report types and chart configurations
+report_types = [
+    {
+        'type': 'questionnaire',
+        'charts': [
+            {
+                'title': 'Response Count Over Time',
+                'type': 'line',
+                'data_source': 'responses',
+                'data_query': {'group_by': 'day', 'measure': 'count'}
+            },
+            {
+                'title': 'Completion Rate',
+                'type': 'doughnut',
+                'data_source': 'responses',
+                'data_query': {'group_by': 'completion_status', 'measure': 'count'}
+            },
+            {
+                'title': 'Average Score by Question',
+                'type': 'bar',
+                'data_source': 'answers',
+                'data_query': {'group_by': 'question', 'measure': 'avg_score'}
+            }
+        ]
+    },
+    {
+        'type': 'user',
+        'charts': [
+            {
+                'title': 'User Activity Over Time',
+                'type': 'line',
+                'data_source': 'user_activity',
+                'data_query': {'group_by': 'day', 'measure': 'count'}
+            },
+            {
+                'title': 'Questionnaires Created vs Completed',
+                'type': 'bar',
+                'data_source': 'user_metrics',
+                'data_query': {'measures': ['questionnaires_created', 'questionnaires_completed']}
+            }
+        ]
+    },
+    {
+        'type': 'organization',
+        'charts': [
+            {
+                'title': 'Member Activity',
+                'type': 'pie',
+                'data_source': 'organization_members',
+                'data_query': {'group_by': 'role', 'measure': 'count'}
+            },
+            {
+                'title': 'Response Count by Questionnaire',
+                'type': 'bar',
+                'data_source': 'responses',
+                'data_query': {'group_by': 'questionnaire', 'measure': 'count'}
+            },
+            {
+                'title': 'Average Score Trend',
+                'type': 'line',
+                'data_source': 'responses',
+                'data_query': {'group_by': 'week', 'measure': 'avg_score'}
+            }
+        ]
+    }
+]
+
+# Create reports for each organization
+for organization in Organization.objects.all():
+    # Create organization report
+    org_report = Report.objects.create(
+        name=f"{organization.name} Overview",
+        description=f"Overview report for {organization.name}",
+        type='organization',
+        filters={'organization_id': str(organization.id)},
+        date_range_start=timezone.now() - timedelta(days=90),
+        date_range_end=timezone.now(),
+        organization=organization,
+        is_public=False,
+        created_by=OrganizationMember.objects.filter(organization=organization, role='owner').first().user
+    )
+
+    # Create charts for organization report
+    for i, chart_config in enumerate(next(rt['charts'] for rt in report_types if rt['type'] == 'organization')):
+        Chart.objects.create(
+            report=org_report,
+            title=chart_config['title'],
+            type=chart_config['type'],
+            data_source=chart_config['data_source'],
+            data_query=chart_config['data_query'],
+            options={},
+            width=12 if i == 0 else 6,  # First chart full width, others half width
+            height=400,
+            order=i
+        )
+
+    # Create questionnaire reports for each questionnaire in the organization
+    for questionnaire in Questionnaire.objects.filter(organization=organization):
+        q_report = Report.objects.create(
+            name=f"{questionnaire.title} Analysis",
+            description=f"Analysis report for {questionnaire.title}",
+            type='questionnaire',
+            filters={'questionnaire_id': str(questionnaire.id)},
+            date_range_start=timezone.now() - timedelta(days=90),
+            date_range_end=timezone.now(),
+            questionnaire=questionnaire,
+            organization=organization,
+            is_public=False,
+            created_by=questionnaire.created_by
+        )
+
+        # Create charts for questionnaire report
+        for i, chart_config in enumerate(next(rt['charts'] for rt in report_types if rt['type'] == 'questionnaire')):
+            Chart.objects.create(
+                report=q_report,
+                title=chart_config['title'],
+                type=chart_config['type'],
+                data_source=chart_config['data_source'],
+                data_query=chart_config['data_query'],
+                options={},
+                width=12 if i == 0 else 6,  # First chart full width, others half width
+                height=400,
+                order=i
+            )
+
+    # Create dashboard for organization
+    dashboard = Dashboard.objects.create(
+        name=f"{organization.name} Dashboard",
+        description=f"Main dashboard for {organization.name}",
+        layout={
+            'type': 'grid',
+            'columns': 12,
+            'margin': 10
+        },
+        is_public=False,
+        organization=organization,
+        created_by=OrganizationMember.objects.filter(organization=organization, role='owner').first().user
+    )
+
+    # Add organization report to dashboard
+    DashboardReport.objects.create(
+        dashboard=dashboard,
+        report=org_report,
+        width=12,  # Full width
+        height=800,
+        order=0
+    )
+
+    # Add questionnaire reports to dashboard
+    for i, questionnaire in enumerate(Questionnaire.objects.filter(organization=organization)[:4]):  # Limit to 4
+        report = Report.objects.filter(questionnaire=questionnaire).first()
+        if report:
+            DashboardReport.objects.create(
+                dashboard=dashboard,
+                report=report,
+                width=6,  # Half width
+                height=600,
+                order=i+1
+            )
+```
+
+### 6.9 API Endpoints
+
+#### Analytics Endpoints:
+- `GET /api/v1/analytics/dashboard/` - Get dashboard analytics
+- `GET /api/v1/analytics/user-metrics/` - Get user metrics
+- `GET /api/v1/analytics/organization-metrics/` - Get organization metrics
+- `GET /api/v1/analytics/questionnaire-metrics/` - Get questionnaire metrics
+- `GET /api/v1/analytics/metrics-snapshots/` - Get metrics snapshots
+
+#### Report Endpoints:
+- `GET /api/v1/reports/reports/` - List reports
+- `POST /api/v1/reports/reports/` - Create report
+- `GET /api/v1/reports/reports/{id}/` - Get report details
+- `PUT /api/v1/reports/reports/{id}/` - Update report
+- `DELETE /api/v1/reports/reports/{id}/` - Delete report
+- `GET /api/v1/reports/reports/{id}/data/` - Get report data
+
+#### Dashboard Endpoints:
+- `GET /api/v1/reports/dashboards/` - List dashboards
+- `POST /api/v1/reports/dashboards/` - Create dashboard
+- `GET /api/v1/reports/dashboards/{id}/` - Get dashboard details
+- `PUT /api/v1/reports/dashboards/{id}/` - Update dashboard
+- `DELETE /api/v1/reports/dashboards/{id}/` - Delete dashboard
+- `GET /api/v1/reports/dashboards/{id}/data/` - Get dashboard data
+
+### 6.10 Data Validation Rules
+
+#### Metrics:
+- Average score must be between 0 and 100
+- Completion rate must be between 0 and 100
+- If total_score is set, average_score should be calculated correctly
+
+#### Report:
+- If type is questionnaire, questionnaire_id must be provided
+- If type is organization, organization_id must be provided
+- If date_range_start is provided, date_range_end must be after date_range_start
+
+#### Chart:
+- Chart type must be one of the supported types
+- Data source must be valid
+- Data query must be valid JSON
+
+## 7. Database Configuration and Management
+
+### 7.1 PostgreSQL Configuration
+
+The primary database for the MindTrack application is PostgreSQL, hosted on Neon.
+
+#### Connection Details:
+```
+DATABASE_URL: postgresql://mindrack_db_owner:npg_MOG25VzHJDaE@ep-nameless-hill-a4i2q3sc-pooler.us-east-1.aws.neon.tech/mindrack_db?sslmode=require
+```
+
+#### Database Settings:
+```python
+# Database configuration in settings.py
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'mindrack_db',
+        'USER': 'mindrack_db_owner',
+        'PASSWORD': 'npg_MOG25VzHJDaE',
+        'HOST': 'ep-nameless-hill-a4i2q3sc-pooler.us-east-1.aws.neon.tech',
+        'PORT': '5432',
+        'OPTIONS': {
+            'sslmode': 'require'
+        }
+    }
+}
+```
+
+### 7.2 Database Migrations
+
+Database migrations are managed using Django's built-in migration system.
+
+#### Creating Migrations:
+```bash
+python manage.py makemigrations
+```
+
+#### Applying Migrations:
+```bash
+python manage.py migrate
+```
+
+### 7.3 Data Backup and Restore
+
+#### Backup:
+```bash
+pg_dump -h ep-nameless-hill-a4i2q3sc-pooler.us-east-1.aws.neon.tech -U mindrack_db_owner -d mindrack_db -F c -f backup.dump
+```
+
+#### Restore:
+```bash
+pg_restore -h ep-nameless-hill-a4i2q3sc-pooler.us-east-1.aws.neon.tech -U mindrack_db_owner -d mindrack_db -c backup.dump
+```
+
+## 8. Conclusion
+
+This document provides a comprehensive overview of the MindTrack database schema, including:
+
+1. **Users and Authentication**: User accounts, profiles, and authentication mechanisms.
+2. **Questionnaires and Questions**: Questionnaire metadata and question structures.
+3. **Responses and Answers**: User responses to questionnaires and individual answers.
+4. **Organizations**: Organization structures and membership management.
+5. **Communications**: Email templates and messaging capabilities.
+6. **Analytics and Reporting**: Metrics, reports, and dashboards for data analysis.
+7. **Database Configuration**: Connection details and management procedures.
+
+### Key Features
+
+- **UUID Primary Keys**: All models use UUID primary keys for security and distributed generation.
+- **Timestamps**: Created and updated timestamps on all models for auditing.
+- **Soft Deletion**: Many models support soft deletion via is_active flags.
+- **Comprehensive Indexing**: Strategic indexes for performance optimization.
+- **Flexible JSON Fields**: JSON fields for flexible data structures where appropriate.
+- **Relationship Integrity**: Well-defined relationships between models.
+
+### Data Generation
+
+The sample data generation scripts provided in this document can be used to populate the database with realistic test data for development and testing purposes. These scripts create:
+
+- Admin, staff, and regular users
+- Organizations with members
+- Questionnaires with various question types
+- Responses with answers and AI analyses
+- Email templates and sent emails
+- Reports, charts, and dashboards
+- Metrics for users, organizations, and questionnaires
+
+### API Integration
+
+The documented API endpoints provide a comprehensive interface for frontend applications to interact with the backend data. The endpoints follow RESTful principles and include:
+
+- Authentication and user management
+- Questionnaire creation and management
+- Response collection and analysis
+- Organization management
+- Communications
+- Analytics and reporting
+
+This documentation serves as a reference for both backend and frontend developers working on the MindTrack application.

@@ -1,0 +1,155 @@
+{% extends 'admin_portal/modern_base.html' %}
+
+{% block title %}Preview: {{ questionnaire.title }} - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-6">
+            <div class="flex items-center">
+                <a href="{% url 'surveys:survey_detail' pk=questionnaire.pk %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">
+                    Preview: {{ questionnaire.title }}
+                </h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                This is a preview of how respondents will see your questionnaire
+            </p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="mb-6">
+            <div class="flex justify-between text-sm text-gray-500 mb-1">
+                <div>Question {{ current_question_index }} of {{ total_questions }}</div>
+                <div>{{ progress_percentage|floatformat:0 }}% Complete</div>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-primary-600 h-2.5 rounded-full transition-all duration-500 ease-out" style="width: {{ progress_percentage }}%"></div>
+            </div>
+        </div>
+
+        <!-- Question Card -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6 border border-gray-200">
+            {% if current_question %}
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-xl font-medium text-gray-900 mb-4">{{ current_question.text }}</h2>
+                    
+                    {% if current_question.description %}
+                        <p class="text-gray-600 mb-6">{{ current_question.description }}</p>
+                    {% endif %}
+                    
+                    <!-- Question Type Specific Content -->
+                    {% if current_question.question_type == 'text' %}
+                        <div class="mt-4">
+                            <input type="text" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" placeholder="Enter your answer">
+                        </div>
+                    
+                    {% elif current_question.question_type == 'textarea' %}
+                        <div class="mt-4">
+                            <textarea rows="4" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" placeholder="Enter your answer"></textarea>
+                        </div>
+                    
+                    {% elif current_question.question_type == 'number' %}
+                        <div class="mt-4">
+                            <input type="number" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" placeholder="Enter a number">
+                        </div>
+                    
+                    {% elif current_question.question_type == 'single_choice' %}
+                        <div class="mt-4 space-y-4">
+                            {% for choice in current_question.choices.all %}
+                                <div class="flex items-center">
+                                    <input id="choice-{{ choice.id }}" name="choice" type="radio" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
+                                    <label for="choice-{{ choice.id }}" class="ml-3 block text-sm font-medium text-gray-700">
+                                        {{ choice.text }}
+                                    </label>
+                                </div>
+                            {% empty %}
+                                <div class="text-gray-500 italic">No choices defined for this question</div>
+                            {% endfor %}
+                        </div>
+                    
+                    {% elif current_question.question_type == 'multiple_choice' %}
+                        <div class="mt-4 space-y-4">
+                            {% for choice in current_question.choices.all %}
+                                <div class="flex items-center">
+                                    <input id="choice-{{ choice.id }}" name="choices[]" type="checkbox" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                    <label for="choice-{{ choice.id }}" class="ml-3 block text-sm font-medium text-gray-700">
+                                        {{ choice.text }}
+                                    </label>
+                                </div>
+                            {% empty %}
+                                <div class="text-gray-500 italic">No choices defined for this question</div>
+                            {% endfor %}
+                        </div>
+                    
+                    {% elif current_question.question_type == 'scale' %}
+                        <div class="mt-6">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-sm text-gray-500">1</span>
+                                <span class="text-sm text-gray-500">10</span>
+                            </div>
+                            <input type="range" min="1" max="10" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                    
+                    {% elif current_question.question_type == 'date' %}
+                        <div class="mt-4">
+                            <input type="date" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                        </div>
+                    
+                    {% elif current_question.question_type == 'time' %}
+                        <div class="mt-4">
+                            <input type="time" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                        </div>
+                    
+                    {% elif current_question.question_type == 'file' %}
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700">Upload a file</label>
+                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                                <div class="space-y-1 text-center">
+                                    <i class="fas fa-upload text-gray-400 text-3xl mb-3"></i>
+                                    <div class="flex text-sm text-gray-600">
+                                        <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500">
+                                            <span>Upload a file</span>
+                                            <input id="file-upload" name="file-upload" type="file" class="sr-only">
+                                        </label>
+                                        <p class="pl-1">or drag and drop</p>
+                                    </div>
+                                    <p class="text-xs text-gray-500">PNG, JPG, PDF up to 10MB</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="px-4 py-5 sm:p-6 text-center">
+                    <p class="text-gray-500">No questions available for this questionnaire.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="flex justify-between">
+            {% if current_question_index > 1 %}
+                <a href="{% url 'surveys:survey_preview' pk=questionnaire.pk %}?question={{ prev_question_index }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-chevron-left mr-2"></i> Previous
+                </a>
+            {% else %}
+                <div></div>
+            {% endif %}
+
+            {% if current_question_index < total_questions %}
+                <a href="{% url 'surveys:survey_preview' pk=questionnaire.pk %}?question={{ next_question_index }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    Next <i class="fas fa-chevron-right ml-2"></i>
+                </a>
+            {% else %}
+                <a href="{% url 'surveys:survey_detail' pk=questionnaire.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    Finish Preview <i class="fas fa-check ml-2"></i>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+<footer class="bg-gray-100 pt-12 pb-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+            <div class="md:col-span-5">
+                <h5 class="text-primary-600 text-lg font-display font-bold mb-4">MindTrack</h5>
+                <p class="text-gray-500 mb-6">Comprehensive mental health questionnaire management platform designed to help healthcare professionals create, distribute, collect, analyze, and follow up on mental health assessments.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors">
+                        <i class="fab fa-facebook-f text-lg"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors">
+                        <i class="fab fa-twitter text-lg"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors">
+                        <i class="fab fa-linkedin-in text-lg"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-primary-500 transition-colors">
+                        <i class="fab fa-instagram text-lg"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="md:col-span-2">
+                <h6 class="text-gray-900 font-semibold mb-4">Quick Links</h6>
+                <ul class="space-y-2">
+                    <li><a href="{% url 'core:home' %}" class="text-gray-500 hover:text-primary-600 transition-colors">Home</a></li>
+                    <li><a href="{% url 'core:about' %}" class="text-gray-500 hover:text-primary-600 transition-colors">About</a></li>
+                    <li><a href="{% url 'core:contact' %}" class="text-gray-500 hover:text-primary-600 transition-colors">Contact</a></li>
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'core:dashboard' %}" class="text-gray-500 hover:text-primary-600 transition-colors">Dashboard</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div class="md:col-span-2">
+                <h6 class="text-gray-900 font-semibold mb-4">Resources</h6>
+                <ul class="space-y-2">
+                    <li><a href="#" class="text-gray-500 hover:text-primary-600 transition-colors">Documentation</a></li>
+                    <li><a href="#" class="text-gray-500 hover:text-primary-600 transition-colors">FAQs</a></li>
+                    <li><a href="#" class="text-gray-500 hover:text-primary-600 transition-colors">Blog</a></li>
+                    <li><a href="#" class="text-gray-500 hover:text-primary-600 transition-colors">Support</a></li>
+                </ul>
+            </div>
+            <div class="md:col-span-3">
+                <h6 class="text-gray-900 font-semibold mb-4">Subscribe to Our Newsletter</h6>
+                <p class="text-gray-500 mb-4">Stay updated with the latest features and news.</p>
+                <form class="flex" hx-post="/subscribe/" hx-swap="outerHTML">
+                    <input type="email" name="email" class="flex-grow px-4 py-2 rounded-l-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Your email">
+                    <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-r-md transition-colors">
+                        Subscribe
+                    </button>
+                </form>
+            </div>
+        </div>
+        <div class="border-t border-gray-200 mt-12 pt-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-500 text-sm">&copy; {% now "Y" %} MindTrack. All rights reserved.</p>
+                <div class="flex space-x-6 mt-4 md:mt-0">
+                    <a href="#" class="text-gray-500 hover:text-primary-600 text-sm">Privacy Policy</a>
+                    <a href="#" class="text-gray-500 hover:text-primary-600 text-sm">Terms of Service</a>
+                    <a href="#" class="text-gray-500 hover:text-primary-600 text-sm">Cookie Policy</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>

@@ -1,0 +1,155 @@
+{% extends "base/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Admin Login{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-login-container {
+        max-width: 450px;
+        margin: 80px auto;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        background-color: white;
+    }
+    .admin-login-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .admin-login-header h1 {
+        color: #343a40;
+        font-weight: 600;
+    }
+    .admin-login-form .btn-primary {
+        width: 100%;
+        padding: 10px;
+        font-weight: 500;
+    }
+    .admin-login-footer {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="admin-login-container slide-in-up" data-aos="fade-up">
+        <div class="admin-login-header">
+            <div class="text-center mb-4">
+                <i class="fas fa-user-shield fa-3x text-primary mb-3"></i>
+                <h1 class="h3">Admin Portal</h1>
+                <p class="text-muted">Sign in to access the admin dashboard</p>
+                <div class="progress mt-3" style="height: 4px;">
+                    <div class="progress-bar progress-animate" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show slide-in-right" role="alert">
+                <div class="d-flex align-items-center">
+                    {% if message.tags == 'success' %}
+                        <i class="fas fa-check-circle me-2"></i>
+                    {% elif message.tags == 'error' %}
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                    {% elif message.tags == 'warning' %}
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% else %}
+                        <i class="fas fa-info-circle me-2"></i>
+                    {% endif %}
+                    <div>{{ message }}</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="admin-login-form">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <div class="mb-3 slide-in-right delay-100">
+                    <label for="{{ form.username.id_for_label }}" class="form-label">Username or Email</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        {{ form.username }}
+                    </div>
+                    {% if form.username.errors %}
+                        <div class="invalid-feedback d-block">{{ form.username.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3 slide-in-right delay-200">
+                    <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        {{ form.password }}
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    {% if form.password.errors %}
+                        <div class="invalid-feedback d-block">{{ form.password.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3 slide-in-right delay-300">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="rememberMe">
+                        <label class="form-check-label" for="rememberMe">Remember me</label>
+                    </div>
+                    <a href="#" class="text-decoration-none">Forgot Password?</a>
+                </div>
+
+                <div class="mt-4 slide-in-right delay-400">
+                    <button type="submit" class="btn btn-primary w-100 ripple">
+                        <i class="fas fa-sign-in-alt me-2"></i> Sign In
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="admin-login-footer slide-in-up delay-500">
+            <div class="d-flex justify-content-center">
+                <p>Not an admin? <a href="/client-portal/login/" class="ms-1 text-decoration-none">Go to Client Portal</a></p>
+            </div>
+            <div class="text-center mt-3">
+                <small class="text-muted">© 2023 MindTrack. All rights reserved.</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle password visibility
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordField = document.getElementById('{{ form.password.id_for_label }}');
+
+        if (togglePassword && passwordField) {
+            togglePassword.addEventListener('click', function() {
+                const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordField.setAttribute('type', type);
+
+                // Toggle eye icon
+                this.querySelector('i').classList.toggle('fa-eye');
+                this.querySelector('i').classList.toggle('fa-eye-slash');
+            });
+        }
+
+        // Form validation
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            form.classList.add('was-validated');
+        });
+    });
+</script>
+{% endblock %}

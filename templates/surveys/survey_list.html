@@ -1,0 +1,192 @@
+{% extends 'admin_portal/modern_base.html' %}
+
+{% block title %}Surveys - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Questionnaires</h1>
+                <p class="mt-2 text-gray-600">Create and manage your mental health questionnaires</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <a href="{% url 'surveys:survey_archive_list' %}" class="btn-animated inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600">
+                    <i class="fas fa-archive mr-2"></i> Archive
+                </a>
+                <a href="{% url 'surveys:survey_create' %}" class="btn-animated inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-plus mr-2"></i> Create New Survey
+                </a>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-gray-50 rounded-lg p-4 mb-8">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Filters</h2>
+            <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select id="category" name="category" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                        <option value="">All Categories</option>
+                        {% for value, label in categories %}
+                            <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select id="status" name="status" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                        <option value="">All Statuses</option>
+                        {% for value, label in statuses %}
+                            <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <i class="fas fa-filter mr-2"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'surveys:survey_list' %}" class="ml-2 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <i class="fas fa-times mr-2"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Surveys Grid -->
+        {% if questionnaires %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for survey in questionnaires %}
+                    <div class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:translate-y-[-4px] transition-all duration-300 overflow-hidden m-2">
+                        <div class="p-5 flex items-center border-b border-gray-100">
+                            <div class="flex-shrink-0 h-12 w-12 rounded-lg bg-primary-100 flex items-center justify-center shadow-sm">
+                                <i class="fas fa-clipboard-list text-primary-600 text-lg"></i>
+                            </div>
+                            <div class="ml-4 flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900 truncate">{{ survey.title }}</h3>
+                                <div class="flex items-center mt-1.5">
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full
+                                        {% if survey.status == 'active' %}bg-green-100 text-green-800 border border-green-200
+                                        {% elif survey.status == 'draft' %}bg-yellow-100 text-yellow-800 border border-yellow-200
+                                        {% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}">
+                                        {{ survey.get_status_display }}
+                                    </span>
+                                    <span class="ml-2 flex items-center text-xs text-gray-500">
+                                        <i class="fas fa-question-circle mr-1 text-gray-400"></i>
+                                        {{ survey.get_question_count }} questions
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-5 bg-gray-50">
+                            <p class="text-sm text-gray-600 mb-4 line-clamp-2">{{ survey.description|truncatechars:120|default:"No description provided." }}</p>
+                            <div class="flex flex-wrap gap-2 text-xs text-gray-500 mb-4">
+                                <span class="flex items-center bg-gray-100 px-2 py-1 rounded-md border border-gray-200">
+                                    <i class="fas fa-tag mr-1 text-gray-500"></i>
+                                    {{ survey.get_category_display }}
+                                </span>
+                                <span class="flex items-center bg-gray-100 px-2 py-1 rounded-md border border-gray-200">
+                                    <i class="fas fa-calendar mr-1 text-gray-500"></i>
+                                    {{ survey.created_at|date:"M d, Y" }}
+                                </span>
+                                {% if survey.organization %}
+                                    <span class="flex items-center bg-gray-100 px-2 py-1 rounded-md border border-gray-200">
+                                        <i class="fas fa-building mr-1 text-gray-500"></i>
+                                        {{ survey.organization.name }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="p-4 flex justify-between items-center bg-white border-t border-gray-100">
+                            <a href="{% url 'surveys:survey_detail' pk=survey.pk %}" class="btn-animated inline-flex items-center px-4 py-2 text-sm font-medium text-primary-600 hover:text-primary-800 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors">
+                                <i class="fas fa-eye mr-1.5"></i> View
+                            </a>
+                            <div class="flex space-x-2">
+                                <a href="{% url 'surveys:survey_edit' pk=survey.pk %}" class="btn-animated inline-flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 border border-gray-200 transition-colors">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'feedback:questionnaire_response_list' questionnaire_pk=survey.pk %}" class="btn-animated inline-flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 border border-gray-200 transition-colors">
+                                    <i class="fas fa-chart-bar"></i>
+                                </a>
+                                <a href="{% url 'surveys:generate_qr_code' pk=survey.pk %}" class="btn-animated inline-flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 border border-gray-200 transition-colors">
+                                    <i class="fas fa-qrcode"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-8 m-2">
+                <div class="text-center">
+                    <div class="inline-flex items-center justify-center h-20 w-20 rounded-full bg-gray-100 mb-6">
+                        <i class="fas fa-clipboard-list text-4xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">No surveys found</h3>
+                    <p class="text-gray-600 mb-6">Create your first survey to get started with data collection</p>
+                    <a href="{% url 'surveys:survey_create' %}" class="btn-animated inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all">
+                        <i class="fas fa-plus mr-2"></i> Create New Survey
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Templates Section -->
+        {% if template_questionnaires %}
+            <div class="mt-12">
+                <h2 class="text-2xl font-display font-bold text-gray-900 mb-4">Templates</h2>
+                <p class="text-gray-600 mb-6">Use these pre-built templates to quickly create standardized questionnaires</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for template in template_questionnaires %}
+                        <div class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:translate-y-[-4px] transition-all duration-300 overflow-hidden m-2">
+                            <div class="p-5 flex items-center border-b border-gray-100">
+                                <div class="flex-shrink-0 h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center shadow-sm">
+                                    <i class="fas fa-clipboard-check text-blue-600 text-lg"></i>
+                                </div>
+                                <div class="ml-4 flex-1">
+                                    <h3 class="text-lg font-semibold text-gray-900 truncate">{{ template.title }}</h3>
+                                    <div class="flex items-center mt-1.5">
+                                        <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                                            Template
+                                        </span>
+                                        <span class="ml-2 flex items-center text-xs text-gray-500">
+                                            <i class="fas fa-question-circle mr-1 text-gray-400"></i>
+                                            {{ template.get_question_count }} questions
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-5 bg-gray-50">
+                                <p class="text-sm text-gray-600 mb-4 line-clamp-2">{{ template.description|truncatechars:120|default:"No description provided." }}</p>
+                                <div class="flex flex-wrap gap-2 text-xs text-gray-500 mb-4">
+                                    <span class="flex items-center bg-gray-100 px-2 py-1 rounded-md border border-gray-200">
+                                        <i class="fas fa-tag mr-1 text-gray-500"></i>
+                                        {{ template.get_category_display }}
+                                    </span>
+                                    <span class="flex items-center bg-gray-100 px-2 py-1 rounded-md border border-gray-200">
+                                        <i class="fas fa-calendar mr-1 text-gray-500"></i>
+                                        {{ template.created_at|date:"M d, Y" }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="p-4 flex justify-between items-center bg-white border-t border-gray-100">
+                                <a href="{% url 'surveys:survey_detail' pk=template.pk %}" class="btn-animated inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                                    <i class="fas fa-eye mr-1.5"></i> View
+                                </a>
+                                <form method="post" action="{% url 'surveys:survey_create' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="template_id" value="{{ template.pk }}">
+                                    <button type="submit" class="btn-animated inline-flex items-center px-4 py-2 border border-blue-200 text-sm font-medium rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                                        <i class="fas fa-copy mr-1.5"></i> Use Template
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

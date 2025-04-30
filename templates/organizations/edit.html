@@ -1,0 +1,155 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Edit Organization - MindTrack{% endblock %}
+
+{% block breadcrumbs %}
+<span class="mx-2">/</span>
+<a href="{% url 'organizations' %}" class="text-indigo-600 hover:text-indigo-900">Organizations</a>
+<span class="mx-2">/</span>
+<a href="{% url 'organization_detail' id=organization.id|default:1 %}" class="text-indigo-600 hover:text-indigo-900">{{ organization.name|default:"Organization" }}</a>
+<span class="mx-2">/</span>
+<span class="text-gray-900">Edit</span>
+{% endblock %}
+
+{% block admin_content %}
+<div class="mb-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-semibold text-gray-900">Edit Organization</h1>
+    </div>
+</div>
+
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">Organization Information</h3>
+        <p class="mt-1 text-sm text-gray-500">Update the organization details.</p>
+    </div>
+    <div class="px-4 py-5 sm:p-6">
+        <form action="{% url 'organization_edit' id=organization.id|default:1 %}" method="POST" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                <div class="sm:col-span-4">
+                    <label for="name" class="block text-sm font-medium text-gray-700">Organization Name *</label>
+                    <div class="mt-1">
+                        <input type="text" name="name" id="name" required value="{{ organization.name|default:'Acme Healthcare' }}" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                </div>
+
+                <div class="sm:col-span-6">
+                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <div class="mt-1">
+                        <textarea id="description" name="description" rows="3" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">{{ organization.description|default:'A leading healthcare provider specializing in mental health services.' }}</textarea>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">Brief description of the organization.</p>
+                </div>
+
+                <div class="sm:col-span-4">
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email Address *</label>
+                    <div class="mt-1">
+                        <input id="email" name="email" type="email" required value="{{ organization.email|default:'contact@acmehealthcare.com' }}" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                </div>
+
+                <div class="sm:col-span-3">
+                    <label for="phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                    <div class="mt-1">
+                        <input type="text" name="phone" id="phone" value="{{ organization.phone|default:'(555) 123-4567' }}" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                </div>
+
+                <div class="sm:col-span-4">
+                    <label for="website" class="block text-sm font-medium text-gray-700">Website</label>
+                    <div class="mt-1">
+                        <input type="url" name="website" id="website" value="{{ organization.website|default:'https://acmehealthcare.com' }}" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="https://example.com">
+                    </div>
+                </div>
+
+                <div class="sm:col-span-6">
+                    <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+                    <div class="mt-1">
+                        <input type="text" name="address" id="address" value="{{ organization.address|default:'123 Main St, Suite 200' }}" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="city" class="block text-sm font-medium text-gray-700">City</label>
+                    <div class="mt-1">
+                        <input type="text" name="city" id="city" value="{{ organization.city|default:'Anytown' }}" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="state" class="block text-sm font-medium text-gray-700">State / Province</label>
+                    <div class="mt-1">
+                        <input type="text" name="state" id="state" value="{{ organization.state|default:'CA' }}" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="zip" class="block text-sm font-medium text-gray-700">ZIP / Postal Code</label>
+                    <div class="mt-1">
+                        <input type="text" name="zip" id="zip" value="{{ organization.zip|default:'12345' }}" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                </div>
+
+                <div class="sm:col-span-3">
+                    <label for="country" class="block text-sm font-medium text-gray-700">Country</label>
+                    <div class="mt-1">
+                        <select id="country" name="country" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            <option value="US" {% if organization.country == 'US' or not organization.country %}selected{% endif %}>United States</option>
+                            <option value="CA" {% if organization.country == 'CA' %}selected{% endif %}>Canada</option>
+                            <option value="UK" {% if organization.country == 'UK' %}selected{% endif %}>United Kingdom</option>
+                            <option value="AU" {% if organization.country == 'AU' %}selected{% endif %}>Australia</option>
+                            <option value="DE" {% if organization.country == 'DE' %}selected{% endif %}>Germany</option>
+                            <option value="FR" {% if organization.country == 'FR' %}selected{% endif %}>France</option>
+                            <option value="JP" {% if organization.country == 'JP' %}selected{% endif %}>Japan</option>
+                            <option value="CN" {% if organization.country == 'CN' %}selected{% endif %}>China</option>
+                            <option value="IN" {% if organization.country == 'IN' %}selected{% endif %}>India</option>
+                            <option value="BR" {% if organization.country == 'BR' %}selected{% endif %}>Brazil</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="sm:col-span-6">
+                    <label for="logo" class="block text-sm font-medium text-gray-700">Logo</label>
+                    <div class="mt-1 flex items-center">
+                        <span class="h-12 w-12 rounded-full overflow-hidden bg-gray-100">
+                            {% if organization.logo_url %}
+                                <img src="{{ organization.logo_url }}" alt="{{ organization.name }}" class="h-12 w-12 object-cover">
+                            {% else %}
+                                <svg class="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                            {% endif %}
+                        </span>
+                        <button type="button" class="ml-5 bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Change
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sm:col-span-6">
+                    <div class="relative flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="is_active" name="is_active" type="checkbox" {% if organization.is_active|default:True %}checked{% endif %} class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="is_active" class="font-medium text-gray-700">Active</label>
+                            <p class="text-gray-500">Set the organization as active.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-5 border-t border-gray-200 flex justify-end">
+                <a href="{% url 'organization_detail' id=organization.id|default:1 %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mr-3">
+                    Cancel
+                </a>
+                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,437 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Portal{% endblock %} | MindTrack</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            950: '#082f49',
+                        },
+                        secondary: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                            950: '#042f2e',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Manrope', 'sans-serif'],
+                    },
+                    animation: {
+                        'spin-slow': 'spin 3s linear infinite',
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-in-right': 'slideInRight 0.5s ease-in-out',
+                        'slide-in-up': 'slideInUp 0.5s ease-in-out',
+                        'pulse-once': 'pulse 1s ease-in-out 1',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideInRight: {
+                            '0%': { transform: 'translateX(-10px)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' },
+                        },
+                        slideInUp: {
+                            '0%': { transform: 'translateY(10px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Custom CSS -->
+    <style>
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .slide-in-right {
+            animation: slideInRight 0.3s ease-in-out;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(-10px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .slide-in-up {
+            animation: slideInUp 0.3s ease-in-out;
+        }
+
+        @keyframes slideInUp {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Transitions */
+        .transition-all {
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Enhanced Cards */
+        .enhanced-card {
+            transition: all 0.2s ease-in-out;
+            border: 1px solid rgba(229, 231, 235, 1);
+        }
+
+        .enhanced-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-color: rgba(209, 213, 219, 1);
+        }
+
+        /* Enhanced Inputs */
+        .enhanced-input, .enhanced-select {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .enhanced-input:focus, .enhanced-select:focus {
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+        }
+
+        .animate-focus {
+            animation: focusPulse 1s ease-in-out;
+        }
+
+        @keyframes focusPulse {
+            0% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4); }
+            70% { box-shadow: 0 0 0 4px rgba(14, 165, 233, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+        }
+
+        /* Button animations */
+        .btn-animated {
+            transition: all 0.2s ease-in-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-animated:after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+
+        .btn-animated:hover {
+            transform: scale(1.02);
+        }
+
+        .btn-animated:focus:not(:active)::after {
+            animation: ripple 0.6s ease-out;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(20, 20);
+                opacity: 0;
+            }
+        }
+
+        /* Dark mode transitions */
+        .dark-transition {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* Dark mode styles */
+        .dark body {
+            background-color: #111827;
+            color: #f3f4f6;
+        }
+
+        .dark .bg-white {
+            background-color: #1f2937;
+        }
+
+        .dark .bg-gray-50 {
+            background-color: #111827;
+        }
+
+        .dark .text-gray-900 {
+            color: #f3f4f6;
+        }
+
+        .dark .text-gray-800 {
+            color: #e5e7eb;
+        }
+
+        .dark .text-gray-700 {
+            color: #d1d5db;
+        }
+
+        .dark .text-gray-600 {
+            color: #9ca3af;
+        }
+
+        .dark .text-gray-500 {
+            color: #6b7280;
+        }
+
+        .dark .border-gray-200 {
+            border-color: #374151;
+        }
+
+        .dark .border-gray-300 {
+            border-color: #4b5563;
+        }
+
+        .dark .shadow {
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .dark .enhanced-input, .dark .enhanced-select {
+            background-color: #111827;
+            color: #e5e7eb;
+            border-color: #4b5563;
+        }
+
+        .dark .enhanced-input:focus, .dark .enhanced-select:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Splash screen */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .dark #splash-screen {
+            background-color: #111827;
+        }
+
+        .splash-content {
+            text-align: center;
+        }
+
+        .splash-logo {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 20px;
+            animation: pulse 2s infinite;
+        }
+
+        .splash-text {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            opacity: 0;
+            animation: fadeIn 0.5s ease-in-out forwards 0.5s;
+        }
+
+        .splash-spinner {
+            margin-top: 20px;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(14, 165, 233, 0.2);
+            border-radius: 50%;
+            border-top-color: #0ea5e9;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gray-50 dark-transition">
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <div class="splash-content">
+            <div class="splash-logo">
+                <i class="fas fa-brain text-primary-600 text-6xl"></i>
+            </div>
+            <div class="splash-text text-gray-900 dark:text-white">MindTrack Admin</div>
+            <div class="splash-spinner mx-auto"></div>
+        </div>
+    </div>
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        {% include 'admin_portal/sidebar.html' %}
+
+        <!-- Main Content -->
+        <div class="flex flex-col flex-1 overflow-hidden">
+            <!-- Navbar -->
+            {% include 'admin_portal/navbar.html' %}
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-y-auto p-4 md:p-6">
+                <!-- Page Header -->
+                <div class="mb-6">
+                    <h1 class="text-2xl font-semibold text-gray-800">
+                        {% block page_title %}Dashboard Overview{% endblock %}
+                    </h1>
+                    <nav class="flex mt-1" aria-label="Breadcrumb">
+                        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                            <li class="inline-flex items-center">
+                                <a href="{% url 'dashboard:admin_dashboard' %}" class="text-sm text-gray-500 hover:text-gray-700">
+                                    <i class="fas fa-home mr-1"></i> Home
+                                </a>
+                            </li>
+                            {% block breadcrumbs %}
+                            <li aria-current="page">
+                                <div class="flex items-center">
+                                    <i class="fas fa-chevron-right text-gray-400 text-xs mx-1"></i>
+                                    <span class="text-sm text-gray-500">Dashboard</span>
+                                </div>
+                            </li>
+                            {% endblock %}
+                        </ol>
+                    </nav>
+                </div>
+
+                <!-- Loading indicator for HTMX -->
+                <div id="loading-indicator" class="htmx-indicator fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white bg-opacity-75 p-4 rounded-lg shadow-lg z-50">
+                    <div class="flex flex-col items-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mb-3"></div>
+                        <p class="text-gray-700 font-medium">Loading...</p>
+                    </div>
+                </div>
+
+                <!-- Page Content -->
+                <div id="admin-content" class="fade-in" hx-target="this" hx-indicator="#loading-indicator">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script>
+        // Hide splash screen after page loads
+        window.addEventListener('load', function() {
+            const splashScreen = document.getElementById('splash-screen');
+            if (splashScreen) {
+                setTimeout(function() {
+                    splashScreen.style.opacity = '0';
+                    setTimeout(function() {
+                        splashScreen.style.display = 'none';
+                    }, 500);
+                }, 1000);
+            }
+        });
+
+        document.addEventListener('htmx:afterSwap', function(event) {
+            // Add fade-in animation to swapped content
+            if (event.detail.target) {
+                event.detail.target.classList.add('fade-in');
+            }
+        });
+
+        // Form input animations
+        document.querySelectorAll('.enhanced-input, .enhanced-select').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.classList.add('animate-focus');
+            });
+
+            input.addEventListener('blur', function() {
+                this.classList.remove('animate-focus');
+            });
+        });
+
+        // Add animation to all buttons
+        document.querySelectorAll('button, .btn-animated').forEach(button => {
+            button.addEventListener('mouseenter', function() {
+                this.classList.add('animate-pulse-once');
+            });
+
+            button.addEventListener('animationend', function() {
+                this.classList.remove('animate-pulse-once');
+            });
+        });
+    </script>
+
+    <!-- Dashboard Charts -->
+    <script src="{% static 'js/dashboard-charts.js' %}"></script>
+
+    <!-- Search Functionality -->
+    <script src="{% static 'js/search.js' %}"></script>
+
+    <!-- Notifications Functionality -->
+    <script src="{% static 'js/notifications.js' %}"></script>
+
+    <!-- Theme Switcher -->
+    <script src="{% static 'js/theme-switcher.js' %}"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

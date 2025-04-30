@@ -1,0 +1,107 @@
+{% extends "users/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Edit Profile{% endblock %}
+
+{% block client_content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">Edit Profile</h2>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Basic Information</h5>
+                </div>
+                <div class="card-body">
+                    {{ user_form|crispy }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Personal Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ profile_form.bio|as_crispy_field }}
+                            {{ profile_form.date_of_birth|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ profile_form.address_line1|as_crispy_field }}
+                            {{ profile_form.address_line2|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            {{ profile_form.city|as_crispy_field }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ profile_form.state|as_crispy_field }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ profile_form.postal_code|as_crispy_field }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ profile_form.country|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Emergency Contact</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            {{ profile_form.emergency_contact_name|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ profile_form.emergency_contact_phone|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ profile_form.emergency_contact_relationship|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Health Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            {{ profile_form.health_conditions|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ profile_form.medications|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ profile_form.allergies|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-end mb-4">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{% url 'client_profile' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

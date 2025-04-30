@@ -1,0 +1,164 @@
+{% extends 'reports/base.html' %}
+{% load static %}
+
+{% block reports_content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold">Create New Dashboard</h1>
+    <p class="text-gray-600 mt-1">Create a custom dashboard to visualize your data</p>
+</div>
+
+<form method="post" class="space-y-6">
+    {% csrf_token %}
+    
+    <!-- Basic Information -->
+    <div class="bg-gray-50 p-4 rounded-lg">
+        <h2 class="text-lg font-semibold mb-4">Basic Information</h2>
+        <div class="grid grid-cols-1 gap-4">
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Dashboard Name *</label>
+                <input type="text" name="name" id="name" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+            </div>
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea name="description" id="description" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"></textarea>
+            </div>
+            <div>
+                <label for="icon" class="block text-sm font-medium text-gray-700 mb-1">Icon</label>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <select name="icon" id="icon" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                            <option value="dashboard">Dashboard</option>
+                            <option value="chart-bar">Bar Chart</option>
+                            <option value="chart-line">Line Chart</option>
+                            <option value="chart-pie">Pie Chart</option>
+                            <option value="chart-area">Area Chart</option>
+                            <option value="analytics">Analytics</option>
+                            <option value="brain">Mental Health</option>
+                            <option value="users">Users</option>
+                            <option value="building">Organization</option>
+                            <option value="clipboard-list">Questionnaire</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="bg-blue-100 text-blue-600 p-3 rounded-lg mr-3">
+                            <i id="icon-preview" class="fas fa-dashboard text-xl"></i>
+                        </div>
+                        <span class="text-sm text-gray-500">Icon Preview</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Layout Settings -->
+    <div class="bg-gray-50 p-4 rounded-lg">
+        <h2 class="text-lg font-semibold mb-4">Layout Settings</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="layout_type" class="block text-sm font-medium text-gray-700 mb-1">Layout Type</label>
+                <select name="layout_type" id="layout_type" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                    {% for type_code, type_name in layout_types %}
+                    <option value="{{ type_code }}">{{ type_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="refresh_interval" class="block text-sm font-medium text-gray-700 mb-1">Auto-refresh Interval</label>
+                <select name="refresh_interval" id="refresh_interval" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                    {% for interval_value, interval_name in refresh_intervals %}
+                    <option value="{{ interval_value }}">{{ interval_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Global Filters -->
+    <div class="bg-gray-50 p-4 rounded-lg" x-data="{ showEditor: false }">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold">Global Filters</h2>
+            <button type="button" @click="showEditor = !showEditor" class="text-blue-600 hover:text-blue-800">
+                <span x-text="showEditor ? 'Hide Editor' : 'Show Editor'"></span>
+            </button>
+        </div>
+        <div x-show="showEditor">
+            <p class="text-sm text-gray-600 mb-2">Define global filters in JSON format</p>
+            <textarea name="global_filters" id="global_filters" rows="5" class="w-full font-mono text-sm rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">{
+  "date_range": {
+    "start": null,
+    "end": null
+  },
+  "questionnaire": null,
+  "organization": null
+}</textarea>
+            <div class="mt-2">
+                <div class="flex items-center">
+                    <input type="checkbox" name="allow_filter_override" id="allow_filter_override" checked class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                    <label for="allow_filter_override" class="ml-2 block text-sm text-gray-700">Allow users to override global filters</label>
+                </div>
+            </div>
+        </div>
+        <div x-show="!showEditor" class="text-sm text-gray-600">
+            Using default filter settings
+        </div>
+    </div>
+    
+    <!-- Visibility -->
+    <div class="bg-gray-50 p-4 rounded-lg">
+        <h2 class="text-lg font-semibold mb-4">Visibility</h2>
+        <div class="flex items-center">
+            <input type="checkbox" name="is_public" id="is_public" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+            <label for="is_public" class="ml-2 block text-sm text-gray-700">Make this dashboard public</label>
+        </div>
+        <p class="text-sm text-gray-500 mt-1">Public dashboards can be viewed by anyone with the link</p>
+    </div>
+    
+    <!-- Submit Buttons -->
+    <div class="flex justify-end space-x-3">
+        <a href="{% url 'dashboard_list' %}" class="bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-md hover:bg-gray-50 transition duration-300">
+            Cancel
+        </a>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300">
+            Create Dashboard
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block reports_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        // Alpine.js initialization if needed
+    });
+    
+    // Update icon preview when icon selection changes
+    document.addEventListener('DOMContentLoaded', function() {
+        const iconSelect = document.getElementById('icon');
+        const iconPreview = document.getElementById('icon-preview');
+        
+        if (iconSelect && iconPreview) {
+            iconSelect.addEventListener('change', function() {
+                iconPreview.className = `fas fa-${this.value} text-xl`;
+            });
+        }
+        
+        // Handle JSON editor
+        const globalFiltersEditor = document.getElementById('global_filters');
+        if (globalFiltersEditor) {
+            globalFiltersEditor.addEventListener('blur', function() {
+                try {
+                    // Format JSON when user leaves the field
+                    const value = globalFiltersEditor.value.trim();
+                    if (value) {
+                        const formatted = JSON.stringify(JSON.parse(value), null, 2);
+                        globalFiltersEditor.value = formatted;
+                    }
+                } catch (e) {
+                    console.error('Invalid JSON:', e);
+                    // Optionally show an error message
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

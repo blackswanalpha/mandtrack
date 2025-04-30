@@ -1,0 +1,439 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{{ survey.title }} Analytics - MindTrack{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% url 'surveys:survey_detail' pk=survey.pk %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">{{ survey.title }} Analytics</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                Detailed analytics for this survey
+            </p>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-gray-50 rounded-lg p-4 mb-8">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Filters</h2>
+            <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4" hx-get="{% url 'analytics:survey_dashboard' survey_pk=survey.pk %}" hx-target="#dashboard-content" hx-swap="innerHTML" hx-trigger="change delay:500ms from:#date-range">
+                <div>
+                    <label for="date-range" class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                    <select id="date-range" name="date_range" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                        <option value="7" {% if date_range == '7' %}selected{% endif %}>Last 7 days</option>
+                        <option value="30" {% if date_range == '30' %}selected{% endif %}>Last 30 days</option>
+                        <option value="90" {% if date_range == '90' %}selected{% endif %}>Last 90 days</option>
+                        <option value="365" {% if date_range == '365' %}selected{% endif %}>Last year</option>
+                        <option value="all" {% if date_range == 'all' %}selected{% endif %}>All time</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <i class="fas fa-filter mr-2"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'analytics:survey_dashboard' survey_pk=survey.pk %}" class="ml-2 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <i class="fas fa-times mr-2"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboard-content">
+            <!-- Summary Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <h3 class="text-sm font-medium text-gray-500">Total Responses</h3>
+                    <p class="mt-1 text-3xl font-semibold text-gray-900">{{ total_responses }}</p>
+                    <p class="mt-1 text-sm text-gray-500">
+                        {% if response_change > 0 %}
+                            <span class="text-green-600"><i class="fas fa-arrow-up mr-1"></i> {{ response_change }}%</span> from previous period
+                        {% elif response_change < 0 %}
+                            <span class="text-red-600"><i class="fas fa-arrow-down mr-1"></i> {{ response_change|abs }}%</span> from previous period
+                        {% else %}
+                            No change from previous period
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <h3 class="text-sm font-medium text-gray-500">Completion Rate</h3>
+                    <p class="mt-1 text-3xl font-semibold text-primary-600">{{ completion_rate }}%</p>
+                    <div class="mt-1 w-full bg-gray-200 rounded-full h-2.5">
+                        <div class="bg-primary-600 h-2.5 rounded-full" style="width: {{ completion_rate }}%"></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <h3 class="text-sm font-medium text-gray-500">Average Score</h3>
+                    <p class="mt-1 text-3xl font-semibold text-gray-900">{{ average_score|floatformat:1 }}</p>
+                    <p class="mt-1 text-sm text-gray-500">
+                        {% if score_change > 0 %}
+                            <span class="text-green-600"><i class="fas fa-arrow-up mr-1"></i> {{ score_change|floatformat:1 }}</span> from previous period
+                        {% elif score_change < 0 %}
+                            <span class="text-red-600"><i class="fas fa-arrow-down mr-1"></i> {{ score_change|abs|floatformat:1 }}</span> from previous period
+                        {% else %}
+                            No change from previous period
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <h3 class="text-sm font-medium text-gray-500">High Risk Responses</h3>
+                    <p class="mt-1 text-3xl font-semibold text-red-600">{{ high_risk_count }}</p>
+                    <p class="mt-1 text-sm text-gray-500">{{ high_risk_percentage }}% of total responses</p>
+                </div>
+            </div>
+            
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <!-- Response Trend Chart -->
+                <div class="bg-white rounded-lg shadow p-4">
+                    <h3 class="text-base font-medium text-gray-900 mb-4">Response Trend</h3>
+                    <div class="h-64">
+                        <canvas id="responseTrendChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Risk Level Distribution Chart -->
+                <div class="bg-white rounded-lg shadow p-4">
+                    <h3 class="text-base font-medium text-gray-900 mb-4">Risk Level Distribution</h3>
+                    <div class="h-64">
+                        <canvas id="riskDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Question Analysis -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+                <div class="px-4 py-5 sm:px-6">
+                    <h2 class="text-lg font-medium text-gray-900">Question Analysis</h2>
+                    <p class="mt-1 text-sm text-gray-500">Breakdown of responses by question.</p>
+                </div>
+                <div class="border-t border-gray-200">
+                    <div class="divide-y divide-gray-200">
+                        {% for question in questions %}
+                            <div class="px-4 py-5 sm:px-6">
+                                <div class="mb-4">
+                                    <h3 class="text-base font-medium text-gray-900">
+                                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary-100 text-primary-600 text-sm mr-2">{{ question.order }}</span>
+                                        {{ question.text }}
+                                    </h3>
+                                    {% if question.description %}
+                                        <p class="mt-1 ml-8 text-sm text-gray-500">{{ question.description }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if question.question_type in 'radio,checkbox,dropdown' %}
+                                    <div class="ml-8">
+                                        <div class="h-64 mb-4">
+                                            <canvas id="questionChart{{ question.id }}"></canvas>
+                                        </div>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {% for choice in question.choices.all %}
+                                                <div class="bg-gray-50 rounded-lg p-3">
+                                                    <div class="flex justify-between items-center mb-1">
+                                                        <span class="text-sm font-medium text-gray-900">{{ choice.text }}</span>
+                                                        <span class="text-sm font-medium text-gray-900">{{ choice_counts|get_item:choice.id|default:0 }} responses</span>
+                                                    </div>
+                                                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                                        <div class="bg-primary-600 h-2.5 rounded-full" style="width: {{ choice_percentages|get_item:choice.id|default:0 }}%"></div>
+                                                    </div>
+                                                    <div class="flex justify-between items-center mt-1">
+                                                        <span class="text-xs text-gray-500">Score: {{ choice.score }}</span>
+                                                        <span class="text-xs text-gray-500">{{ choice_percentages|get_item:choice.id|default:0|floatformat:1 }}%</span>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% elif question.question_type == 'scale' %}
+                                    <div class="ml-8">
+                                        <div class="h-64 mb-4">
+                                            <canvas id="questionChart{{ question.id }}"></canvas>
+                                        </div>
+                                        <div class="grid grid-cols-1 md:grid-cols-11 gap-2">
+                                            {% for i in "0123456789X" %}
+                                                {% with value=forloop.counter0 %}
+                                                    <div class="bg-gray-50 rounded-lg p-2 text-center">
+                                                        <div class="text-sm font-medium text-gray-900">{{ value }}</div>
+                                                        <div class="text-xs text-gray-500">{{ scale_counts|get_item:question.id|get_item:value|default:0 }} responses</div>
+                                                    </div>
+                                                {% endwith %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% elif question.question_type == 'text' or question.question_type == 'textarea' %}
+                                    <div class="ml-8">
+                                        <p class="text-sm text-gray-500 mb-2">Text responses are not visualized. View individual responses for details.</p>
+                                        <a href="{% url 'feedback:survey_response_list' survey_pk=survey.pk %}" class="text-sm text-primary-600 hover:text-primary-900">
+                                            View all responses <i class="fas fa-arrow-right ml-1"></i>
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <div class="px-4 py-5 sm:px-6 text-center">
+                                <p class="text-gray-500">No questions found for this survey.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Responses Table -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+                <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-medium text-gray-900">Recent Responses</h2>
+                        <p class="mt-1 text-sm text-gray-500">The latest responses to this survey.</p>
+                    </div>
+                    <a href="{% url 'feedback:survey_response_list' survey_pk=survey.pk %}" class="text-sm text-primary-600 hover:text-primary-900">
+                        View all <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+                <div class="border-t border-gray-200">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Respondent</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk Level</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for response in recent_responses %}
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            {% if response.respondent_name %}
+                                                {{ response.respondent_name }}
+                                            {% elif response.respondent %}
+                                                {{ response.respondent.get_full_name|default:response.respondent.email }}
+                                            {% elif response.respondent_email %}
+                                                {{ response.respondent_email }}
+                                            {% else %}
+                                                Anonymous
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ response.completed_at|default:response.started_at|date:"M d, Y" }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                {% if response.status == 'completed' %}bg-green-100 text-green-800
+                                                {% elif response.status == 'in_progress' %}bg-yellow-100 text-yellow-800
+                                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                {{ response.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            {% if response.risk_level != 'none' %}
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                    {% if response.risk_level == 'critical' %}bg-red-100 text-red-800
+                                                    {% elif response.risk_level == 'high' %}bg-orange-100 text-orange-800
+                                                    {% elif response.risk_level == 'medium' %}bg-yellow-100 text-yellow-800
+                                                    {% elif response.risk_level == 'low' %}bg-green-100 text-green-800
+                                                    {% endif %}">
+                                                    {{ response.get_risk_level_display }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-gray-500">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {% if response.total_score is not None %}
+                                                {{ response.total_score }}
+                                            {% else %}
+                                                <span class="text-gray-500">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <a href="{% url 'feedback:response_detail' pk=response.pk %}" class="text-primary-600 hover:text-primary-900">
+                                                View Details
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                                            No responses found.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Export Options -->
+            <div class="flex justify-end space-x-4">
+                <a href="{% url 'feedback:export_survey_responses' survey_pk=survey.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-file-csv mr-2"></i> Export CSV
+                </a>
+                <a href="{% url 'analytics:create_report' %}?survey={{ survey.pk }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-file-pdf mr-2"></i> Generate Report
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Response Trend Chart
+        const responseTrendCtx = document.getElementById('responseTrendChart').getContext('2d');
+        const responseTrendChart = new Chart(responseTrendCtx, {
+            type: 'line',
+            data: {
+                labels: {{ response_trend_labels|safe }},
+                datasets: [{
+                    label: 'Responses',
+                    data: {{ response_trend_data|safe }},
+                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    pointBackgroundColor: 'rgba(79, 70, 229, 1)',
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Risk Level Distribution Chart
+        const riskDistributionCtx = document.getElementById('riskDistributionChart').getContext('2d');
+        const riskDistributionChart = new Chart(riskDistributionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Low', 'Medium', 'High', 'Critical', 'None'],
+                datasets: [{
+                    data: {{ risk_distribution_data|safe }},
+                    backgroundColor: [
+                        'rgba(34, 197, 94, 0.7)',
+                        'rgba(234, 179, 8, 0.7)',
+                        'rgba(249, 115, 22, 0.7)',
+                        'rgba(239, 68, 68, 0.7)',
+                        'rgba(156, 163, 175, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(34, 197, 94, 1)',
+                        'rgba(234, 179, 8, 1)',
+                        'rgba(249, 115, 22, 1)',
+                        'rgba(239, 68, 68, 1)',
+                        'rgba(156, 163, 175, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+        
+        // Question Charts
+        {% for question in questions %}
+            {% if question.question_type in 'radio,checkbox,dropdown' %}
+                const questionCtx{{ question.id }} = document.getElementById('questionChart{{ question.id }}');
+                if (questionCtx{{ question.id }}) {
+                    new Chart(questionCtx{{ question.id }}, {
+                        type: 'bar',
+                        data: {
+                            labels: {{ question_labels|get_item:question.id|safe }},
+                            datasets: [{
+                                label: 'Responses',
+                                data: {{ question_data|get_item:question.id|safe }},
+                                backgroundColor: 'rgba(79, 70, 229, 0.7)',
+                                borderColor: 'rgba(79, 70, 229, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        precision: 0
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+                }
+            {% elif question.question_type == 'scale' %}
+                const questionCtx{{ question.id }} = document.getElementById('questionChart{{ question.id }}');
+                if (questionCtx{{ question.id }}) {
+                    new Chart(questionCtx{{ question.id }}, {
+                        type: 'bar',
+                        data: {
+                            labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                            datasets: [{
+                                label: 'Responses',
+                                data: {{ scale_data|get_item:question.id|safe }},
+                                backgroundColor: 'rgba(79, 70, 229, 0.7)',
+                                borderColor: 'rgba(79, 70, 229, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        precision: 0
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+                }
+            {% endif %}
+        {% endfor %}
+    });
+</script>
+{% endblock %}

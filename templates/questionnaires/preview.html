@@ -1,0 +1,272 @@
+{% extends 'questionnaires/base.html' %}
+{% load static %}
+{% load questionnaire_filters %}
+
+{% block questionnaires_content %}
+<!-- Header with animations -->
+<div class="flex justify-between items-center mb-6"
+     x-data="{}"
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 100)"
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+    <div>
+        <a href="{% url 'questionnaire_detail' id=questionnaire.id|default:1 %}" class="text-indigo-600 hover:text-indigo-800 flex items-center mb-2 group">
+            <i class="fas fa-arrow-left mr-2 transform group-hover:-translate-x-1 transition-transform duration-300"></i>
+            <span>Back to Questionnaire</span>
+        </a>
+        <h1 class="text-2xl font-bold text-gray-800">Preview: {{ questionnaire.title|default:"Untitled Questionnaire" }}</h1>
+    </div>
+
+    <div class="flex space-x-2">
+        <a href="{% url 'questionnaire_share' id=questionnaire.id|default:1 %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 hover:shadow-md flex items-center">
+            <i class="fas fa-share-alt mr-2"></i> Share
+        </a>
+    </div>
+</div>
+
+<!-- Device Selector -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6"
+     x-data="{ device: 'desktop' }"
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 200)"
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+
+    <div class="flex justify-between items-center">
+        <h2 class="text-lg font-medium text-gray-800">Device Preview</h2>
+
+        <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+            <button @click="device = 'desktop'" :class="{'bg-white shadow text-indigo-600': device === 'desktop', 'text-gray-500 hover:text-gray-700': device !== 'desktop'}" class="px-3 py-1 rounded-md transition-all duration-200 flex items-center">
+                <i class="fas fa-desktop mr-2"></i> Desktop
+            </button>
+            <button @click="device = 'tablet'" :class="{'bg-white shadow text-indigo-600': device === 'tablet', 'text-gray-500 hover:text-gray-700': device !== 'tablet'}" class="px-3 py-1 rounded-md transition-all duration-200 flex items-center">
+                <i class="fas fa-tablet-alt mr-2"></i> Tablet
+            </button>
+            <button @click="device = 'mobile'" :class="{'bg-white shadow text-indigo-600': device === 'mobile', 'text-gray-500 hover:text-gray-700': device !== 'mobile'}" class="px-3 py-1 rounded-md transition-all duration-200 flex items-center">
+                <i class="fas fa-mobile-alt mr-2"></i> Mobile
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Container -->
+<div x-data="{ device: 'desktop', currentStep: 1, totalSteps: 3 }"
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 300)"
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+
+    <!-- Device Frame -->
+    <div class="flex justify-center mb-6">
+        <div :class="{
+            'w-full max-w-5xl': device === 'desktop',
+            'w-full max-w-2xl': device === 'tablet',
+            'w-full max-w-sm': device === 'mobile'
+        }" class="transition-all duration-500 ease-in-out">
+
+            <!-- Device Border -->
+            <div :class="{
+                'rounded-lg border-8 border-gray-800 shadow-xl': device === 'desktop',
+                'rounded-xl border-12 border-gray-800 shadow-xl': device === 'tablet',
+                'rounded-3xl border-8 border-gray-800 shadow-xl': device === 'mobile'
+            }" class="bg-white transition-all duration-500 ease-in-out overflow-hidden">
+
+                <!-- Device Status Bar -->
+                <div :class="{
+                    'bg-gray-800 text-white px-4 py-2 flex justify-between items-center': device === 'desktop',
+                    'bg-gray-800 text-white px-4 py-1 flex justify-between items-center': device === 'tablet' || device === 'mobile'
+                }" class="transition-all duration-500 ease-in-out">
+                    <div class="text-sm">{{ questionnaire.title|default:"Untitled Questionnaire" }}</div>
+                    <div class="text-sm">
+                        <i class="fas fa-wifi mr-2"></i>
+                        <i class="fas fa-battery-full"></i>
+                    </div>
+                </div>
+
+                <!-- Questionnaire Content -->
+                <div class="p-6 bg-gray-50 min-h-[500px]">
+                    <!-- Progress Bar -->
+                    <div class="mb-6">
+                        <div class="flex justify-between text-sm text-gray-500 mb-1">
+                            <div>Question <span x-text="currentStep"></span> of <span x-text="totalSteps"></span></div>
+                            <div><span x-text="Math.round((currentStep / totalSteps) * 100)"></span>% Complete</div>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500 ease-out" :style="`width: ${(currentStep / totalSteps) * 100}%`"></div>
+                        </div>
+                    </div>
+
+                    <!-- Question 1 -->
+                    <div x-show="currentStep === 1"
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 transform translate-y-4"
+                         x-transition:enter-end="opacity-100 transform translate-y-0"
+                         class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">How would you rate your overall experience?</h3>
+                        <p class="text-gray-600 mb-6">Please select an option that best describes your experience.</p>
+
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <input id="rating-5" name="rating" type="radio" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                                <label for="rating-5" class="ml-3 block text-gray-700">Excellent</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="rating-4" name="rating" type="radio" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                                <label for="rating-4" class="ml-3 block text-gray-700">Good</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="rating-3" name="rating" type="radio" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                                <label for="rating-3" class="ml-3 block text-gray-700">Average</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="rating-2" name="rating" type="radio" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                                <label for="rating-2" class="ml-3 block text-gray-700">Poor</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="rating-1" name="rating" type="radio" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                                <label for="rating-1" class="ml-3 block text-gray-700">Very Poor</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div x-show="currentStep === 2"
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 transform translate-y-4"
+                         x-transition:enter-end="opacity-100 transform translate-y-0"
+                         class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">What aspects of our service could be improved?</h3>
+                        <p class="text-gray-600 mb-6">Please provide your feedback in the text area below.</p>
+
+                        <div>
+                            <textarea rows="4" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50" placeholder="Type your answer here..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div x-show="currentStep === 3"
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 transform translate-y-4"
+                         x-transition:enter-end="opacity-100 transform translate-y-0"
+                         class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Would you recommend our service to others?</h3>
+                        <p class="text-gray-600 mb-6">Please select one of the options below.</p>
+
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <input id="recommend-yes" name="recommend" type="radio" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                                <label for="recommend-yes" class="ml-3 block text-gray-700">Yes, definitely</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="recommend-maybe" name="recommend" type="radio" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                                <label for="recommend-maybe" class="ml-3 block text-gray-700">Maybe</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="recommend-no" name="recommend" type="radio" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                                <label for="recommend-no" class="ml-3 block text-gray-700">No</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Buttons -->
+                    <div class="flex justify-between">
+                        <button @click="currentStep = Math.max(1, currentStep - 1)" x-show="currentStep > 1" class="bg-white border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-50 transition-all duration-200 flex items-center">
+                            <i class="fas fa-chevron-left mr-2"></i> Previous
+                        </button>
+                        <div x-show="currentStep === 1"></div>
+
+                        <button @click="currentStep = Math.min(totalSteps, currentStep + 1)" x-show="currentStep < totalSteps" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200 flex items-center">
+                            Next <i class="fas fa-chevron-right ml-2"></i>
+                        </button>
+
+                        <button x-show="currentStep === totalSteps" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200 flex items-center">
+                            Submit <i class="fas fa-check ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Annotation Tools -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6"
+     x-data="{ showAnnotations: false }"
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 400)"
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-medium text-gray-800">Preview Tools</h2>
+
+        <div class="flex space-x-2">
+            <button @click="showAnnotations = !showAnnotations" :class="{'bg-indigo-600 text-white': showAnnotations, 'bg-white border border-gray-300 text-gray-700': !showAnnotations}" class="font-medium py-2 px-4 rounded-md transition-all duration-200 flex items-center">
+                <i class="fas fa-comment-alt mr-2"></i>
+                <span x-text="showAnnotations ? 'Hide Annotations' : 'Show Annotations'"></span>
+            </button>
+
+            <a href="{% url 'questionnaire_edit' id=questionnaire.id|default:1 %}" class="bg-white border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-50 transition-all duration-200 flex items-center">
+                <i class="fas fa-edit mr-2"></i> Edit Questionnaire
+            </a>
+        </div>
+    </div>
+
+    <div x-show="showAnnotations"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform -translate-y-4"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         class="space-y-4">
+
+        <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-lightbulb text-yellow-400 text-lg"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-yellow-800">Design Note</h3>
+                    <div class="mt-2 text-sm text-yellow-700">
+                        <p>The progress bar provides clear feedback to users about their position in the questionnaire. Consider adding a time estimate for completion.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-info-circle text-blue-400 text-lg"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-blue-800">Usability Note</h3>
+                    <div class="mt-2 text-sm text-blue-700">
+                        <p>The radio button options are well-spaced for easy selection on mobile devices. The text is clear and readable across all device sizes.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="flex justify-between"
+     x-data="{}"
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 500)"
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+
+    <a href="{% url 'questionnaire_detail' id=questionnaire.id|default:1 %}" class="bg-white border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-50 transition-all duration-200 flex items-center">
+        <i class="fas fa-arrow-left mr-2"></i> Back to Details
+    </a>
+
+    <div class="flex space-x-3">
+        <a href="{% url 'questionnaire_share' id=questionnaire.id|default:1 %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 hover:shadow-md flex items-center">
+            <i class="fas fa-share-alt mr-2"></i> Share
+        </a>
+
+        <a href="{% url 'questionnaire_edit' id=questionnaire.id|default:1 %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 hover:shadow-md flex items-center">
+            <i class="fas fa-edit mr-2"></i> Edit
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block questionnaires_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        // Alpine.js initialization if needed
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "accounts/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Admin Profile{% endblock %}
+
+{% block admin_content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">Admin Profile</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Profile Information</h5>
+            </div>
+            <div class="card-body text-center">
+                {% if user.profile_image %}
+                <img src="{{ user.profile_image.url }}" alt="{{ user.get_full_name }}" class="rounded-circle img-fluid mb-3" style="max-width: 150px;">
+                {% else %}
+                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 150px; height: 150px;">
+                    <span class="text-white display-4">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
+                </div>
+                {% endif %}
+                <h4>{{ user.get_full_name }}</h4>
+                <p class="text-muted">{{ user.email }}</p>
+                <p><span class="badge bg-primary">{{ user.get_role_display }}</span></p>
+                <div class="mt-3">
+                    <a href="{% url 'admin_change_password' %}" class="btn btn-outline-primary">Change Password</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Edit Profile</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="mb-3">User Information</h6>
+                            {{ user_form|crispy }}
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Admin Information</h6>
+                            {{ profile_form|crispy }}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

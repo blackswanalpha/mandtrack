@@ -1,0 +1,793 @@
+# MindTrack Application - Pages Documentation
+
+This document provides a comprehensive overview of all pages in the MindTrack application, including their features, functions, and components used.
+
+## Table of Contents
+
+1. [Landing Pages](#landing-pages)
+2. [Authentication Pages](#authentication-pages)
+3. [Dashboard Pages](#dashboard-pages)
+4. [Questionnaire Management Pages](#questionnaire-management-pages)
+5. [Question Management Pages](#question-management-pages)
+6. [Response Management Pages](#response-management-pages)
+7. [Organization Management Pages](#organization-management-pages)
+8. [User Management Pages](#user-management-pages)
+9. [QR Code Management Pages](#qr-code-management-pages)
+10. [Analysis and Reporting Pages](#analysis-and-reporting-pages)
+11. [Client Pages](#client-pages)
+12. [Settings Pages](#settings-pages)
+13. [Test Pages](#test-pages)
+
+---
+
+## Landing Pages
+
+### Home Page (`/`)
+**Features & Functions:**
+- Introduction to MindTrack application
+- Call-to-action buttons for sign-up and login
+- Overview of key features and benefits
+- Testimonials and social proof
+- FAQ section
+
+**Components Used:**
+- HeroSection
+- FeatureGrid
+- TestimonialCarousel
+- CTAButton
+- FAQAccordion
+- Footer
+- NavigationMenu
+
+---
+
+## Authentication Pages
+
+### Login Page (`/login`)
+**Features & Functions:**
+- User authentication with email and password
+- Social login options
+- "Remember me" functionality
+- Forgot password link
+- Redirect to dashboard after successful login
+
+**Components Used:**
+- LoginForm
+- SocialLoginButtons
+- FormInput
+- PasswordInput
+- Checkbox
+- Button
+- Card
+- Alert
+
+### Register Page (`/register`)
+**Features & Functions:**
+- User registration with email, password, and profile information
+- Terms and conditions acceptance
+- Email verification
+- Organization selection or creation
+- Redirect to dashboard after successful registration
+
+**Components Used:**
+- RegisterForm
+- FormInput
+- PasswordInput
+- Checkbox
+- Button
+- Card
+- Alert
+- OrganizationSelector
+
+### Forgot Password Page (`/forgot-password`)
+**Features & Functions:**
+- Request password reset via email
+- Email validation
+- Success/error messaging
+- Return to login option
+
+**Components Used:**
+- ForgotPasswordForm
+- FormInput
+- Button
+- Card
+- Alert
+
+### Reset Password Page (`/reset-password`)
+**Features & Functions:**
+- Password reset with token validation
+- Password strength requirements
+- Password confirmation
+- Success/error messaging
+- Redirect to login after successful reset
+
+**Components Used:**
+- ResetPasswordForm
+- PasswordInput
+- PasswordStrengthIndicator
+- Button
+- Card
+- Alert
+
+---
+
+## Dashboard Pages
+
+### Admin Dashboard (`/admin/dashboard`)
+**Features & Functions:**
+- Overview of system statistics
+- Recent activity feed
+- Quick access to key functions
+- Performance metrics and charts
+- Notification center
+
+**Components Used:**
+- StatisticsCards
+- ActivityFeed
+- QuickActionButtons
+- MetricsCharts
+- NotificationList
+- AdminLayout
+- Card
+- Tabs
+
+### Client Dashboard (`/client/dashboard`)
+**Features & Functions:**
+- Available questionnaires
+- Completed questionnaires
+- Recent results
+- Upcoming assessments
+- Personal progress metrics
+
+**Components Used:**
+- QuestionnaireList
+- ResultsSummary
+- ProgressCharts
+- ClientLayout
+- Card
+- Tabs
+
+---
+
+## Questionnaire Management Pages
+
+### Questionnaires List Page (`/admin/questionnaires`)
+**Features & Functions:**
+- List of all questionnaires with filtering and sorting
+- Search functionality
+- Quick actions (edit, preview, share, duplicate, archive)
+- Pagination
+- Create new questionnaire button
+
+**Components Used:**
+- QuestionnaireTable
+- SearchInput
+- FilterDropdown
+- SortDropdown
+- Pagination
+- ActionButtons
+- AdminLayout
+- Card
+
+### Create Questionnaire Page (`/admin/questionnaires/create`)
+**Features & Functions:**
+- Multi-step questionnaire creation wizard
+- Basic information input (title, description, instructions)
+- Question type selection and configuration
+- Questionnaire settings (scoring, visibility, access)
+- Preview and publish options
+
+**Components Used:**
+- QuestionnaireForm
+- FormInput
+- FormTextarea
+- StepWizard
+- QuestionTypeSelector
+- SettingsForm
+- PreviewPanel
+- AdminLayout
+- Card
+- Button
+
+### Questionnaire Detail Page (`/admin/questionnaires/[id]`)
+**Features & Functions:**
+- Questionnaire overview and statistics
+- List of questions with ordering capability
+- Response summary
+- Action buttons (edit, preview, share, duplicate, archive)
+- QR code generation
+
+**Components Used:**
+- QuestionnaireSummary
+- QuestionList
+- DragDropQuestionReorder
+- ResponseSummary
+- ActionButtons
+- QRCodeGenerator
+- AdminLayout
+- Card
+- Tabs
+
+### Edit Questionnaire Page (`/admin/questionnaires/[id]/edit`)
+**Features & Functions:**
+- Edit questionnaire basic information
+- Manage questions (add, edit, remove, reorder)
+- Update settings
+- Preview changes
+- Save and publish options
+
+**Components Used:**
+- QuestionnaireForm
+- QuestionManager
+- DragDropQuestionReorder
+- SettingsForm
+- PreviewPanel
+- AdminLayout
+- Card
+- Button
+
+### Questionnaire Analytics Page (`/admin/questionnaires/[id]/analytics`)
+**Features & Functions:**
+- Response rate metrics
+- Completion time statistics
+- Question-level analytics
+- Demographic breakdowns
+- Export data options
+
+**Components Used:**
+- AnalyticsDashboard
+- MetricsCards
+- AnalyticsCharts
+- ResponseBreakdown
+- ExportButton
+- AdminLayout
+- Card
+- Tabs
+
+---
+
+## Question Management Pages
+
+### Questions List Page (`/admin/questionnaires/[id]/questions`)
+**Features & Functions:**
+- List of all questions for a questionnaire
+- Drag and drop reordering
+- Quick edit and delete options
+- Question type indicators
+- Add new question button
+
+**Components Used:**
+- QuestionList
+- DragDropQuestionReorder
+- QuestionTypeIcon
+- ActionButtons
+- AdminLayout
+- Card
+
+### Create Question Page (`/admin/questionnaires/[id]/questions/create`)
+**Features & Functions:**
+- Question type selection
+- Question text input
+- Answer options configuration
+- Required/optional setting
+- Scoring configuration
+- Conditional logic setup
+
+**Components Used:**
+- QuestionForm
+- QuestionTypeSelector
+- FormInput
+- FormTextarea
+- OptionsList
+- ScoringConfig
+- ConditionalLogicBuilder
+- AdminLayout
+- Card
+- Button
+
+### Edit Question Page (`/admin/questionnaires/[id]/questions/[questionId]/edit`)
+**Features & Functions:**
+- Edit question text and type
+- Modify answer options
+- Update required/optional setting
+- Adjust scoring configuration
+- Edit conditional logic
+
+**Components Used:**
+- QuestionForm
+- QuestionTypeSelector
+- FormInput
+- FormTextarea
+- OptionsList
+- ScoringConfig
+- ConditionalLogicBuilder
+- AdminLayout
+- Card
+- Button
+
+---
+
+## Response Management Pages
+
+### Responses List Page (`/admin/responses`)
+**Features & Functions:**
+- List of all responses with filtering and sorting
+- Search functionality
+- Status indicators (completed, scored, flagged)
+- Quick actions (view, score, analyze, email)
+- Pagination
+
+**Components Used:**
+- ResponseTable
+- SearchInput
+- FilterDropdown
+- SortDropdown
+- StatusBadge
+- ActionButtons
+- AdminLayout
+- Card
+- Pagination
+
+### Response Detail Page (`/admin/responses/[id]`)
+**Features & Functions:**
+- Response overview (patient info, score, risk level)
+- Question and answer display
+- Scoring information
+- AI analysis summary
+- Action buttons (edit score, analyze, email results)
+
+**Components Used:**
+- ResponseSummary
+- PatientInfoCard
+- QuestionAnswerList
+- ScoringCard
+- AIAnalysisSummary
+- ActionButtons
+- AdminLayout
+- Card
+- Tabs
+
+### Response Analysis Page (`/admin/responses/[id]/analysis`)
+**Features & Functions:**
+- Comprehensive AI-generated analysis
+- Visual representations of analysis data
+- Key metrics visualization
+- Domain scores charts
+- Recommendation priorities
+- Projected improvement timeline
+
+**Components Used:**
+- AIAnalysisVisualizer
+- KeyMetricsRadarChart
+- DomainScoresBarChart
+- RecommendationsPriorityChart
+- ProjectionTimelineChart
+- AdminLayout
+- Card
+- Tabs
+
+### Response Email Page (`/admin/responses/[id]/email`)
+**Features & Functions:**
+- Email template selection
+- Customization of email content
+- Preview functionality
+- Recipient information
+- Send email button
+
+**Components Used:**
+- EmailTemplateSelector
+- EmailEditor
+- EmailPreview
+- RecipientInfo
+- AdminLayout
+- Card
+- Button
+
+---
+
+## Organization Management Pages
+
+### Organizations List Page (`/admin/organizations`)
+**Features & Functions:**
+- List of all organizations with filtering and sorting
+- Search functionality
+- Quick actions (view, edit, manage members)
+- Create new organization button
+- Pagination
+
+**Components Used:**
+- OrganizationTable
+- SearchInput
+- FilterDropdown
+- SortDropdown
+- ActionButtons
+- AdminLayout
+- Card
+- Pagination
+
+### Create Organization Page (`/admin/organizations/create`)
+**Features & Functions:**
+- Organization information input (name, description, type)
+- Contact details
+- Logo upload
+- Member invitation
+- Settings configuration
+
+**Components Used:**
+- OrganizationForm
+- FormInput
+- FormTextarea
+- ImageUploader
+- MemberInviteForm
+- SettingsForm
+- AdminLayout
+- Card
+- Button
+
+### Organization Detail Page (`/admin/organizations/[id]`)
+**Features & Functions:**
+- Organization overview
+- Member list
+- Questionnaire list
+- Activity feed
+- Action buttons (edit, manage members, view questionnaires)
+
+**Components Used:**
+- OrganizationSummary
+- MemberList
+- QuestionnaireList
+- ActivityFeed
+- ActionButtons
+- AdminLayout
+- Card
+- Tabs
+
+### Edit Organization Page (`/admin/organizations/[id]/edit`)
+**Features & Functions:**
+- Edit organization information
+- Update contact details
+- Change logo
+- Modify settings
+- Save changes button
+
+**Components Used:**
+- OrganizationForm
+- FormInput
+- FormTextarea
+- ImageUploader
+- SettingsForm
+- AdminLayout
+- Card
+- Button
+
+### Organization Members Page (`/admin/organizations/[id]/members`)
+**Features & Functions:**
+- List of all organization members
+- Role and permission management
+- Invite new members
+- Remove members
+- Search and filter functionality
+
+**Components Used:**
+- MemberTable
+- RoleSelector
+- PermissionManager
+- InviteForm
+- SearchInput
+- FilterDropdown
+- AdminLayout
+- Card
+- Button
+
+---
+
+## User Management Pages
+
+### Users List Page (`/admin/users`)
+**Features & Functions:**
+- List of all users with filtering and sorting
+- Search functionality
+- Role and status indicators
+- Quick actions (view, edit, disable)
+- Create new user button
+- Pagination
+
+**Components Used:**
+- UserTable
+- SearchInput
+- FilterDropdown
+- SortDropdown
+- StatusBadge
+- ActionButtons
+- AdminLayout
+- Card
+- Pagination
+
+---
+
+## QR Code Management Pages
+
+### QR Code Page (`/admin/questionnaires/[id]/qr-code`)
+**Features & Functions:**
+- QR code generation for questionnaire
+- Customization options (size, color, logo)
+- Download in various formats (PNG, SVG, PDF)
+- Print functionality
+- Share options
+
+**Components Used:**
+- QRCodeGenerator
+- QRCodeCustomizer
+- DownloadOptions
+- ShareOptions
+- AdminLayout
+- Card
+- Button
+
+---
+
+## Analysis and Reporting Pages
+
+### AI Analysis Dashboard (`/admin/ai-analysis`)
+**Features & Functions:**
+- Overview of AI analysis capabilities
+- Recent analyses
+- Generate new analysis
+- Analysis templates
+- Batch analysis options
+
+**Components Used:**
+- AIAnalyticsDashboard
+- RecentAnalysesList
+- AnalysisTemplateSelector
+- BatchAnalysisForm
+- AdminLayout
+- Card
+- Button
+
+### Metrics Dashboard (`/admin/metrics`)
+**Features & Functions:**
+- System-wide performance metrics
+- User engagement statistics
+- Questionnaire completion rates
+- Response trends
+- Export data options
+
+**Components Used:**
+- MetricsDashboard
+- PerformanceCharts
+- EngagementMetrics
+- CompletionRateCharts
+- TrendAnalysis
+- ExportButton
+- AdminLayout
+- Card
+- Tabs
+
+---
+
+## Client Pages
+
+### Client Questionnaire List (`/questionnaires`)
+**Features & Functions:**
+- List of available questionnaires
+- Status indicators (completed, in progress)
+- Search and filter functionality
+- Start/continue questionnaire buttons
+- View results of completed questionnaires
+
+**Components Used:**
+- ClientQuestionnaireList
+- StatusBadge
+- SearchInput
+- FilterDropdown
+- ActionButtons
+- ClientLayout
+- Card
+
+### Take Questionnaire Page (`/respond/questionnaires/[id]`)
+**Features & Functions:**
+- Questionnaire instructions
+- Question display with appropriate input types
+- Progress indicator
+- Navigation (previous/next/submit)
+- Save and continue later option
+
+**Components Used:**
+- QuestionnaireInstructions
+- QuestionRenderer
+- ProgressBar
+- NavigationButtons
+- SaveButton
+- ClientLayout
+- Card
+
+### Questionnaire Completion Page (`/questionnaires/complete/[uniqueCode]`)
+**Features & Functions:**
+- Completion confirmation
+- Summary of responses
+- Score and risk level display (if applicable)
+- Next steps recommendations
+- Return to dashboard button
+
+**Components Used:**
+- CompletionSummary
+- ResponseSummary
+- ScoreDisplay
+- RecommendationsList
+- Button
+- ClientLayout
+- Card
+
+### QR Code Scanner Page (`/scan`)
+**Features & Functions:**
+- Camera access for QR code scanning
+- Manual code entry option
+- Scan history
+- Quick access to recent questionnaires
+
+**Components Used:**
+- QRCodeScanner
+- ManualEntryForm
+- ScanHistory
+- RecentQuestionnaires
+- ClientLayout
+- Card
+
+---
+
+## Settings Pages
+
+### Profile Settings Page (`/admin/profile`)
+**Features & Functions:**
+- Personal information management
+- Password change
+- Notification preferences
+- Connected accounts
+- API key management
+
+**Components Used:**
+- ProfileForm
+- PasswordChangeForm
+- NotificationSettings
+- ConnectedAccountsList
+- APIKeyManager
+- AdminLayout
+- Card
+- Tabs
+
+---
+
+## Test Pages
+
+### Test Data Page (`/admin/test-data`)
+**Features & Functions:**
+- Generate test questionnaires
+- Create test responses
+- Simulate user activity
+- Clear test data
+- Export test data
+
+**Components Used:**
+- TestDataGenerator
+- TestResponseGenerator
+- ActivitySimulator
+- ClearDataButton
+- ExportButton
+- AdminLayout
+- Card
+- Button
+
+### Test Questionnaire Page (`/test/questionnaires/[id]`)
+**Features & Functions:**
+- Test questionnaire preview
+- Generate test responses
+- View test statistics
+- Reset test data
+
+**Components Used:**
+- TestQuestionnairePreview
+- TestResponseGenerator
+- TestStatistics
+- ResetButton
+- TestLayout
+- Card
+- Buttonhttps://us02web.zoom.us/j/82812275756?pwd=dDFvQVAvN0xCNEpyVjQ2b2pzRmFiQT09
+
+### Test Response Page (`/test/responses/[id]`)
+**Features & Functions:**
+- Test response details
+- Modify test response data
+- Generate AI analysis
+- Simulate scoring
+- Export test response
+
+**Components Used:**
+- TestResponseDetails
+- ResponseEditor
+- AIAnalysisGenerator
+- ScoringSimulator
+- ExportButton
+- TestLayout
+- Card
+- Button
+
+---
+
+## Component Library
+
+### UI Components
+- **Layout Components**: AdminLayout, ClientLayout, TestLayout, Card, Container, Grid
+- **Navigation Components**: NavigationMenu, Sidebar, Breadcrumbs, Tabs, Pagination
+- **Form Components**: FormInput, FormTextarea, PasswordInput, Checkbox, RadioGroup, Select, Switch, DatePicker
+- **Button Components**: Button, IconButton, ButtonGroup, ActionButtons
+- **Display Components**: Card, Badge, Alert, Toast, Modal, Drawer, Tooltip, Popover
+- **Data Display Components**: Table, List, Tree, Timeline, Accordion
+- **Feedback Components**: ProgressBar, Spinner, Skeleton, LoadingIndicator
+- **Chart Components**: BarChart, LineChart, PieChart, RadarChart, AreaChart
+- **Media Components**: Avatar, Image, Icon, QRCode
+- **Specialized Components**: DragDropList, FileUploader, CodeEditor, RichTextEditor, ColorPicker
+
+### Feature-Specific Components
+- **Questionnaire Components**: QuestionnaireForm, QuestionForm, QuestionTypeSelector, OptionsList, ConditionalLogicBuilder
+- **Response Components**: ResponseSummary, QuestionAnswerList, ScoringCard, AIAnalysisSummary
+- **Analysis Components**: AIAnalysisVisualizer, KeyMetricsRadarChart, DomainScoresBarChart, RecommendationsPriorityChart
+- **QR Code Components**: QRCodeGenerator, QRCodeCustomizer, QRCodeScanner
+- **Email Components**: EmailTemplateSelector, EmailEditor, EmailPreview
+- **Organization Components**: OrganizationForm, MemberList, MemberInviteForm
+- **User Components**: UserForm, RoleSelector, PermissionManager
+
+---
+
+## Page Component Dependencies
+
+This section outlines the component dependencies for each page, showing which components are required for each page to function properly.
+
+### Landing Page
+- NavigationMenu
+- HeroSection
+- FeatureGrid
+- TestimonialCarousel
+- CTAButton
+- FAQAccordion
+- Footer
+
+### Authentication Pages
+- LoginForm, RegisterForm, ForgotPasswordForm, ResetPasswordForm
+- FormInput, PasswordInput, Checkbox, Button
+- Card, Alert
+
+### Dashboard Pages
+- AdminLayout, ClientLayout
+- StatisticsCards, ActivityFeed, QuickActionButtons
+- MetricsCharts, NotificationList
+- Card, Tabs
+
+### Questionnaire Management Pages
+- AdminLayout
+- QuestionnaireTable, QuestionnaireForm, QuestionnaireSummary
+- QuestionList, DragDropQuestionReorder
+- SearchInput, FilterDropdown, SortDropdown
+- ActionButtons, Card, Button
+
+### Response Management Pages
+- AdminLayout
+- ResponseTable, ResponseSummary, PatientInfoCard
+- QuestionAnswerList, ScoringCard, AIAnalysisSummary
+- AIAnalysisVisualizer, KeyMetricsRadarChart, DomainScoresBarChart
+- Card, Tabs, Button
+
+### Client Pages
+- ClientLayout
+- ClientQuestionnaireList, QuestionnaireInstructions
+- QuestionRenderer, ProgressBar, NavigationButtons
+- CompletionSummary, ResponseSummary, ScoreDisplay
+- Card, Button
+
+---
+
+## Conclusion
+
+This document provides a comprehensive overview of all pages in the MindTrack application, including their features, functions, and components used. It serves as a reference for developers working on the application and helps ensure consistency across the user interface.
+
+The page structure follows a logical organization based on the application's information architecture, with clear separation between different functional areas. Each page is designed to provide a specific set of features and functions, using a consistent set of UI components to ensure a cohesive user experience.

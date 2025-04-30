@@ -1,0 +1,310 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{{ survey.title }} - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8 text-center">
+            <h1 class="text-3xl font-display font-bold text-gray-900">{{ survey.title }}</h1>
+            {% if survey.description %}
+                <p class="mt-4 text-gray-600">{{ survey.description }}</p>
+            {% endif %}
+        </div>
+
+        {% if survey.instructions %}
+            <div class="bg-blue-50 rounded-lg p-4 mb-8">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-info-circle text-blue-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-blue-800">Instructions</h3>
+                        <div class="mt-2 text-sm text-blue-700">
+                            {{ survey.instructions|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" class="space-y-8" id="surveyForm">
+            {% csrf_token %}
+            
+            <!-- Respondent Information -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6">
+                    <h2 class="text-lg font-medium text-gray-900">Your Information</h2>
+                    <p class="mt-1 text-sm text-gray-500">Please provide your contact details.</p>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                    <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <div class="sm:col-span-3">
+                            <label for="respondent_name" class="block text-sm font-medium text-gray-700">Name</label>
+                            <div class="mt-1">
+                                <input type="text" name="respondent_name" id="respondent_name" 
+                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                            </div>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label for="respondent_email" class="block text-sm font-medium text-gray-700">Email</label>
+                            <div class="mt-1">
+                                <input type="email" name="respondent_email" id="respondent_email" 
+                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Questions -->
+            {% for question in questions %}
+                <div class="bg-white shadow overflow-hidden sm:rounded-lg question-container" id="question-{{ question.id }}">
+                    <div class="px-4 py-5 sm:px-6">
+                        <div class="flex items-center">
+                            <span class="w-6 h-6 flex items-center justify-center rounded-full bg-primary-100 text-primary-600 text-xs mr-2">
+                                {{ question.order }}
+                            </span>
+                            <h2 class="text-lg font-medium text-gray-900">{{ question.text }}</h2>
+                            {% if question.required %}
+                                <span class="ml-2 px-1.5 py-0.5 text-xs rounded-full bg-red-100 text-red-800">Required</span>
+                            {% endif %}
+                        </div>
+                        {% if question.description %}
+                            <p class="mt-1 ml-8 text-sm text-gray-500">{{ question.description }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                        {% if question.question_type == 'text' %}
+                            <input type="text" name="answer_{{ question.id }}" id="answer_{{ question.id }}" 
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                   {% if question.required %}required{% endif %}>
+                                   
+                        {% elif question.question_type == 'textarea' %}
+                            <textarea name="answer_{{ question.id }}" id="answer_{{ question.id }}" rows="4"
+                                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                      {% if question.required %}required{% endif %}></textarea>
+                                      
+                        {% elif question.question_type == 'radio' %}
+                            <div class="space-y-4">
+                                {% for choice in question.choices.all %}
+                                    <div class="flex items-center">
+                                        <input type="radio" id="choice_{{ choice.id }}" name="answer_{{ question.id }}" value="{{ choice.id }}"
+                                               class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                                               {% if question.required %}required{% endif %}>
+                                        <label for="choice_{{ choice.id }}" class="ml-3 block text-sm font-medium text-gray-700">
+                                            {{ choice.text }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            
+                        {% elif question.question_type == 'checkbox' %}
+                            <div class="space-y-4">
+                                {% for choice in question.choices.all %}
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="choice_{{ choice.id }}" name="answer_{{ question.id }}_{{ choice.id }}" value="{{ choice.id }}"
+                                               class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                        <label for="choice_{{ choice.id }}" class="ml-3 block text-sm font-medium text-gray-700">
+                                            {{ choice.text }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if question.required %}
+                                <input type="hidden" class="checkbox-validator" data-question-id="{{ question.id }}" required>
+                            {% endif %}
+                            
+                        {% elif question.question_type == 'dropdown' %}
+                            <select name="answer_{{ question.id }}" id="answer_{{ question.id }}"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                    {% if question.required %}required{% endif %}>
+                                <option value="">Select an option</option>
+                                {% for choice in question.choices.all %}
+                                    <option value="{{ choice.id }}">{{ choice.text }}</option>
+                                {% endfor %}
+                            </select>
+                            
+                        {% elif question.question_type == 'scale' %}
+                            <div class="mt-2">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-gray-500">0</span>
+                                    <span class="text-sm text-gray-500">10</span>
+                                </div>
+                                <input type="range" name="answer_{{ question.id }}" id="answer_{{ question.id }}" min="0" max="10" step="1" value="5"
+                                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                       {% if question.required %}required{% endif %}>
+                                <div class="mt-2 text-center">
+                                    <span class="text-sm font-medium text-gray-700" id="scale_value_{{ question.id }}">5</span>
+                                </div>
+                            </div>
+                            
+                        {% elif question.question_type == 'date' %}
+                            <input type="date" name="answer_{{ question.id }}" id="answer_{{ question.id }}"
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                   {% if question.required %}required{% endif %}>
+                                   
+                        {% elif question.question_type == 'time' %}
+                            <input type="time" name="answer_{{ question.id }}" id="answer_{{ question.id }}"
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                   {% if question.required %}required{% endif %}>
+                                   
+                        {% elif question.question_type == 'file' %}
+                            <input type="file" name="answer_{{ question.id }}" id="answer_{{ question.id }}"
+                                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                                   {% if question.required %}required{% endif %}>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+            
+            <div class="flex justify-between pt-6">
+                <button type="button" id="prevBtn" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" style="display: none;">
+                    <i class="fas fa-arrow-left mr-2"></i> Previous
+                </button>
+                <div>
+                    <button type="button" id="nextBtn" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        Next <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                    <button type="submit" id="submitBtn" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500" style="display: none;">
+                        Submit <i class="fas fa-check ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const questions = document.querySelectorAll('.question-container');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        let currentQuestionIndex = 0;
+        
+        // Show only the first question initially
+        showQuestion(currentQuestionIndex);
+        
+        // Handle next button click
+        nextBtn.addEventListener('click', function() {
+            // Validate current question
+            const currentQuestion = questions[currentQuestionIndex];
+            const requiredInputs = currentQuestion.querySelectorAll('[required]');
+            let isValid = true;
+            
+            requiredInputs.forEach(input => {
+                if (!input.value) {
+                    isValid = false;
+                    input.classList.add('border-red-500');
+                } else {
+                    input.classList.remove('border-red-500');
+                }
+            });
+            
+            // Validate checkbox groups
+            const checkboxValidator = currentQuestion.querySelector('.checkbox-validator');
+            if (checkboxValidator) {
+                const questionId = checkboxValidator.dataset.questionId;
+                const checkboxes = currentQuestion.querySelectorAll(`input[name^="answer_${questionId}_"]`);
+                let anyChecked = false;
+                
+                checkboxes.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        anyChecked = true;
+                    }
+                });
+                
+                if (!anyChecked && checkboxValidator.hasAttribute('required')) {
+                    isValid = false;
+                    checkboxes.forEach(checkbox => {
+                        checkbox.parentElement.classList.add('border', 'border-red-500', 'rounded', 'p-1');
+                    });
+                } else {
+                    checkboxes.forEach(checkbox => {
+                        checkbox.parentElement.classList.remove('border', 'border-red-500', 'rounded', 'p-1');
+                    });
+                }
+            }
+            
+            if (!isValid) {
+                return;
+            }
+            
+            // Move to next question
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                showQuestion(currentQuestionIndex);
+            }
+        });
+        
+        // Handle previous button click
+        prevBtn.addEventListener('click', function() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                showQuestion(currentQuestionIndex);
+            }
+        });
+        
+        // Function to show the current question and hide others
+        function showQuestion(index) {
+            questions.forEach((question, i) => {
+                if (i === index) {
+                    question.style.display = 'block';
+                } else {
+                    question.style.display = 'none';
+                }
+            });
+            
+            // Show/hide prev button
+            if (index > 0) {
+                prevBtn.style.display = 'inline-flex';
+            } else {
+                prevBtn.style.display = 'none';
+            }
+            
+            // Show/hide next and submit buttons
+            if (index === questions.length - 1) {
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'inline-flex';
+            } else {
+                nextBtn.style.display = 'inline-flex';
+                submitBtn.style.display = 'none';
+            }
+        }
+        
+        // Handle range input changes
+        document.querySelectorAll('input[type="range"]').forEach(range => {
+            const questionId = range.id.split('_').pop();
+            const valueDisplay = document.getElementById(`scale_value_${questionId}`);
+            
+            range.addEventListener('input', function() {
+                valueDisplay.textContent = this.value;
+            });
+        });
+        
+        // Handle checkbox validation
+        document.querySelectorAll('.checkbox-validator').forEach(validator => {
+            const questionId = validator.dataset.questionId;
+            const checkboxes = document.querySelectorAll(`input[name^="answer_${questionId}_"]`);
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    let anyChecked = false;
+                    checkboxes.forEach(cb => {
+                        if (cb.checked) {
+                            anyChecked = true;
+                        }
+                    });
+                    
+                    if (anyChecked) {
+                        validator.setCustomValidity('');
+                    } else {
+                        validator.setCustomValidity('Please select at least one option');
+                    }
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

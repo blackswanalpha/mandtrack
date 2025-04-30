@@ -1,0 +1,231 @@
+<header class="navbar navbar-expand-lg navbar-dark sticky-top bg-primary p-0 shadow">
+    <!-- Brand Logo -->
+    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 py-2 d-flex align-items-center" href="{% url 'core:dashboard' %}">
+        <div class="d-flex align-items-center">
+            <div class="logo-icon bg-white text-primary rounded p-1 me-2">
+                <i class="fas fa-brain"></i>
+            </div>
+            <div>
+                <span class="fw-bold">Mind</span><span class="fw-bold">Track</span>
+            </div>
+        </div>
+    </a>
+
+    <!-- Mobile Toggle Button -->
+    <button class="navbar-toggler position-absolute d-md-none collapsed border-0" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Search Bar -->
+    <div class="d-none d-md-flex flex-grow-1 px-3">
+        <div class="input-group">
+            <span class="input-group-text bg-white border-end-0">
+                <i class="fas fa-search text-muted"></i>
+            </span>
+            <input class="form-control ps-0 border-start-0" type="search" placeholder="Search questionnaires, responses, or users..." aria-label="Search">
+            <button class="btn btn-light border border-start-0" type="button">
+                <i class="fas fa-filter text-muted"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Right Navigation -->
+    <div class="navbar-nav flex-row me-2">
+        <!-- Create New Button -->
+        <div class="nav-item dropdown me-3 d-none d-md-block">
+            <button class="btn btn-success btn-sm dropdown-toggle" type="button" id="createNewDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-plus-circle me-1"></i> Create New
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end animate slideIn" aria-labelledby="createNewDropdown">
+                <li><a class="dropdown-item" href="{% url 'surveys:survey_create' %}"><i class="fas fa-clipboard-list me-2 text-primary"></i>Questionnaire</a></li>
+                <li><a class="dropdown-item" href="{% url 'groups:organization_create' %}"><i class="fas fa-building me-2 text-info"></i>Organization</a></li>
+                <li><a class="dropdown-item" href="{% url 'surveys:qr_code_create' %}"><i class="fas fa-qrcode me-2 text-success"></i>QR Code</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#"><i class="fas fa-file-export me-2 text-warning"></i>Report</a></li>
+            </ul>
+        </div>
+
+        <!-- Notifications -->
+        <div class="nav-item dropdown me-3">
+            <a class="nav-link position-relative px-2" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-bell fs-5"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger animate__animated animate__pulse animate__infinite">
+                    3
+                    <span class="visually-hidden">unread notifications</span>
+                </span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end animate slideIn" aria-labelledby="notificationsDropdown" style="width: 320px;">
+                <li>
+                    <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                        <h6 class="dropdown-header m-0 p-0">Notifications</h6>
+                        <a href="#" class="text-decoration-none small">Mark all as read</a>
+                    </div>
+                </li>
+                <div class="notifications-scroll" style="max-height: 300px; overflow-y: auto;">
+                    <li>
+                        <a class="dropdown-item py-2 border-bottom" href="#">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-primary bg-opacity-10 p-2 rounded">
+                                        <i class="fas fa-comment-dots text-primary"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <p class="mb-0 fw-semibold">New response received</p>
+                                    <p class="text-muted small mb-0">John Doe completed Anxiety Assessment</p>
+                                    <p class="text-muted small mb-0">5 minutes ago</p>
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-2 border-bottom" href="#">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-success bg-opacity-10 p-2 rounded">
+                                        <i class="fas fa-chart-line text-success"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <p class="mb-0 fw-semibold">Analysis complete</p>
+                                    <p class="text-muted small mb-0">Depression Screening analysis is ready</p>
+                                    <p class="text-muted small mb-0">1 hour ago</p>
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-2" href="#">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-info bg-opacity-10 p-2 rounded">
+                                        <i class="fas fa-cog text-info"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <p class="mb-0 fw-semibold">System update</p>
+                                    <p class="text-muted small mb-0">New features have been added</p>
+                                    <p class="text-muted small mb-0">1 day ago</p>
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                </div>
+                <li><hr class="dropdown-divider m-0"></li>
+                <li><a class="dropdown-item text-center py-2" href="#">View all notifications</a></li>
+            </ul>
+        </div>
+
+        <!-- Help -->
+        <div class="nav-item me-3">
+            <a class="nav-link px-2" href="#" data-bs-toggle="tooltip" title="Help & Support">
+                <i class="fas fa-question-circle fs-5"></i>
+            </a>
+        </div>
+
+        <!-- User Profile -->
+        <div class="nav-item dropdown">
+            <a class="nav-link d-flex align-items-center px-2" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="avatar bg-white text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                    {% if request.user.first_name %}
+                        {{ request.user.first_name|first }}{{ request.user.last_name|first }}
+                    {% else %}
+                        {{ request.user.email|first|upper }}
+                    {% endif %}
+                </div>
+                <span class="d-none d-lg-inline text-truncate" style="max-width: 120px;">
+                    {{ request.user.get_full_name|default:request.user.email }}
+                </span>
+                <i class="fas fa-chevron-down ms-1 small"></i>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end animate slideIn" aria-labelledby="userDropdown">
+                <li>
+                    <div class="dropdown-item-text">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 48px; height: 48px; font-size: 1.2rem;">
+                                {% if request.user.first_name %}
+                                    {{ request.user.first_name|first }}{{ request.user.last_name|first }}
+                                {% else %}
+                                    {{ request.user.email|first|upper }}
+                                {% endif %}
+                            </div>
+                            <div>
+                                <p class="mb-0 fw-semibold">{{ request.user.get_full_name|default:request.user.email }}</p>
+                                <p class="text-muted small mb-0">
+                                    {% if request.user.is_staff %}Admin User{% else %}Regular User{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#profileModal"><i class="fas fa-user me-2 text-primary"></i>My Profile</a></li>
+                <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2 text-secondary"></i>Account Settings</a></li>
+                {% if request.user.is_staff %}
+                <li><a class="dropdown-item" href="/admin/" target="_blank"><i class="fas fa-tools me-2 text-warning"></i>Django Admin</a></li>
+                {% endif %}
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'account_logout' %}"><i class="fas fa-sign-out-alt me-2 text-danger"></i>Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</header>
+
+<!-- Mobile Search (shown only on small screens) -->
+<div class="d-md-none bg-light p-2 border-bottom">
+    <div class="input-group">
+        <span class="input-group-text bg-white border-end-0">
+            <i class="fas fa-search text-muted"></i>
+        </span>
+        <input class="form-control ps-0 border-start-0" type="search" placeholder="Search..." aria-label="Search">
+        <button class="btn btn-light border border-start-0" type="button">
+            <i class="fas fa-filter text-muted"></i>
+        </button>
+    </div>
+</div>
+
+<!-- CSS for animations -->
+<style>
+    /* Dropdown animation */
+    .animate {
+        animation-duration: 0.3s;
+        -webkit-animation-duration: 0.3s;
+        animation-fill-mode: both;
+        -webkit-animation-fill-mode: both;
+    }
+
+    @keyframes slideIn {
+        0% {
+            transform: translateY(1rem);
+            opacity: 0;
+        }
+        100% {
+            transform: translateY(0rem);
+            opacity: 1;
+        }
+    }
+
+    .slideIn {
+        -webkit-animation-name: slideIn;
+        animation-name: slideIn;
+    }
+
+    /* Notification badge pulse animation */
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .pulse {
+        animation-name: pulse;
+        animation-duration: 1.5s;
+        animation-iteration-count: infinite;
+    }
+</style>

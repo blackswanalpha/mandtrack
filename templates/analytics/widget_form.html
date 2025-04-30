@@ -1,0 +1,303 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{% if is_edit %}Edit Widget{% else %}Add Widget{% endif %} - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% url 'analytics:custom_dashboard' pk=dashboard.pk %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">
+                    {% if is_edit %}Edit Widget{% else %}Add Widget{% endif %}
+                </h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                {% if is_edit %}
+                    Update widget for "{{ dashboard.title }}"
+                {% else %}
+                    Add a new widget to "{{ dashboard.title }}"
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    <input type="hidden" name="widget_id" value="{{ widget.id|default:'' }}">
+                    
+                    {% if form.non_field_errors %}
+                        <div class="rounded-md bg-red-50 p-4 mb-6">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-red-800">There were errors with your submission</h3>
+                                    <div class="mt-2 text-sm text-red-700">
+                                        <ul class="list-disc pl-5 space-y-1">
+                                            {% for error in form.non_field_errors %}
+                                                <li>{{ error }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Title -->
+                    <div>
+                        <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Widget Title <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <input type="text" name="{{ form.title.name }}" id="{{ form.title.id_for_label }}" 
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.title.errors %}border-red-300{% endif %}"
+                                   value="{{ form.title.value|default:'' }}" required>
+                        </div>
+                        {% if form.title.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.title.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Description -->
+                    <div>
+                        <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Description
+                        </label>
+                        <div class="mt-1">
+                            <textarea name="{{ form.description.name }}" id="{{ form.description.id_for_label }}" rows="2"
+                                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.description.errors %}border-red-300{% endif %}">{{ form.description.value|default:'' }}</textarea>
+                        </div>
+                        {% if form.description.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Widget Type -->
+                    <div>
+                        <label for="{{ form.widget_type.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Widget Type <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <select name="{{ form.widget_type.name }}" id="{{ form.widget_type.id_for_label }}"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.widget_type.errors %}border-red-300{% endif %}"
+                                    onchange="toggleDataSourceOptions()">
+                                {% for value, label in form.fields.widget_type.choices %}
+                                    <option value="{{ value }}" {% if form.widget_type.value == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if form.widget_type.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.widget_type.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Data Source -->
+                    <div>
+                        <label for="{{ form.data_source.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Data Source <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <select name="{{ form.data_source.name }}" id="{{ form.data_source.id_for_label }}"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.data_source.errors %}border-red-300{% endif %}"
+                                    onchange="toggleDataFilterOptions()">
+                                {% for value, label in form.fields.data_source.choices %}
+                                    <option value="{{ value }}" {% if form.data_source.value == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if form.data_source.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.data_source.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Data Filter -->
+                    <div id="data-filter-container">
+                        <label for="data-filter-survey" class="block text-sm font-medium text-gray-700">
+                            Filter Data
+                        </label>
+                        
+                        <!-- Survey Filter -->
+                        <div id="survey-filter" class="mt-2">
+                            <label for="data-filter-survey" class="block text-sm font-medium text-gray-500">Survey</label>
+                            <select id="data-filter-survey" name="data_filter_survey" 
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                                <option value="">All Surveys</option>
+                                {% for survey in surveys %}
+                                    <option value="{{ survey.id }}" {% if data_filter_survey == survey.id|stringformat:"s" %}selected{% endif %}>{{ survey.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Date Range Filter -->
+                        <div id="date-filter" class="mt-2">
+                            <label class="block text-sm font-medium text-gray-500">Date Range</label>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
+                                <div>
+                                    <label for="data-filter-date-from" class="block text-xs text-gray-500">From</label>
+                                    <input type="date" id="data-filter-date-from" name="data_filter_date_from" 
+                                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                           value="{{ data_filter_date_from|default:'' }}">
+                                </div>
+                                <div>
+                                    <label for="data-filter-date-to" class="block text-xs text-gray-500">To</label>
+                                    <input type="date" id="data-filter-date-to" name="data_filter_date_to" 
+                                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                           value="{{ data_filter_date_to|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Organization Filter -->
+                        <div id="organization-filter" class="mt-2">
+                            <label for="data-filter-organization" class="block text-sm font-medium text-gray-500">Organization</label>
+                            <select id="data-filter-organization" name="data_filter_organization" 
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                                <option value="">All Organizations</option>
+                                {% for org in organizations %}
+                                    <option value="{{ org.id }}" {% if data_filter_organization == org.id|stringformat:"s" %}selected{% endif %}>{{ org.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Risk Level Filter -->
+                        <div id="risk-level-filter" class="mt-2">
+                            <label for="data-filter-risk-level" class="block text-sm font-medium text-gray-500">Risk Level</label>
+                            <select id="data-filter-risk-level" name="data_filter_risk_level" 
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                                <option value="">All Risk Levels</option>
+                                {% for value, label in risk_levels %}
+                                    <option value="{{ value }}" {% if data_filter_risk_level == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Widget Size -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Widget Size
+                        </label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="{{ form.width.id_for_label }}" class="block text-sm font-medium text-gray-500">Width</label>
+                                <input type="number" name="{{ form.width.name }}" id="{{ form.width.id_for_label }}" min="1" max="12"
+                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.width.errors %}border-red-300{% endif %}"
+                                       value="{{ form.width.value|default:'4' }}">
+                                <p class="mt-1 text-xs text-gray-500">1-12 columns (12 is full width)</p>
+                            </div>
+                            <div>
+                                <label for="{{ form.height.id_for_label }}" class="block text-sm font-medium text-gray-500">Height</label>
+                                <input type="number" name="{{ form.height.name }}" id="{{ form.height.id_for_label }}" min="1" max="12"
+                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.height.errors %}border-red-300{% endif %}"
+                                       value="{{ form.height.value|default:'4' }}">
+                                <p class="mt-1 text-xs text-gray-500">Height in grid units</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Custom Configuration (for Text widget) -->
+                    <div id="text-config" style="display: none;">
+                        <label for="text-content" class="block text-sm font-medium text-gray-700">
+                            Text Content
+                        </label>
+                        <div class="mt-1">
+                            <textarea id="text-content" name="text_content" rows="5"
+                                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">{{ text_content|default:'' }}</textarea>
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">You can use Markdown formatting</p>
+                    </div>
+                    
+                    <!-- Custom Configuration (for Table widget) -->
+                    <div id="table-config" style="display: none;">
+                        <label for="table-columns" class="block text-sm font-medium text-gray-700">
+                            Table Columns (comma-separated)
+                        </label>
+                        <div class="mt-1">
+                            <input type="text" id="table-columns" name="table_columns"
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                   value="{{ table_columns|default:'' }}" placeholder="e.g. Name, Email, Date, Score">
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">Define the columns to show in the table</p>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                        <a href="{% url 'analytics:custom_dashboard' pk=dashboard.pk %}" 
+                           class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            Cancel
+                        </a>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            {% if is_edit %}Update Widget{% else %}Add Widget{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleDataSourceOptions();
+        toggleDataFilterOptions();
+    });
+    
+    function toggleDataSourceOptions() {
+        const widgetType = document.getElementById('{{ form.widget_type.id_for_label }}').value;
+        const textConfig = document.getElementById('text-config');
+        const tableConfig = document.getElementById('table-config');
+        
+        // Hide all custom configs first
+        textConfig.style.display = 'none';
+        tableConfig.style.display = 'none';
+        
+        // Show relevant config based on widget type
+        if (widgetType === 'text') {
+            textConfig.style.display = 'block';
+        } else if (widgetType === 'table') {
+            tableConfig.style.display = 'block';
+        }
+    }
+    
+    function toggleDataFilterOptions() {
+        const dataSource = document.getElementById('{{ form.data_source.id_for_label }}').value;
+        const surveyFilter = document.getElementById('survey-filter');
+        const dateFilter = document.getElementById('date-filter');
+        const organizationFilter = document.getElementById('organization-filter');
+        const riskLevelFilter = document.getElementById('risk-level-filter');
+        
+        // Show/hide filters based on data source
+        if (dataSource === 'survey') {
+            surveyFilter.style.display = 'block';
+            dateFilter.style.display = 'block';
+            organizationFilter.style.display = 'block';
+            riskLevelFilter.style.display = 'none';
+        } else if (dataSource === 'response') {
+            surveyFilter.style.display = 'block';
+            dateFilter.style.display = 'block';
+            organizationFilter.style.display = 'block';
+            riskLevelFilter.style.display = 'block';
+        } else if (dataSource === 'organization') {
+            surveyFilter.style.display = 'none';
+            dateFilter.style.display = 'block';
+            organizationFilter.style.display = 'block';
+            riskLevelFilter.style.display = 'none';
+        } else if (dataSource === 'user') {
+            surveyFilter.style.display = 'none';
+            dateFilter.style.display = 'block';
+            organizationFilter.style.display = 'block';
+            riskLevelFilter.style.display = 'none';
+        } else if (dataSource === 'custom') {
+            surveyFilter.style.display = 'none';
+            dateFilter.style.display = 'none';
+            organizationFilter.style.display = 'none';
+            riskLevelFilter.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

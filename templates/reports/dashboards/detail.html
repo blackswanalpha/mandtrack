@@ -1,0 +1,395 @@
+{% extends 'reports/base.html' %}
+{% load static %}
+
+{% block reports_content %}
+<div class="flex justify-between items-start mb-6">
+    <div class="flex items-center">
+        <div class="bg-blue-100 text-blue-600 p-3 rounded-lg mr-3">
+            <i class="fas fa-{{ dashboard.icon|default:'dashboard' }} text-xl"></i>
+        </div>
+        <div>
+            <h1 class="text-2xl font-bold">{{ dashboard.name }}</h1>
+            <p class="text-gray-600 mt-1">{{ dashboard.description|default:"No description" }}</p>
+            <div class="flex items-center mt-2 space-x-4">
+                <span class="text-sm text-gray-500">
+                    <i class="far fa-calendar-alt mr-1"></i> {{ dashboard.created_at|date:"M d, Y" }}
+                </span>
+                {% if dashboard.is_public %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <i class="fas fa-globe-americas mr-1"></i> Public
+                </span>
+                {% else %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    <i class="fas fa-lock mr-1"></i> Private
+                </span>
+                {% endif %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <i class="fas fa-th-large mr-1"></i> {{ dashboard.layout_type|title }} Layout
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="flex space-x-2">
+        <a href="{% url 'add_item_to_dashboard' dashboard_id=dashboard.id %}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300">
+            <i class="fas fa-plus mr-2"></i> Add Item
+        </a>
+        <a href="{% url 'dashboard_edit' id=dashboard.id %}" class="bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-md hover:bg-gray-50 transition duration-300">
+            <i class="fas fa-edit mr-2"></i> Edit
+        </a>
+        <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" class="bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-md hover:bg-gray-50 transition duration-300">
+                <i class="fas fa-download mr-2"></i> Export <i class="fas fa-chevron-down ml-1"></i>
+            </button>
+            <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                <div class="py-1">
+                    <a href="{% url 'export_dashboard' id=dashboard.id %}?format=pdf" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <i class="far fa-file-pdf mr-2"></i> Export as PDF
+                    </a>
+                    <a href="{% url 'export_dashboard' id=dashboard.id %}?format=xlsx" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <i class="far fa-file-excel mr-2"></i> Export as Excel
+                    </a>
+                    <a href="{% url 'export_dashboard' id=dashboard.id %}?format=png" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <i class="far fa-file-image mr-2"></i> Export as PNG
+                    </a>
+                </div>
+            </div>
+        </div>
+        <form method="post" action="{% url 'dashboard_delete' id=dashboard.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this dashboard?');">
+            {% csrf_token %}
+            <button type="submit" class="bg-white border border-gray-300 text-red-600 font-semibold py-2 px-4 rounded-md hover:bg-gray-50 transition duration-300">
+                <i class="fas fa-trash-alt mr-2"></i> Delete
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Global Filters -->
+<div class="bg-gray-50 p-4 rounded-lg mb-6" x-data="{ showFilters: false }">
+    <div class="flex justify-between items-center">
+        <h2 class="text-lg font-semibold">Filters</h2>
+        <button type="button" @click="showFilters = !showFilters" class="text-blue-600 hover:text-blue-800">
+            <span x-text="showFilters ? 'Hide Filters' : 'Show Filters'"></span>
+        </button>
+    </div>
+    <div x-show="showFilters" class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+            <label for="date_range" class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+            <div class="grid grid-cols-2 gap-2">
+                <input type="date" id="date_start" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                <input type="date" id="date_end" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+            </div>
+        </div>
+        <div>
+            <label for="questionnaire" class="block text-sm font-medium text-gray-700 mb-1">Questionnaire</label>
+            <select id="questionnaire" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                <option value="">All Questionnaires</option>
+                <option value="1">Questionnaire 1</option>
+                <option value="2">Questionnaire 2</option>
+            </select>
+        </div>
+        <div class="flex items-end">
+            <button type="button" id="apply-filters" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300">
+                <i class="fas fa-filter mr-2"></i> Apply Filters
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Dashboard Content -->
+<div class="dashboard-container" 
+     data-refresh-interval="{{ dashboard.refresh_interval }}"
+     data-layout-type="{{ dashboard.layout_type }}">
+    
+    {% if dashboard.layout_type == 'grid' %}
+    <!-- Grid Layout -->
+    <div class="grid grid-cols-12 gap-4" id="dashboard-grid">
+        {% for item in items %}
+        <div class="dashboard-item col-span-{{ item.width }} bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
+             data-item-id="{{ item.id }}"
+             data-item-type="{{ item.item_type }}"
+             style="height: {{ item.height }}px;">
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="font-semibold text-gray-800">
+                    {% if item.title_override %}
+                        {{ item.title_override }}
+                    {% elif item.item_type == 'report' and item.report %}
+                        {{ item.report.name }}
+                    {% elif item.item_type == 'chart' and item.chart %}
+                        {{ item.chart.title }}
+                    {% else %}
+                        Dashboard Item
+                    {% endif %}
+                </h3>
+                <div class="flex space-x-2">
+                    <button type="button" class="text-gray-500 hover:text-blue-600 refresh-item" title="Refresh">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <a href="{% url 'edit_dashboard_item' dashboard_id=dashboard.id item_id=item.id %}" class="text-gray-500 hover:text-blue-600" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <form method="post" action="{% url 'remove_dashboard_item' dashboard_id=dashboard.id item_id=item.id %}" class="inline" onsubmit="return confirm('Are you sure you want to remove this item?');">
+                        {% csrf_token %}
+                        <button type="submit" class="text-gray-500 hover:text-red-600" title="Remove">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="dashboard-item-content p-4" style="height: calc(100% - 57px);">
+                {% if item.item_type == 'report' %}
+                    <div class="text-center text-gray-500">
+                        <i class="fas fa-file-alt text-4xl mb-2"></i>
+                        <p>Report content will be loaded here</p>
+                    </div>
+                {% elif item.item_type == 'chart' %}
+                    <div class="h-full">
+                        <canvas id="chart-{{ item.id }}"></canvas>
+                    </div>
+                {% elif item.item_type == 'text' %}
+                    <div class="prose max-w-none">
+                        {{ item.content|safe }}
+                    </div>
+                {% elif item.item_type == 'iframe' %}
+                    <iframe src="{{ item.content }}" class="w-full h-full border-0"></iframe>
+                {% elif item.item_type == 'image' %}
+                    <img src="{{ item.content }}" alt="Dashboard image" class="max-w-full max-h-full mx-auto">
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% elif dashboard.layout_type == 'tabs' %}
+    <!-- Tabbed Layout -->
+    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden" x-data="{ activeTab: 0 }">
+        <div class="border-b border-gray-200">
+            <nav class="flex -mb-px">
+                {% for item in items %}
+                <button @click="activeTab = {{ forloop.counter0 }}" :class="{ 'border-blue-500 text-blue-600': activeTab === {{ forloop.counter0 }}, 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== {{ forloop.counter0 }} }" class="py-4 px-6 font-medium border-b-2 focus:outline-none">
+                    {% if item.title_override %}
+                        {{ item.title_override }}
+                    {% elif item.item_type == 'report' and item.report %}
+                        {{ item.report.name }}
+                    {% elif item.item_type == 'chart' and item.chart %}
+                        {{ item.chart.title }}
+                    {% else %}
+                        Tab {{ forloop.counter }}
+                    {% endif %}
+                </button>
+                {% endfor %}
+            </nav>
+        </div>
+        <div class="p-4">
+            {% for item in items %}
+            <div x-show="activeTab === {{ forloop.counter0 }}" class="dashboard-item" data-item-id="{{ item.id }}" data-item-type="{{ item.item_type }}">
+                <div class="flex justify-end mb-2">
+                    <div class="flex space-x-2">
+                        <button type="button" class="text-gray-500 hover:text-blue-600 refresh-item" title="Refresh">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <a href="{% url 'edit_dashboard_item' dashboard_id=dashboard.id item_id=item.id %}" class="text-gray-500 hover:text-blue-600" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <form method="post" action="{% url 'remove_dashboard_item' dashboard_id=dashboard.id item_id=item.id %}" class="inline" onsubmit="return confirm('Are you sure you want to remove this item?');">
+                            {% csrf_token %}
+                            <button type="submit" class="text-gray-500 hover:text-red-600" title="Remove">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="dashboard-item-content" style="height: 600px;">
+                    {% if item.item_type == 'report' %}
+                        <div class="text-center text-gray-500">
+                            <i class="fas fa-file-alt text-4xl mb-2"></i>
+                            <p>Report content will be loaded here</p>
+                        </div>
+                    {% elif item.item_type == 'chart' %}
+                        <div class="h-full">
+                            <canvas id="chart-{{ item.id }}"></canvas>
+                        </div>
+                    {% elif item.item_type == 'text' %}
+                        <div class="prose max-w-none">
+                            {{ item.content|safe }}
+                        </div>
+                    {% elif item.item_type == 'iframe' %}
+                        <iframe src="{{ item.content }}" class="w-full h-full border-0"></iframe>
+                    {% elif item.item_type == 'image' %}
+                        <img src="{{ item.content }}" alt="Dashboard image" class="max-w-full max-h-full mx-auto">
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <!-- Default Layout -->
+    <div class="space-y-4">
+        {% for item in items %}
+        <div class="dashboard-item bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
+             data-item-id="{{ item.id }}"
+             data-item-type="{{ item.item_type }}">
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="font-semibold text-gray-800">
+                    {% if item.title_override %}
+                        {{ item.title_override }}
+                    {% elif item.item_type == 'report' and item.report %}
+                        {{ item.report.name }}
+                    {% elif item.item_type == 'chart' and item.chart %}
+                        {{ item.chart.title }}
+                    {% else %}
+                        Dashboard Item
+                    {% endif %}
+                </h3>
+                <div class="flex space-x-2">
+                    <button type="button" class="text-gray-500 hover:text-blue-600 refresh-item" title="Refresh">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <a href="{% url 'edit_dashboard_item' dashboard_id=dashboard.id item_id=item.id %}" class="text-gray-500 hover:text-blue-600" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <form method="post" action="{% url 'remove_dashboard_item' dashboard_id=dashboard.id item_id=item.id %}" class="inline" onsubmit="return confirm('Are you sure you want to remove this item?');">
+                        {% csrf_token %}
+                        <button type="submit" class="text-gray-500 hover:text-red-600" title="Remove">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="dashboard-item-content p-4" style="height: 400px;">
+                {% if item.item_type == 'report' %}
+                    <div class="text-center text-gray-500">
+                        <i class="fas fa-file-alt text-4xl mb-2"></i>
+                        <p>Report content will be loaded here</p>
+                    </div>
+                {% elif item.item_type == 'chart' %}
+                    <div class="h-full">
+                        <canvas id="chart-{{ item.id }}"></canvas>
+                    </div>
+                {% elif item.item_type == 'text' %}
+                    <div class="prose max-w-none">
+                        {{ item.content|safe }}
+                    </div>
+                {% elif item.item_type == 'iframe' %}
+                    <iframe src="{{ item.content }}" class="w-full h-full border-0"></iframe>
+                {% elif item.item_type == 'image' %}
+                    <img src="{{ item.content }}" alt="Dashboard image" class="max-w-full max-h-full mx-auto">
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% if not items %}
+    <div class="text-center py-8 bg-gray-50 rounded-lg">
+        <div class="text-gray-400 mb-4">
+            <i class="fas fa-chart-line text-5xl"></i>
+        </div>
+        <h3 class="text-xl font-medium text-gray-600 mb-2">No items in this dashboard</h3>
+        <p class="text-gray-500 mb-4">Add your first item to start building your dashboard</p>
+        <a href="{% url 'add_item_to_dashboard' dashboard_id=dashboard.id %}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300">
+            <i class="fas fa-plus mr-2"></i> Add Item
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block reports_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize charts
+        const chartItems = document.querySelectorAll('[data-item-type="chart"]');
+        chartItems.forEach(item => {
+            const chartId = item.getAttribute('data-item-id');
+            const canvas = document.getElementById(`chart-${chartId}`);
+            if (canvas) {
+                // Create a sample chart (in a real app, you'd fetch data from the API)
+                const ctx = canvas.getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Sample Data',
+                            data: [12, 19, 3, 5, 2, 3],
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+        });
+        
+        // Set up auto-refresh
+        const dashboardContainer = document.querySelector('.dashboard-container');
+        if (dashboardContainer) {
+            const refreshInterval = parseInt(dashboardContainer.getAttribute('data-refresh-interval'), 10);
+            if (refreshInterval > 0) {
+                setInterval(function() {
+                    refreshAllItems();
+                }, refreshInterval * 1000);
+            }
+        }
+        
+        // Set up refresh buttons
+        const refreshButtons = document.querySelectorAll('.refresh-item');
+        refreshButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const item = this.closest('.dashboard-item');
+                refreshItem(item);
+            });
+        });
+        
+        // Apply filters button
+        const applyFiltersButton = document.getElementById('apply-filters');
+        if (applyFiltersButton) {
+            applyFiltersButton.addEventListener('click', function() {
+                refreshAllItems();
+            });
+        }
+        
+        // Function to refresh all items
+        function refreshAllItems() {
+            const items = document.querySelectorAll('.dashboard-item');
+            items.forEach(item => {
+                refreshItem(item);
+            });
+        }
+        
+        // Function to refresh a single item
+        function refreshItem(item) {
+            const itemId = item.getAttribute('data-item-id');
+            const itemType = item.getAttribute('data-item-type');
+            const contentContainer = item.querySelector('.dashboard-item-content');
+            
+            // Add loading state
+            contentContainer.classList.add('opacity-50');
+            
+            // In a real app, you'd fetch data from the API
+            setTimeout(function() {
+                // Remove loading state
+                contentContainer.classList.remove('opacity-50');
+                
+                // If it's a chart, update it
+                if (itemType === 'chart') {
+                    const canvas = document.getElementById(`chart-${itemId}`);
+                    if (canvas) {
+                        const chart = Chart.getChart(canvas);
+                        if (chart) {
+                            // Update with new random data
+                            chart.data.datasets[0].data = Array.from({length: 6}, () => Math.floor(Math.random() * 30));
+                            chart.update();
+                        }
+                    }
+                }
+            }, 1000);
+        }
+    });
+</script>
+{% endblock %}

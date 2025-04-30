@@ -1,0 +1,534 @@
+# AdminDashboardPro Database Schema Documentation
+
+## Overview
+This document outlines the database schema for the AdminDashboardPro application, including all tables, fields, relationships, and configuration details.
+
+## Database Information
+- **Database Name**: admin_dashboard_pro
+- **Database Type**: PostgreSQL
+- **Hosting**: Neon (PostgreSQL in the cloud)
+
+## PostgreSQL Neon Configuration
+
+### Connection Details
+- **Host**: db.neon.tech
+- **Port**: 5432
+- **Database**: mindtrack_db
+- **SSL Mode**: require
+
+### Connection String Format
+```
+postgresql://mindtrack_db_owner:npg_jwLXnpTy2oH7@ep-square-frog-a2wgh9dc-pooler.eu-central-1.aws.neon.tech/mindtrack_db?sslmode=require
+```
+
+### Pooling Configuration
+- **Pool Size**: 20
+- **Idle Timeout**: 30000ms
+- **Connection Timeout**: 5000ms
+
+### Environment Variables
+```
+DATABASE_URL=postgresql://[user]:[password]@db.neon.tech:5432/admin_dashboard_pro?sslmode=require
+PGHOST=db.neon.tech
+PGDATABASE=mindtrack_db
+PGUSER=postgres
+PGPASSWORD=postgres
+PGPORT=5432
+```
+
+## Table Schemas
+
+### users
+Stores user account information.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | SERIAL | PRIMARY KEY | Unique identifier |
+| name | VARCHAR(255) | NOT NULL | User's full name |
+| email | VARCHAR(255) | NOT NULL, UNIQUE | User's email address |
+| password | VARCHAR(255) | NOT NULL | Hashed password |
+| role | VARCHAR(50) | NOT NULL | User role (admin, user) |
+| profile_image | VARCHAR(255) | | URL to profile image |
+| last_login | TIMESTAMP | | Last login timestamp |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+| updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Update timestamp |
+
+### questionnaires
+Stores questionnaire information.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | SERIAL | PRIMARY KEY | Unique identifier |
+| title | VARCHAR(255) | NOT NULL | Questionnaire title |
+| description | TEXT | | Questionnaire description |
+| type | VARCHAR(50) | NOT NULL, DEFAULT 'Standard' | Questionnaire type |
+| category | VARCHAR(50) | | Questionnaire category |
+| estimated_time | INTEGER | | Estimated completion time in minutes |
+| is_active | BOOLEAN | NOT NULL, DEFAULT TRUE | Whether the questionnaire is active |
+| is_adaptive | BOOLEAN | NOT NULL, DEFAULT FALSE | Whether the questionnaire uses adaptive logic |
+| is_qr_enabled | BOOLEAN | NOT NULL, DEFAULT TRUE | Whether QR code access is enabled |
+| is_template | BOOLEAN | NOT NULL, DEFAULT FALSE | Whether this is a template |
+| is_public | BOOLEAN | NOT NULL, DEFAULT FALSE | Whether the questionnaire is publicly accessible |
+| allow_anonymous | BOOLEAN | NOT NULL, DEFAULT TRUE | Whether anonymous responses are allowed |
+| requires_auth | BOOLEAN | NOT NULL, DEFAULT FALSE | Whether authentication is required |
+| max_responses | INTEGER | | Maximum number of responses allowed |
+| expires_at | TIMESTAMP | | Expiration date |
+| version | INTEGER | NOT NULL, DEFAULT 1 | Version number |
+| parent_id | INTEGER | REFERENCES questionnaires(id) | ID of parent questionnaire (for versions) |
+| tags | JSONB | | Tags for categorization |
+| organization_id | INTEGER | REFERENCES organizations(id) | Organization that owns this questionnaire |
+| created_by_id | INTEGER | NOT NULL, REFERENCES users(id) | User who created the questionnaire |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+| updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Update timestamp |
+
+### questions
+Stores questions for questionnaires.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | SERIAL | PRIMARY KEY | Unique identifier |
+| questionnaire_id | INTEGER | NOT NULL, REFERENCES questionnaires(id) ON DELETE CASCADE | Associated questionnaire |
+| text | TEXT | NOT NULL | Question text |
+| type | VARCHAR(50) | NOT NULL | Question type (text, multiple_choice, rating, boolean) |
+| required | BOOLEAN | NOT NULL, DEFAULT TRUE | Whether the question is required |
+| order_num | INTEGER | NOT NULL | Order in the questionnaire |
+| options | JSONB | | Options for multiple choice questions |
+| conditional_logic | JSONB | | Logic for adaptive questions |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+| updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Update timestamp |
+
+### responses
+Stores responses to questionnaires.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | SERIAL | PRIMARY KEY | Unique identifier |
+| questionnaire_id | INTEGER | NOT NULL, REFERENCES questionnaires(id) ON DELETE CASCADE | Associated questionnaire |
+| user_id | INTEGER | REFERENCES users(id) | User who submitted the response (if authenticated) |
+| patient_identifier | VARCHAR(255) | | Unique identifier for the patient/respondent |
+| patient_name | VARCHAR(255) | | Name of the patient/respondent |
+| patient_email | VARCHAR(255) | | Email of the patient/respondent |
+| patient_age | INTEGER | | Age of the patient/respondent |
+| patient_gender | VARCHAR(50) | | Gender of the patient/respondent |
+| score | INTEGER | | Calculated score |
+| risk_level | VARCHAR(50) | | Risk level assessment |
+| flagged_for_review | BOOLEAN | NOT NULL, DEFAULT FALSE | Whether this response is flagged for review |
+| completion_time | INTEGER | | Time taken to complete in seconds |
+| completed_at | TIMESTAMP | | When the response was completed |
+| organization_id | INTEGER | REFERENCES organizations(id) | Organization associated with this response |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+| updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Update timestamp |
+
+### answers
+Stores individual answers to questions.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | SERIAL | PRIMARY KEY | Unique identifier |
+| response_id | INTEGER | NOT NULL, REFERENCES responses(id) ON DELETE CASCADE | Associated response |
+| question_id | INTEGER | NOT NULL, REFERENCES questions(id) ON DELETE CASCADE | Associated question |
+| value | TEXT | NOT NULL | Answer value |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+| updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Update timestamp |
+
+### organizations
+Stores organization information.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | SERIAL | PRIMARY KEY | Unique identifier |
+| name | VARCHAR(255) | NOT NULL | Organization name |
+| description | TEXT | | Organization description |
+| type | VARCHAR(50) | | Organization type |
+| contact_email | VARCHAR(255) | | Contact email |
+| contact_phone | VARCHAR(50) | | Contact phone number |
+| address | TEXT | | Physical address |
+| logo_url | VARCHAR(255) | | URL to organization logo |
+| settings | JSONB | | Organization settings |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+| updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Update timestamp |
+
+### organization_members
+Stores organization membership information.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | SERIAL | PRIMARY KEY | Unique identifier |
+| organization_id | INTEGER | NOT NULL, REFERENCES organizations(id) ON DELETE CASCADE | Associated organization |
+| user_id | INTEGER | NOT NULL, REFERENCES users(id) ON DELETE CASCADE | Associated user |
+| role | VARCHAR(50) | NOT NULL | Role within the organization |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+| updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Update timestamp |
+
+### email_templates
+Stores email templates.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | SERIAL | PRIMARY KEY | Unique identifier |
+| name | VARCHAR(255) | NOT NULL | Template name |
+| subject | VARCHAR(255) | NOT NULL | Email subject |
+| body | TEXT | NOT NULL | Email body (HTML) |
+| variables | JSONB | | Template variables |
+| created_by_id | INTEGER | NOT NULL, REFERENCES users(id) | User who created the template |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+| updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Update timestamp |
+
+### email_logs
+Stores logs of sent emails.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | SERIAL | PRIMARY KEY | Unique identifier |
+| template_id | INTEGER | REFERENCES email_templates(id) | Associated template |
+| recipient | VARCHAR(255) | NOT NULL | Recipient email |
+| subject | VARCHAR(255) | NOT NULL | Email subject |
+| body | TEXT | NOT NULL | Email body |
+| status | VARCHAR(50) | NOT NULL | Delivery status |
+| error | TEXT | | Error message if delivery failed |
+| sent_by_id | INTEGER | REFERENCES users(id) | User who sent the email |
+| sent_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | When the email was sent |
+
+### scoring_configs
+Stores scoring configuration for questionnaires.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | SERIAL | PRIMARY KEY | Unique identifier |
+| questionnaire_id | INTEGER | NOT NULL, REFERENCES questionnaires(id) ON DELETE CASCADE | Associated questionnaire |
+| name | VARCHAR(255) | NOT NULL | Configuration name |
+| rules | JSONB | NOT NULL | Scoring rules |
+| risk_levels | JSONB | NOT NULL | Risk level thresholds |
+| created_by_id | INTEGER | NOT NULL, REFERENCES users(id) | User who created the configuration |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+| updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Update timestamp |
+
+### ai_analyses
+Stores AI analysis results.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | SERIAL | PRIMARY KEY | Unique identifier |
+| response_id | INTEGER | NOT NULL, REFERENCES responses(id) ON DELETE CASCADE | Associated response |
+| prompt | TEXT | NOT NULL | Prompt sent to AI |
+| analysis | TEXT | NOT NULL | Analysis result |
+| recommendations | TEXT | | Recommendations |
+| risk_assessment | TEXT | | Risk assessment |
+| model_used | VARCHAR(255) | NOT NULL | AI model used |
+| created_by_id | INTEGER | REFERENCES users(id) | User who requested the analysis |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+
+### sessions
+Stores user session information.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | VARCHAR(255) | PRIMARY KEY | Session ID |
+| user_id | INTEGER | NOT NULL, REFERENCES users(id) ON DELETE CASCADE | Associated user |
+| ip_address | VARCHAR(50) | | IP address |
+| user_agent | TEXT | | User agent string |
+| expires_at | TIMESTAMP | NOT NULL | Expiration timestamp |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+
+### audit_logs
+Stores audit logs for important actions.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | SERIAL | PRIMARY KEY | Unique identifier |
+| user_id | INTEGER | REFERENCES users(id) | User who performed the action |
+| action | VARCHAR(255) | NOT NULL | Action performed |
+| entity_type | VARCHAR(50) | NOT NULL | Type of entity affected |
+| entity_id | INTEGER | | ID of entity affected |
+| details | JSONB | | Additional details |
+| ip_address | VARCHAR(50) | | IP address |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+
+## New Tables (To Be Added)
+
+### notifications
+Stores user notifications.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | SERIAL | PRIMARY KEY | Unique identifier |
+| user_id | INTEGER | NOT NULL, REFERENCES users(id) ON DELETE CASCADE | User to notify |
+| title | VARCHAR(255) | NOT NULL | Notification title |
+| message | TEXT | NOT NULL | Notification message |
+| type | VARCHAR(50) | NOT NULL | Notification type |
+| is_read | BOOLEAN | NOT NULL, DEFAULT FALSE | Whether the notification has been read |
+| entity_type | VARCHAR(50) | | Type of related entity |
+| entity_id | INTEGER | | ID of related entity |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+
+### user_metrics
+Stores user metrics for analytics.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | SERIAL | PRIMARY KEY | Unique identifier |
+| user_id | INTEGER | NOT NULL, REFERENCES users(id) ON DELETE CASCADE | Associated user |
+| metric_type | VARCHAR(50) | NOT NULL | Type of metric |
+| metric_value | FLOAT | NOT NULL | Value of the metric |
+| period_start | TIMESTAMP | NOT NULL | Start of the period |
+| period_end | TIMESTAMP | NOT NULL | End of the period |
+| details | JSONB | | Additional details |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+
+### questionnaire_tags
+Stores tags for questionnaires.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | SERIAL | PRIMARY KEY | Unique identifier |
+| name | VARCHAR(255) | NOT NULL, UNIQUE | Tag name |
+| description | TEXT | | Tag description |
+| color | VARCHAR(50) | | Color code for UI |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+| updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Update timestamp |
+
+### questionnaire_tag_mappings
+Maps questionnaires to tags (many-to-many).
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| questionnaire_id | INTEGER | NOT NULL, REFERENCES questionnaires(id) ON DELETE CASCADE | Associated questionnaire |
+| tag_id | INTEGER | NOT NULL, REFERENCES questionnaire_tags(id) ON DELETE CASCADE | Associated tag |
+| PRIMARY KEY | | (questionnaire_id, tag_id) | Composite primary key |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Creation timestamp |
+
+## Relationships
+
+### One-to-Many Relationships
+- users → questionnaires (created_by_id)
+- users → responses (user_id)
+- users → email_templates (created_by_id)
+- users → scoring_configs (created_by_id)
+- users → ai_analyses (created_by_id)
+- questionnaires → questions
+- questionnaires → responses
+- questionnaires → scoring_configs
+- responses → answers
+- responses → ai_analyses
+- organizations → questionnaires
+- organizations → responses
+- email_templates → email_logs
+
+### Many-to-Many Relationships
+- users ↔ organizations (via organization_members)
+- questionnaires ↔ questionnaire_tags (via questionnaire_tag_mappings)
+
+## Indexes
+
+### Primary Key Indexes
+- users(id)
+- questionnaires(id)
+- questions(id)
+- responses(id)
+- answers(id)
+- organizations(id)
+- organization_members(id)
+- email_templates(id)
+- email_logs(id)
+- scoring_configs(id)
+- ai_analyses(id)
+- sessions(id)
+- audit_logs(id)
+- notifications(id)
+- user_metrics(id)
+- questionnaire_tags(id)
+
+### Foreign Key Indexes
+- questionnaires(created_by_id)
+- questionnaires(organization_id)
+- questionnaires(parent_id)
+- questions(questionnaire_id)
+- responses(questionnaire_id)
+- responses(user_id)
+- responses(organization_id)
+- answers(response_id)
+- answers(question_id)
+- organization_members(organization_id)
+- organization_members(user_id)
+- email_templates(created_by_id)
+- email_logs(template_id)
+- email_logs(sent_by_id)
+- scoring_configs(questionnaire_id)
+- scoring_configs(created_by_id)
+- ai_analyses(response_id)
+- ai_analyses(created_by_id)
+- sessions(user_id)
+- audit_logs(user_id)
+- notifications(user_id)
+- user_metrics(user_id)
+- questionnaire_tag_mappings(questionnaire_id)
+- questionnaire_tag_mappings(tag_id)
+
+### Additional Indexes
+- users(email)
+- questionnaires(is_active)
+- questionnaires(is_public)
+- responses(patient_identifier)
+- responses(patient_email)
+- responses(risk_level)
+- responses(completed_at)
+- email_logs(recipient)
+- email_logs(sent_at)
+- audit_logs(action)
+- audit_logs(created_at)
+- notifications(is_read)
+- notifications(created_at)
+
+## Database Storage Types
+
+### SQL Database (PostgreSQL)
+The primary storage for the application will be PostgreSQL, which will handle:
+- User accounts and authentication
+- Questionnaires and questions
+- Responses and answers
+- Organizations and members
+- Email templates and logs
+- Scoring configurations
+- Session management
+- Audit logging
+
+PostgreSQL is ideal for this application because:
+- It provides strong ACID compliance for data integrity
+- It supports complex relationships between entities
+- It offers robust querying capabilities for analytics
+- It handles transactions well for multi-step operations
+- It provides good performance for the expected data volume
+
+### NoSQL Database (MongoDB)
+While the primary database is PostgreSQL, certain data types would benefit from NoSQL storage:
+
+1. **AI Analysis Results**: The unstructured nature of AI-generated content makes MongoDB a good fit.
+   - Collection: `ai_analyses`
+   - Document structure would include response ID, prompt, analysis text, and metadata
+
+2. **Analytics Data**: For high-volume time-series data from analytics.
+   - Collection: `analytics_events`
+   - Document structure would include event type, timestamp, user ID, and event details
+
+3. **User Activity Logs**: For tracking detailed user behavior.
+   - Collection: `user_activities`
+   - Document structure would include user ID, action, timestamp, and context
+
+MongoDB is suitable for these use cases because:
+- It handles unstructured and semi-structured data well
+- It provides good performance for high-volume writes
+- It scales horizontally for growing datasets
+- It offers flexible schema for evolving data requirements
+
+### File Storage
+For certain types of data, file storage is more appropriate:
+
+1. **User Uploads**: Profile images, organization logos, and other media.
+   - Storage: AWS S3 or similar object storage
+   - Database would store references (URLs) to these files
+
+2. **Export Files**: Generated PDFs, CSV exports, and other downloadable content.
+   - Storage: AWS S3 with time-limited access URLs
+   - Database would store metadata about these exports
+
+3. **Backup Data**: Database backups and system snapshots.
+   - Storage: AWS S3 with versioning and lifecycle policies
+   - Separate from application data
+
+File storage is necessary for:
+- Large binary data that doesn't need to be queried
+- Content that needs to be served directly to users
+- Data that requires different backup and retention policies
+
+## PostgreSQL Neon Specific Configuration
+
+### Serverless Configuration
+```
+NEON_PROJECT_ID=your-project-id
+NEON_BRANCH_ID=br-xxxx
+NEON_ENDPOINT_ID=ep-xxxx
+NEON_API_KEY=your-api-key
+```
+
+### Autoscaling Settings
+- **Compute Units**: 0.25 - 1 (autoscaling)
+- **Minimum Compute**: 0.25 (to maintain responsiveness)
+- **Autoscaling Enabled**: Yes
+- **Suspend Compute When Idle**: Yes (after 5 minutes)
+
+### Branching Configuration
+- **Production Branch**: main
+- **Development Branch**: dev
+- **Testing Branch**: test
+
+### Backup Configuration
+- **Automated Backups**: Enabled
+- **Backup Frequency**: Daily
+- **Backup Retention**: 7 days
+- **Point-in-Time Recovery**: Enabled
+
+### Connection Pooling
+- **Pooler Mode**: Transaction
+- **Pool Size**: 20
+- **Idle Timeout**: 30 seconds
+
+## Migration Strategy
+
+For database migrations, we'll use:
+- **Tool**: node-pg-migrate
+- **Migration Files Location**: `/server/db/migrations`
+- **Migration Naming Convention**: `YYYYMMDDHHMMSS_descriptive_name.js`
+
+Example migration file:
+```javascript
+exports.up = pgm => {
+  pgm.createTable('new_table', {
+    id: 'id',
+    name: { type: 'varchar(255)', notNull: true },
+    created_at: {
+      type: 'timestamp',
+      notNull: true,
+      default: pgm.func('current_timestamp')
+    }
+  });
+};
+
+exports.down = pgm => {
+  pgm.dropTable('new_table');
+};
+```
+
+## Data Seeding
+
+Initial data seeding will include:
+- Admin user
+- Basic questionnaire templates
+- Default email templates
+- Sample organizations
+
+Seed files are located in `/server/db/seeds` and can be run with:
+```
+npm run db:seed
+```
+
+## Performance Considerations
+
+1. **Indexing Strategy**:
+   - Indexes on frequently queried columns
+   - Composite indexes for common query patterns
+   - Partial indexes for filtered queries
+
+2. **Query Optimization**:
+   - Use of prepared statements
+   - Pagination for large result sets
+   - Selective column fetching
+
+3. **Connection Pooling**:
+   - Reuse database connections
+   - Proper pool sizing based on workload
+   - Connection timeout management
+
+4. **Caching Strategy**:
+   - Cache frequently accessed, rarely changing data
+   - Use Redis for shared cache across instances
+   - Implement cache invalidation on data changes

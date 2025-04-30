@@ -1,0 +1,50 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Delete Survey - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="text-center mb-6">
+                    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                        <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
+                    </div>
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Delete Survey</h3>
+                    <p class="mt-2 text-sm text-gray-500">
+                        Are you sure you want to delete the survey "{{ survey.title }}"?
+                    </p>
+                </div>
+                
+                <div class="rounded-md bg-yellow-50 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-yellow-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-yellow-800">Warning</h3>
+                            <div class="mt-2 text-sm text-yellow-700">
+                                <p>This action cannot be undone. This will permanently delete the survey and all associated questions and responses.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post" class="mt-5">
+                    {% csrf_token %}
+                    <div class="flex justify-center space-x-3">
+                        <a href="{% url 'surveys:survey_detail' pk=survey.pk %}" 
+                           class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            Cancel
+                        </a>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Delete Survey
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

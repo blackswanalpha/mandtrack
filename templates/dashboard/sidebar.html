@@ -1,0 +1,417 @@
+<div class="position-sticky pt-3 sidebar-sticky">
+    <!-- User Profile Section -->
+    <div class="user-profile text-center mb-4 fade-in">
+        <div class="avatar-wrapper mb-3">
+            <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto hover-lift" style="width: 80px; height: 80px; font-size: 2rem;">
+                {% if request.user.first_name %}
+                    {{ request.user.first_name|first }}{{ request.user.last_name|first }}
+                {% else %}
+                    {{ request.user.email|first|upper }}
+                {% endif %}
+            </div>
+        </div>
+        <h6 class="mb-1">{{ request.user.get_full_name|default:request.user.email }}</h6>
+        <p class="text-muted small mb-3">
+            {% if request.user.is_staff %}Admin User{% else %}Regular User{% endif %}
+        </p>
+        <div class="d-grid gap-2 d-md-block">
+            <button class="btn btn-sm btn-outline-primary hover-grow" type="button" data-bs-toggle="modal" data-bs-target="#profileModal">
+                <i class="fas fa-user-cog me-1"></i> Profile
+            </button>
+            <a href="{% url 'account_logout' %}" class="btn btn-sm btn-outline-secondary hover-grow">
+                <i class="fas fa-sign-out-alt me-1"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Navigation -->
+    <ul class="nav flex-column">
+        <!-- Dashboard -->
+        <li class="nav-item transition-all stagger-item delay-100">
+            <a class="nav-link {% if request.resolver_match.url_name == 'user_dashboard' or request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %} hover-lift"
+               href="{% if request.user.is_staff %}{% url 'dashboard:admin_dashboard' %}{% else %}{% url 'dashboard:user_dashboard' %}{% endif %}">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+
+        <!-- Survey/Questionnaire Section -->
+        <li class="nav-item transition-all stagger-item delay-200">
+            <a class="nav-link d-flex justify-content-between align-items-center {% if request.resolver_match.namespace == 'surveys' %}active{% endif %} hover-lift"
+               data-bs-toggle="collapse" href="#questionnairesCollapse" role="button" aria-expanded="false" aria-controls="questionnairesCollapse">
+                <span>
+                    <i class="fas fa-clipboard-list me-2"></i>
+                    <span>Survey/Questionnaire</span>
+                </span>
+                <i class="fas fa-chevron-down small"></i>
+            </a>
+            <div class="collapse {% if request.resolver_match.namespace == 'surveys' %}show{% endif %}" id="questionnairesCollapse">
+                <ul class="nav flex-column ms-3 small">
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="{% url 'surveys:survey_list' %}" hx-boost="true">
+                            <i class="fas fa-list me-2"></i> All Questionnaires
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="{% url 'surveys:survey_create' %}" hx-boost="true">
+                            <i class="fas fa-plus-circle me-2"></i> Create New
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="{% url 'surveys:qr_code_list' %}" hx-boost="true">
+                            <i class="fas fa-qrcode me-2"></i> QR Codes
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
+        <!-- Organization Section -->
+        <li class="nav-item transition-all stagger-item delay-300">
+            <a class="nav-link d-flex justify-content-between align-items-center {% if request.resolver_match.namespace == 'groups' %}active{% endif %} hover-lift"
+               data-bs-toggle="collapse" href="#organizationsCollapse" role="button" aria-expanded="false" aria-controls="organizationsCollapse">
+                <span>
+                    <i class="fas fa-building me-2"></i>
+                    <span>Organization</span>
+                </span>
+                <i class="fas fa-chevron-down small"></i>
+            </a>
+            <div class="collapse {% if request.resolver_match.namespace == 'groups' %}show{% endif %}" id="organizationsCollapse">
+                <ul class="nav flex-column ms-3 small">
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="{% url 'groups:organization_list' %}" hx-boost="true">
+                            <i class="fas fa-list me-2"></i> All Organizations
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="{% url 'groups:organization_create' %}" hx-boost="true">
+                            <i class="fas fa-plus-circle me-2"></i> Create New
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-users me-2"></i> Members
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
+        <!-- Analysis Section -->
+        <li class="nav-item transition-all stagger-item delay-400">
+            <a class="nav-link d-flex justify-content-between align-items-center {% if request.resolver_match.namespace == 'analytics' %}active{% endif %} hover-lift"
+               data-bs-toggle="collapse" href="#analyticsCollapse" role="button" aria-expanded="false" aria-controls="analyticsCollapse">
+                <span>
+                    <i class="fas fa-chart-bar me-2"></i>
+                    <span>Analysis</span>
+                </span>
+                <i class="fas fa-chevron-down small"></i>
+            </a>
+            <div class="collapse {% if request.resolver_match.namespace == 'analytics' %}show{% endif %}" id="analyticsCollapse">
+                <ul class="nav flex-column ms-3 small">
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="{% url 'analytics:dashboard' %}" hx-boost="true">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-chart-line me-2"></i> Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-brain me-2"></i> AI Analysis
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-history me-2"></i> History
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
+        <!-- User Management Section -->
+        <li class="nav-item transition-all stagger-item delay-500">
+            <a class="nav-link d-flex justify-content-between align-items-center {% if request.resolver_match.namespace == 'users' %}active{% endif %} hover-lift"
+               data-bs-toggle="collapse" href="#usersCollapse" role="button" aria-expanded="false" aria-controls="usersCollapse">
+                <span>
+                    <i class="fas fa-users me-2"></i>
+                    <span>User Management</span>
+                </span>
+                <i class="fas fa-chevron-down small"></i>
+            </a>
+            <div class="collapse {% if request.resolver_match.namespace == 'users' %}show{% endif %}" id="usersCollapse">
+                <ul class="nav flex-column ms-3 small">
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-user-friends me-2"></i> All Users
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-user-plus me-2"></i> Add User
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-user-shield me-2"></i> Roles & Permissions
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
+        <!-- User Metrics Section -->
+        <li class="nav-item transition-all stagger-item delay-600">
+            <a class="nav-link d-flex justify-content-between align-items-center hover-lift"
+               data-bs-toggle="collapse" href="#metricsCollapse" role="button" aria-expanded="false" aria-controls="metricsCollapse">
+                <span>
+                    <i class="fas fa-chart-pie me-2"></i>
+                    <span>User Metrics</span>
+                </span>
+                <i class="fas fa-chevron-down small"></i>
+            </a>
+            <div class="collapse" id="metricsCollapse">
+                <ul class="nav flex-column ms-3 small">
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-chart-line me-2"></i> Activity Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-user-clock me-2"></i> Engagement
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
+        <!-- Email Section -->
+        <li class="nav-item transition-all stagger-item delay-700">
+            <a class="nav-link d-flex justify-content-between align-items-center hover-lift"
+               data-bs-toggle="collapse" href="#emailCollapse" role="button" aria-expanded="false" aria-controls="emailCollapse">
+                <span>
+                    <i class="fas fa-envelope me-2"></i>
+                    <span>Email</span>
+                </span>
+                <i class="fas fa-chevron-down small"></i>
+            </a>
+            <div class="collapse" id="emailCollapse">
+                <ul class="nav flex-column ms-3 small">
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-paper-plane me-2"></i> Send Email
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-file-alt me-2"></i> Templates
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-history me-2"></i> Email History
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
+        <!-- Google Forms Section -->
+        <li class="nav-item transition-all stagger-item delay-800">
+            <a class="nav-link d-flex justify-content-between align-items-center hover-lift"
+               data-bs-toggle="collapse" href="#googleFormsCollapse" role="button" aria-expanded="false" aria-controls="googleFormsCollapse">
+                <span>
+                    <i class="fab fa-google me-2"></i>
+                    <span>Google Forms</span>
+                </span>
+                <i class="fas fa-chevron-down small"></i>
+            </a>
+            <div class="collapse" id="googleFormsCollapse">
+                <ul class="nav flex-column ms-3 small">
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-link me-2"></i> Connect Account
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-file-import me-2"></i> Import Forms
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
+        <!-- Account Details Section -->
+        <li class="nav-item transition-all stagger-item delay-900">
+            <a class="nav-link d-flex justify-content-between align-items-center hover-lift"
+               data-bs-toggle="collapse" href="#accountCollapse" role="button" aria-expanded="false" aria-controls="accountCollapse">
+                <span>
+                    <i class="fas fa-user-cog me-2"></i>
+                    <span>Account Details</span>
+                </span>
+                <i class="fas fa-chevron-down small"></i>
+            </a>
+            <div class="collapse" id="accountCollapse">
+                <ul class="nav flex-column ms-3 small">
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-id-card me-2"></i> Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-key me-2"></i> Security
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-cog me-2"></i> Preferences
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
+        <!-- Admin Section (only for staff users) -->
+        {% if request.user.is_staff %}
+        <li class="nav-item transition-all stagger-item delay-1000">
+            <a class="nav-link d-flex justify-content-between align-items-center {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %} hover-lift"
+               data-bs-toggle="collapse" href="#adminCollapse" role="button" aria-expanded="false" aria-controls="adminCollapse">
+                <span>
+                    <i class="fas fa-user-shield me-2"></i>
+                    <span>Administration</span>
+                </span>
+                <i class="fas fa-chevron-down small"></i>
+            </a>
+            <div class="collapse {% if request.resolver_match.url_name == 'admin_dashboard' %}show{% endif %}" id="adminCollapse">
+                <ul class="nav flex-column ms-3 small">
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="{% url 'dashboard:admin_dashboard' %}" hx-boost="true">
+                            <i class="fas fa-tachometer-alt me-2"></i> Admin Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="/admin/" target="_blank">
+                            <i class="fas fa-cogs me-2"></i> Django Admin
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-users-cog me-2"></i> User Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
+                            <i class="fas fa-cog me-2"></i> System Settings
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+        {% endif %}
+    </ul>
+
+    <!-- Settings Section -->
+    <div class="mt-4 px-3 fade-in">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="text-muted text-uppercase small mb-0">Settings</h6>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="darkModeSwitch">
+                <label class="form-check-label" for="darkModeSwitch">
+                    <i class="fas fa-moon"></i>
+                </label>
+            </div>
+        </div>
+        <div class="list-group list-group-flush small">
+            <a href="#" class="list-group-item list-group-item-action border-0 px-0 py-2 d-flex align-items-center hover-lift">
+                <i class="fas fa-user-cog me-2 text-muted"></i> Profile Settings
+            </a>
+            <a href="#" class="list-group-item list-group-item-action border-0 px-0 py-2 d-flex align-items-center hover-lift">
+                <i class="fas fa-bell me-2 text-muted"></i> Notifications
+            </a>
+            <a href="#" class="list-group-item list-group-item-action border-0 px-0 py-2 d-flex align-items-center hover-lift">
+                <i class="fas fa-question-circle me-2 text-muted"></i> Help & Support
+            </a>
+        </div>
+    </div>
+
+    <!-- Version Info -->
+    <div class="mt-4 px-3 text-center fade-in">
+        <p class="text-muted small mb-0">MindTrack v1.0.0</p>
+        <p class="text-muted small">© 2025 MindTrack</p>
+    </div>
+</div>
+
+<!-- Profile Modal -->
+<div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="profileModalLabel">User Profile</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4 slide-in-down">
+                    <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 hover-lift pulse" style="width: 100px; height: 100px; font-size: 2.5rem;">
+                        {% if request.user.first_name %}
+                            {{ request.user.first_name|first }}{{ request.user.last_name|first }}
+                        {% else %}
+                            {{ request.user.email|first|upper }}
+                        {% endif %}
+                    </div>
+                    <h5 class="mb-1">{{ request.user.get_full_name|default:request.user.email }}</h5>
+                    <p class="text-muted">
+                        {% if request.user.is_staff %}Admin User{% else %}Regular User{% endif %}
+                    </p>
+                </div>
+
+                <div class="mb-3 slide-in-right delay-100">
+                    <label class="form-label">Email</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                        <input type="email" class="form-control" value="{{ request.user.email }}" readonly>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col slide-in-right delay-200">
+                        <label class="form-label">First Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" value="{{ request.user.first_name }}">
+                        </div>
+                    </div>
+                    <div class="col slide-in-right delay-300">
+                        <label class="form-label">Last Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" value="{{ request.user.last_name }}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3 slide-in-right delay-400">
+                    <label class="form-label">Last Login</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-clock"></i></span>
+                        <input type="text" class="form-control" value="{{ request.user.last_login|date:'F j, Y, g:i a' }}" readonly>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary hover-lift" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Close
+                </button>
+                <button type="button" class="btn btn-primary hover-lift">
+                    <i class="fas fa-save me-1"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

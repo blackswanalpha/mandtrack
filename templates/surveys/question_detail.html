@@ -1,0 +1,117 @@
+{% extends 'admin_portal/modern_base.html' %}
+
+{% block title %}Question Details - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% url 'surveys:survey_detail' pk=survey.pk %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Question Details</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                Viewing question for "{{ survey.title }}"
+            </p>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6 flex justify-between items-start">
+                <div>
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Question Information</h3>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">Details about this question.</p>
+                </div>
+                <div class="flex space-x-2">
+                    <a href="{% url 'surveys:question_edit' survey_pk=survey.pk pk=question.pk %}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <i class="fas fa-edit mr-1.5"></i> Edit
+                    </a>
+                    <a href="{% url 'surveys:question_delete' survey_pk=survey.pk pk=question.pk %}" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        <i class="fas fa-trash-alt mr-1.5"></i> Delete
+                    </a>
+                </div>
+            </div>
+            <div class="border-t border-gray-200">
+                <dl>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Question Text</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ question.text }}</dd>
+                    </div>
+                    {% if question.description %}
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">Description</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ question.description }}</dd>
+                        </div>
+                    {% endif %}
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Question Type</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                {{ question.get_question_type_display }}
+                            </span>
+                        </dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Required</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {% if question.required %}
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                    Required
+                                </span>
+                            {% else %}
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                    Optional
+                                </span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Order</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ question.order }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+        
+        {% if question.question_type in 'radio,checkbox,dropdown' and choices %}
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+                <div class="px-4 py-5 sm:px-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Answer Choices</h3>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">Options for this question.</p>
+                </div>
+                <div class="border-t border-gray-200">
+                    <ul class="divide-y divide-gray-200">
+                        {% for choice in choices %}
+                            <li class="px-4 py-3 sm:px-6">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <span class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 text-xs mr-3">
+                                            {{ choice.order }}
+                                        </span>
+                                        <span class="text-sm text-gray-900">{{ choice.text }}</span>
+                                    </div>
+                                    {% if choice.score != 0 %}
+                                        <span class="px-2 py-1 text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            Score: {{ choice.score }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+        
+        <div class="flex justify-between">
+            <a href="{% url 'surveys:survey_detail' pk=survey.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Survey
+            </a>
+            <a href="{% url 'surveys:question_edit' survey_pk=survey.pk pk=question.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                <i class="fas fa-edit mr-2"></i> Edit Question
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

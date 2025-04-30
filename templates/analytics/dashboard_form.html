@@ -1,0 +1,149 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{% if is_edit %}Edit Dashboard{% else %}Create Dashboard{% endif %} - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% if is_edit %}{% url 'analytics:custom_dashboard' pk=dashboard.pk %}{% else %}{% url 'analytics:dashboard' %}{% endif %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">
+                    {% if is_edit %}Edit Dashboard{% else %}Create Dashboard{% endif %}
+                </h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                {% if is_edit %}
+                    Update dashboard settings
+                {% else %}
+                    Create a new custom dashboard
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="rounded-md bg-red-50 p-4 mb-6">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-red-800">There were errors with your submission</h3>
+                                    <div class="mt-2 text-sm text-red-700">
+                                        <ul class="list-disc pl-5 space-y-1">
+                                            {% for error in form.non_field_errors %}
+                                                <li>{{ error }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Title -->
+                    <div>
+                        <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Dashboard Title <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <input type="text" name="{{ form.title.name }}" id="{{ form.title.id_for_label }}" 
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.title.errors %}border-red-300{% endif %}"
+                                   value="{{ form.title.value|default:'' }}" required>
+                        </div>
+                        {% if form.title.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.title.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Description -->
+                    <div>
+                        <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Description
+                        </label>
+                        <div class="mt-1">
+                            <textarea name="{{ form.description.name }}" id="{{ form.description.id_for_label }}" rows="3"
+                                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.description.errors %}border-red-300{% endif %}">{{ form.description.value|default:'' }}</textarea>
+                        </div>
+                        {% if form.description.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Layout -->
+                    <div>
+                        <label for="{{ form.layout.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Default Layout <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <select name="{{ form.layout.name }}" id="{{ form.layout.id_for_label }}"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.layout.errors %}border-red-300{% endif %}">
+                                {% for value, label in form.fields.layout.choices %}
+                                    <option value="{{ value }}" {% if form.layout.value == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if form.layout.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.layout.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">You can customize the layout after creating the dashboard</p>
+                    </div>
+                    
+                    <!-- Organization -->
+                    <div>
+                        <label for="{{ form.organization.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Organization
+                        </label>
+                        <div class="mt-1">
+                            <select name="{{ form.organization.name }}" id="{{ form.organization.id_for_label }}"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.organization.errors %}border-red-300{% endif %}">
+                                <option value="">Personal Dashboard</option>
+                                {% for org in form.fields.organization.queryset %}
+                                    <option value="{{ org.pk }}" {% if form.organization.value|stringformat:"s" == org.pk|stringformat:"s" %}selected{% endif %}>{{ org.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if form.organization.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.organization.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Associate this dashboard with an organization (optional)</p>
+                    </div>
+                    
+                    <!-- Public/Private -->
+                    <div>
+                        <div class="flex items-center">
+                            <input type="checkbox" name="{{ form.is_public.name }}" id="{{ form.is_public.id_for_label }}"
+                                   class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                                   {% if form.is_public.value %}checked{% endif %}>
+                            <label for="{{ form.is_public.id_for_label }}" class="ml-2 block text-sm text-gray-700">
+                                Make this dashboard public
+                            </label>
+                        </div>
+                        {% if form.is_public.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.is_public.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Public dashboards can be viewed by anyone with the link</p>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                        <a href="{% if is_edit %}{% url 'analytics:custom_dashboard' pk=dashboard.pk %}{% else %}{% url 'analytics:dashboard' %}{% endif %}" 
+                           class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            Cancel
+                        </a>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            {% if is_edit %}Update Dashboard{% else %}Create Dashboard{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

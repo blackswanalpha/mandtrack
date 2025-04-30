@@ -1,0 +1,160 @@
+{% load static %}
+
+<div x-data="{ collapsed: false, mobileOpen: false }">
+    <!-- Mobile Sidebar Toggle -->
+    <button
+        class="lg:hidden fixed z-20 bottom-4 right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg"
+        @click="mobileOpen = !mobileOpen"
+    >
+        <i x-show="!mobileOpen" class="fas fa-bars"></i>
+        <i x-show="mobileOpen" class="fas fa-times"></i>
+    </button>
+
+    <!-- Sidebar Backdrop -->
+    <div
+        x-show="mobileOpen"
+        @click="mobileOpen = false"
+        class="lg:hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-10"
+    ></div>
+
+    <!-- Sidebar -->
+    <aside
+        :class="{
+            'translate-x-0': mobileOpen,
+            '-translate-x-full': !mobileOpen,
+            'w-20': collapsed,
+            'w-64': !collapsed
+        }"
+        class="lg:translate-x-0 fixed lg:relative z-10 h-full bg-white border-r border-gray-200 transition-all duration-300 ease-in-out"
+    >
+        <div class="flex flex-col h-full justify-between">
+            <div>
+                <!-- Logo -->
+                <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+                    <div x-show="!collapsed || mobileOpen" class="flex items-center">
+                        <i class="fas fa-brain text-blue-600 text-2xl"></i>
+                        <span class="ml-2 text-lg font-semibold text-gray-800">MindTrack</span>
+                    </div>
+                    <i x-show="collapsed && !mobileOpen" class="fas fa-brain text-blue-600 text-2xl mx-auto"></i>
+
+                    <button
+                        @click="collapsed = !collapsed"
+                        class="hidden lg:block text-gray-500 hover:text-gray-700"
+                    >
+                        <i x-show="collapsed" class="fas fa-bars text-sm"></i>
+                        <i x-show="!collapsed" class="fas fa-times text-sm"></i>
+                    </button>
+                </div>
+
+                <!-- Navigation Items -->
+                <nav class="px-2 py-2">
+                    <ul class="space-y-2 py-4">
+                        <!-- Dashboard -->
+                        <li>
+                            <a
+                                href="{% url 'dashboard:admin_dashboard' %}"
+                                class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors {% if request.resolver_match.url_name == 'admin_dashboard' %}bg-blue-100 text-blue-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
+                            >
+                                <span class="mr-3"><i class="fas fa-tachometer-alt"></i></span>
+                                <span x-show="!collapsed || mobileOpen">Dashboard</span>
+                            </a>
+                        </li>
+
+                        <!-- Questionnaires -->
+                        <li>
+                            <a
+                                href="{% url 'surveys:survey_list' %}"
+                                class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors {% if 'surveys' in request.path %}bg-blue-100 text-blue-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
+                            >
+                                <span class="mr-3"><i class="fas fa-clipboard-list"></i></span>
+                                <span x-show="!collapsed || mobileOpen">Questionnaires</span>
+                            </a>
+                        </li>
+
+                        <!-- Patients/Users -->
+                        <li>
+                            <a
+                                href="{% url 'dashboard:user_management' %}"
+                                class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors {% if 'users' in request.path %}bg-blue-100 text-blue-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
+                            >
+                                <span class="mr-3"><i class="fas fa-users"></i></span>
+                                <span x-show="!collapsed || mobileOpen">Users</span>
+                            </a>
+                        </li>
+
+                        <!-- Analytics -->
+                        <li>
+                            <a
+                                href="{% url 'analytics:dashboard' %}"
+                                class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors {% if 'analytics' in request.path %}bg-blue-100 text-blue-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
+                            >
+                                <span class="mr-3"><i class="fas fa-chart-bar"></i></span>
+                                <span x-show="!collapsed || mobileOpen">Analytics</span>
+                            </a>
+                        </li>
+
+                        <!-- Schedule -->
+                        <li>
+                            <a
+                                href="#"
+                                class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
+                            >
+                                <span class="mr-3"><i class="fas fa-calendar"></i></span>
+                                <span x-show="!collapsed || mobileOpen">Schedule</span>
+                            </a>
+                        </li>
+
+                        <!-- Assessments -->
+                        <li>
+                            <a
+                                href="#"
+                                class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
+                            >
+                                <span class="mr-3"><i class="fas fa-brain"></i></span>
+                                <span x-show="!collapsed || mobileOpen">Assessments</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <div class="px-2 mb-6">
+                <ul class="space-y-2 py-4">
+                    <!-- Settings -->
+                    <li>
+                        <a
+                            href="#"
+                            class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
+                        >
+                            <span class="mr-3"><i class="fas fa-cog"></i></span>
+                            <span x-show="!collapsed || mobileOpen">Settings</span>
+                        </a>
+                    </li>
+
+                    <!-- Help -->
+                    <li>
+                        <a
+                            href="#"
+                            class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
+                        >
+                            <span class="mr-3"><i class="fas fa-question-circle"></i></span>
+                            <span x-show="!collapsed || mobileOpen">Help</span>
+                        </a>
+                    </li>
+
+                    <!-- Logout -->
+                    <li>
+                        <a
+                            href="{% url 'account_logout' %}"
+                            class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
+                        >
+                            <span class="mr-3"><i class="fas fa-sign-out-alt"></i></span>
+                            <span x-show="!collapsed || mobileOpen">Logout</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </aside>
+</div>

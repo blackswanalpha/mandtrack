@@ -1,0 +1,428 @@
+{% extends 'questionnaires/base.html' %}
+{% load static %}
+{% load questionnaire_filters %}
+
+{% block questionnaires_content %}
+<!-- Header with animations -->
+<div class="flex justify-between items-center mb-6"
+     x-data="{}"
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 100)"
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+    <div>
+        <a href="{% url 'questionnaires' %}" class="text-indigo-600 hover:text-indigo-800 flex items-center mb-2 group">
+            <i class="fas fa-arrow-left mr-2 transform group-hover:-translate-x-1 transition-transform duration-300"></i>
+            <span>Back to Questionnaires</span>
+        </a>
+        <h1 class="text-2xl font-bold text-gray-800">{{ questionnaire.title|default:"Questionnaire Details" }}</h1>
+    </div>
+
+    <div class="flex space-x-2">
+        <div x-data="{ open: false }" class="relative">
+            <button @click="open = !open" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-md transition-all duration-300 flex items-center">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+            <div x-show="open" @click.away="open = false"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 transform scale-95"
+                 x-transition:enter-end="opacity-100 transform scale-100"
+                 class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                <div class="py-1">
+                    <a href="{% url 'questionnaire_edit' id=questionnaire.id|default:1 %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center">
+                        <i class="fas fa-edit mr-2 text-indigo-500"></i> Edit
+                    </a>
+                    <a href="{% url 'questionnaire_preview' id=questionnaire.id|default:1 %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center">
+                        <i class="fas fa-eye mr-2 text-indigo-500"></i> Preview
+                    </a>
+                    <a href="{% url 'questionnaire_share' id=questionnaire.id|default:1 %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center">
+                        <i class="fas fa-share-alt mr-2 text-indigo-500"></i> Share
+                    </a>
+                    <a href="{% url 'questionnaire_duplicate' id=questionnaire.id|default:1 %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center">
+                        <i class="fas fa-copy mr-2 text-indigo-500"></i> Duplicate
+                    </a>
+                    <a href="{% url 'questionnaire_archive' id=questionnaire.id|default:1 %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center">
+                        <i class="fas fa-archive mr-2 text-indigo-500"></i> Archive
+                    </a>
+                </div>
+                <div class="border-t border-gray-100 py-1">
+                    <form method="post" action="{% url 'questionnaire_delete' id=questionnaire.id|default:1 %}" class="block" onsubmit="return confirm('Are you sure you want to delete this questionnaire? This action cannot be undone.');">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 flex items-center">
+                            <i class="fas fa-trash-alt mr-2"></i> Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <a href="{% url 'question_list' id=questionnaire.id|default:1 %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 hover:shadow-md flex items-center">
+            <i class="fas fa-list-ul mr-2"></i> Manage Questions
+        </a>
+    </div>
+</div>
+
+<!-- Questionnaire Summary Card -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 overflow-hidden"
+     x-data="{}"
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 200)"
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+    <div class="flex flex-col md:flex-row md:items-start">
+        <!-- Left side: Icon and status -->
+        <div class="flex-shrink-0 mb-4 md:mb-0 md:mr-6">
+            <div class="w-16 h-16 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
+                <i class="fas fa-clipboard-list text-3xl"></i>
+            </div>
+        </div>
+
+        <!-- Middle: Details -->
+        <div class="flex-grow">
+            <h2 class="text-xl font-semibold text-gray-800 mb-2">{{ questionnaire.title|default:"Untitled Questionnaire" }}</h2>
+            <p class="text-gray-600 mb-4">{{ questionnaire.description|default:"No description provided." }}</p>
+
+            <div class="flex flex-wrap items-center gap-4 mb-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if questionnaire.status == 'active' %}bg-green-100 text-green-800{% elif questionnaire.status == 'draft' %}bg-yellow-100 text-yellow-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ questionnaire.status|default:"Draft"|title }}
+                </span>
+                <span class="text-sm text-gray-500 flex items-center">
+                    <i class="far fa-calendar-alt mr-1"></i> Created: {{ questionnaire.created_at|date:"M d, Y"|default:"N/A" }}
+                </span>
+                <span class="text-sm text-gray-500 flex items-center">
+                    <i class="fas fa-clock mr-1"></i> {{ questionnaire.estimated_time|default:"10" }} min
+                </span>
+                <span class="text-sm text-gray-500 flex items-center">
+                    <i class="fas fa-file-alt mr-1"></i> {{ questionnaire.question_count|default:"0" }} questions
+                </span>
+                <span class="text-sm text-gray-500 flex items-center">
+                    <i class="fas fa-users mr-1"></i> {{ questionnaire.response_count|default:"0" }} responses
+                </span>
+            </div>
+        </div>
+
+        <!-- Right side: Quick stats -->
+        <div class="flex-shrink-0 mt-4 md:mt-0 md:ml-6 pt-4 md:pt-0 border-t md:border-t-0 border-gray-100">
+            <div class="flex flex-col items-center md:items-end">
+                <div class="text-3xl font-bold text-indigo-600">{{ questionnaire.completion_rate|default:"0" }}%</div>
+                <div class="text-sm text-gray-500">Completion Rate</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs Navigation -->
+<div x-data="{ activeTab: 'overview' }"
+     x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 300)"
+     class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+
+    <div class="border-b border-gray-200 mb-6">
+        <nav class="flex -mb-px space-x-8">
+            <button @click="activeTab = 'overview'" :class="{'border-indigo-500 text-indigo-600': activeTab === 'overview', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'overview'}" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200 flex items-center">
+                <i class="fas fa-clipboard-list mr-2"></i> Overview
+            </button>
+
+            <button @click="activeTab = 'questions'" :class="{'border-indigo-500 text-indigo-600': activeTab === 'questions', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'questions'}" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200 flex items-center">
+                <i class="fas fa-list-ul mr-2"></i> Questions
+            </button>
+
+            <button @click="activeTab = 'responses'" :class="{'border-indigo-500 text-indigo-600': activeTab === 'responses', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'responses'}" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200 flex items-center">
+                <i class="fas fa-reply mr-2"></i> Responses
+            </button>
+
+            <button @click="activeTab = 'analysis'" :class="{'border-indigo-500 text-indigo-600': activeTab === 'analysis', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'analysis'}" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200 flex items-center">
+                <i class="fas fa-chart-bar mr-2"></i> Analysis
+            </button>
+
+            <button @click="activeTab = 'reports'" :class="{'border-indigo-500 text-indigo-600': activeTab === 'reports', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'reports'}" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200 flex items-center">
+                <i class="fas fa-file-alt mr-2"></i> Reports
+            </button>
+
+            <button @click="activeTab = 'settings'" :class="{'border-indigo-500 text-indigo-600': activeTab === 'settings', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'settings'}" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200 flex items-center">
+                <i class="fas fa-cog mr-2"></i> Settings
+            </button>
+        </nav>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+         x-init="setTimeout(() => $el.classList.add('opacity-100', 'translate-y-0'), 400)"
+         class="opacity-0 translate-y-4 transition-all duration-500 ease-out">
+
+        <!-- Overview Tab -->
+        <div x-show="activeTab === 'overview'"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform translate-y-4"
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             class="p-6">
+
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Overview</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- Preview Card -->
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <h3 class="text-lg font-medium mb-3 text-gray-700">Preview</h3>
+
+                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                        <p class="text-gray-500 text-center py-8">
+                            <i class="fas fa-eye text-3xl mb-2 block text-indigo-400"></i>
+                            <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium">Click to preview questionnaire</a>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Stats Card -->
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <h3 class="text-lg font-medium mb-3 text-gray-700">Quick Stats</h3>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                            <div class="text-sm text-gray-500">Total Responses</div>
+                            <div class="text-2xl font-bold text-indigo-600">{{ questionnaire.response_count|default:"0" }}</div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                            <div class="text-sm text-gray-500">Avg. Completion Time</div>
+                            <div class="text-2xl font-bold text-indigo-600">{{ questionnaire.avg_completion_time|default:"0" }} min</div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                            <div class="text-sm text-gray-500">Completion Rate</div>
+                            <div class="text-2xl font-bold text-indigo-600">{{ questionnaire.completion_rate|default:"0" }}%</div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                            <div class="text-sm text-gray-500">Questions</div>
+                            <div class="text-2xl font-bold text-indigo-600">{{ questionnaire.question_count|default:"0" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <h3 class="text-lg font-medium mb-3 text-gray-700">Recent Activity</h3>
+
+            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <ul class="divide-y divide-gray-200">
+                    <li class="py-3 flex items-start">
+                        <div class="flex-shrink-0 mr-3">
+                            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-500">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-800">You edited this questionnaire</p>
+                            <p class="text-xs text-gray-500">2 hours ago</p>
+                        </div>
+                    </li>
+                    <li class="py-3 flex items-start">
+                        <div class="flex-shrink-0 mr-3">
+                            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-500">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-800">You added a new question</p>
+                            <p class="text-xs text-gray-500">Yesterday at 3:45 PM</p>
+                        </div>
+                    </li>
+                    <li class="py-3 flex items-start">
+                        <div class="flex-shrink-0 mr-3">
+                            <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-500">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-800">You created this questionnaire</p>
+                            <p class="text-xs text-gray-500">3 days ago</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Questions Tab (Placeholder) -->
+        <div x-show="activeTab === 'questions'"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform translate-y-4"
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             class="p-6">
+
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-800">Questions</h2>
+                <a href="{% url 'question_list' id=questionnaire.id|default:1 %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 flex items-center">
+                    <i class="fas fa-plus mr-2"></i> Add Question
+                </a>
+            </div>
+
+            {% if questionnaire.question_count|default:0 > 0 %}
+                <div class="space-y-4">
+                    <!-- Sample questions would go here -->
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-all duration-300">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="text-xs text-gray-500 mb-1">Question 1</div>
+                                <h3 class="text-lg font-medium text-gray-800">How would you rate your overall experience?</h3>
+                                <div class="text-sm text-gray-600 mt-1">Type: Rating Scale</div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-gray-500 hover:text-indigo-600 p-1">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="text-gray-500 hover:text-red-600 p-1">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-all duration-300">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="text-xs text-gray-500 mb-1">Question 2</div>
+                                <h3 class="text-lg font-medium text-gray-800">What aspects of our service could be improved?</h3>
+                                <div class="text-sm text-gray-600 mt-1">Type: Text Response</div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-gray-500 hover:text-indigo-600 p-1">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="text-gray-500 hover:text-red-600 p-1">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="bg-gray-50 p-8 rounded-lg border border-gray-200 text-center">
+                    <div class="text-gray-400 mb-4">
+                        <i class="fas fa-list-ul text-5xl"></i>
+                    </div>
+                    <h3 class="text-xl font-medium text-gray-700 mb-2">No questions added yet</h3>
+                    <p class="text-gray-500 mb-4">Add questions to your questionnaire to get started</p>
+                    <a href="{% url 'question_list' id=questionnaire.id|default:1 %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 inline-flex items-center">
+                        <i class="fas fa-plus mr-2"></i> Add First Question
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Other tabs would be implemented similarly -->
+        <div x-show="activeTab === 'responses'" class="p-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Responses</h2>
+            <div class="bg-gray-50 p-8 rounded-lg border border-gray-200 text-center">
+                <div class="text-gray-400 mb-4">
+                    <i class="fas fa-reply text-5xl"></i>
+                </div>
+                <h3 class="text-xl font-medium text-gray-700 mb-2">No responses yet</h3>
+                <p class="text-gray-500 mb-4">Share your questionnaire to start collecting responses</p>
+                <a href="#" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 inline-flex items-center">
+                    <i class="fas fa-share-alt mr-2"></i> Share Questionnaire
+                </a>
+            </div>
+        </div>
+
+        <div x-show="activeTab === 'analysis'" class="p-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Analysis</h2>
+            <div class="bg-gray-50 p-8 rounded-lg border border-gray-200 text-center">
+                <div class="text-gray-400 mb-4">
+                    <i class="fas fa-chart-bar text-5xl"></i>
+                </div>
+                <h3 class="text-xl font-medium text-gray-700 mb-2">No data to analyze</h3>
+                <p class="text-gray-500 mb-4">Collect responses to see analysis</p>
+            </div>
+        </div>
+
+        <div x-show="activeTab === 'reports'" class="p-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Reports</h2>
+            <div class="bg-gray-50 p-8 rounded-lg border border-gray-200 text-center">
+                <div class="text-gray-400 mb-4">
+                    <i class="fas fa-file-alt text-5xl"></i>
+                </div>
+                <h3 class="text-xl font-medium text-gray-700 mb-2">No reports available</h3>
+                <p class="text-gray-500 mb-4">Generate reports based on questionnaire responses</p>
+            </div>
+        </div>
+
+        <div x-show="activeTab === 'settings'"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform translate-y-4"
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             class="p-6">
+
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-800">Settings</h2>
+                <a href="{% url 'questionnaire_settings' id=questionnaire.id|default:1 %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 flex items-center">
+                    <i class="fas fa-cog mr-2"></i> Advanced Settings
+                </a>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+                <h3 class="text-base font-medium text-gray-700 mb-3">Quick Settings</h3>
+
+                <form class="space-y-4">
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Questionnaire Title</label>
+                        <input type="text" id="title" name="title" value="{{ questionnaire.title|default:'Untitled Questionnaire' }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                    </div>
+
+                    <div>
+                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select id="status" name="status" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200">
+                            <option value="draft" {% if questionnaire.status == 'draft' or not questionnaire.status %}selected{% endif %}>Draft</option>
+                            <option value="active" {% if questionnaire.status == 'active' %}selected{% endif %}>Active</option>
+                            <option value="archived" {% if questionnaire.status == 'archived' %}selected{% endif %}>Archived</option>
+                        </select>
+                    </div>
+
+                    <div class="pt-4 flex justify-end">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 flex items-center">
+                            <i class="fas fa-save mr-2"></i> Save
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <a href="{% url 'questionnaire_settings' id=questionnaire.id|default:1 %}" class="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-md transition-all duration-300 group">
+                    <div class="flex items-center text-indigo-500 mb-2">
+                        <i class="fas fa-sliders-h text-xl"></i>
+                        <div class="ml-auto transform transition-transform duration-300 group-hover:translate-x-1">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-base font-medium text-gray-800">Display Settings</h3>
+                    <p class="text-sm text-gray-600 mt-1">Customize appearance, theme, and layout</p>
+                </a>
+
+                <a href="{% url 'questionnaire_settings' id=questionnaire.id|default:1 %}" class="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-md transition-all duration-300 group">
+                    <div class="flex items-center text-indigo-500 mb-2">
+                        <i class="fas fa-user-shield text-xl"></i>
+                        <div class="ml-auto transform transition-transform duration-300 group-hover:translate-x-1">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-base font-medium text-gray-800">Privacy Settings</h3>
+                    <p class="text-sm text-gray-600 mt-1">Manage data collection and anonymity</p>
+                </a>
+
+                <a href="{% url 'questionnaire_settings' id=questionnaire.id|default:1 %}" class="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-md transition-all duration-300 group">
+                    <div class="flex items-center text-indigo-500 mb-2">
+                        <i class="fas fa-bell text-xl"></i>
+                        <div class="ml-auto transform transition-transform duration-300 group-hover:translate-x-1">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-base font-medium text-gray-800">Notification Settings</h3>
+                    <p class="text-sm text-gray-600 mt-1">Configure email alerts and notifications</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block questionnaires_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        // Alpine.js initialization if needed
+    });
+</script>
+{% endblock %}

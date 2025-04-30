@@ -1,0 +1,149 @@
+{% extends "base/base.html" %}
+
+{% block title %}Scan QR Code{% endblock %}
+
+{% block extra_css %}
+<style>
+    .qr-scan-container {
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        background-color: white;
+    }
+    .qr-scan-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .qr-scan-header h1 {
+        color: #007bff;
+        font-weight: 600;
+    }
+    .qr-scanner {
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .qr-scanner video {
+        width: 100%;
+        height: auto;
+    }
+    .qr-scan-form {
+        margin-top: 30px;
+    }
+    .qr-scan-form .btn-primary {
+        width: 100%;
+        padding: 10px;
+        font-weight: 500;
+    }
+    .qr-scan-footer {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const html5QrCode = new Html5Qrcode("qr-reader");
+        const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+            // Handle the scanned code
+            document.getElementById('qr-result').textContent = decodedText;
+            document.getElementById('qr-code-input').value = decodedText;
+            html5QrCode.stop();
+            document.getElementById('qr-success').classList.remove('d-none');
+            document.getElementById('qr-scanner-container').classList.add('d-none');
+        };
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+        // Start scanner
+        document.getElementById('start-scanner').addEventListener('click', function() {
+            html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback);
+            document.getElementById('start-scanner').classList.add('d-none');
+            document.getElementById('stop-scanner').classList.remove('d-none');
+        });
+
+        // Stop scanner
+        document.getElementById('stop-scanner').addEventListener('click', function() {
+            html5QrCode.stop();
+            document.getElementById('start-scanner').classList.remove('d-none');
+            document.getElementById('stop-scanner').classList.add('d-none');
+        });
+
+        // Manual entry toggle
+        document.getElementById('manual-entry-toggle').addEventListener('click', function() {
+            document.getElementById('qr-scanner-container').classList.toggle('d-none');
+            document.getElementById('manual-entry-container').classList.toggle('d-none');
+        });
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="qr-scan-container">
+        <div class="qr-scan-header">
+            <h1 class="h3">Scan QR Code</h1>
+            <p class="text-muted">Scan a QR code to access a questionnaire</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <div id="qr-success" class="alert alert-success d-none">
+            <h5>QR Code Detected!</h5>
+            <p>Code: <span id="qr-result"></span></p>
+            <p>Please enter your email to continue.</p>
+        </div>
+
+        <div id="qr-scanner-container">
+            <div class="qr-scanner mb-3">
+                <div id="qr-reader"></div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button id="start-scanner" class="btn btn-primary">Start Scanner</button>
+                <button id="stop-scanner" class="btn btn-danger d-none">Stop Scanner</button>
+                <button id="manual-entry-toggle" class="btn btn-outline-secondary">Enter Code Manually</button>
+            </div>
+        </div>
+
+        <div id="manual-entry-container" class="d-none">
+            <div class="qr-scan-form">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="qr-code-input" class="form-label">QR Code</label>
+                        <input type="text" class="form-control" id="qr-code-input" name="qr_code" placeholder="Enter QR code">
+                    </div>
+                    <div class="mb-3">
+                        <label for="email-input" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email-input" name="email" placeholder="Enter your email">
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <button id="manual-entry-toggle" class="btn btn-outline-secondary">Use Scanner</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="qr-scan-footer">
+            <p>Already have an account? <a href="/client-portal/login/">Sign In</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

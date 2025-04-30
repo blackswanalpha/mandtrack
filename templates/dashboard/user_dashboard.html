@@ -1,0 +1,191 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Dashboard - MindTrack{% endblock %}
+
+{% block page_title %}User Dashboard{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'surveys:questionnaire_create' %}" class="btn btn-sm btn-primary transition-all">
+    <i class="fas fa-plus-circle me-1"></i> New Questionnaire
+</a>
+{% endblock %}
+
+{% block dashboard_content %}
+{% if error_message %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong>Error:</strong> {{ error_message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Total Questionnaires Card -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-start border-primary border-4 shadow h-100 py-2 transition-all hover:shadow-lg stagger-item">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Questionnaires</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_questionnaires }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <a href="{% url 'surveys:questionnaire_list' %}" class="btn btn-sm btn-primary" hx-boost="true">View All</a>
+                <a href="{% url 'surveys:questionnaire_create' %}" class="btn btn-sm btn-outline-primary" hx-boost="true">Create New</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Responses Card -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-start border-success border-4 shadow h-100 py-2 transition-all hover:shadow-lg stagger-item">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Total Responses</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_responses }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-comments fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <a href="{% url 'feedback:response_list' %}" class="btn btn-sm btn-success" hx-boost="true">View All</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Questionnaires -->
+<div class="card shadow mb-4 transition-all hover:shadow-lg stagger-item">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Recent Questionnaires</h6>
+        <a href="{% url 'surveys:questionnaire_list' %}" class="btn btn-sm btn-primary" hx-boost="true">View All</a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for questionnaire in questionnaires %}
+                    <tr class="transition-colors hover:bg-gray-50">
+                        <td>{{ questionnaire.title }}</td>
+                        <td>{{ questionnaire.get_category_display }}</td>
+                        <td>
+                            <span class="badge {% if questionnaire.status == 'active' %}bg-success{% elif questionnaire.status == 'draft' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                {{ questionnaire.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ questionnaire.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'surveys:questionnaire_detail' pk=questionnaire.pk %}" class="btn btn-sm btn-info" hx-boost="true" data-bs-toggle="tooltip" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'surveys:questionnaire_edit' pk=questionnaire.pk %}" class="btn btn-sm btn-warning" hx-boost="true" data-bs-toggle="tooltip" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'surveys:question_list' questionnaire_pk=questionnaire.pk %}" class="btn btn-sm btn-primary" hx-boost="true" data-bs-toggle="tooltip" title="Questions">
+                                    <i class="fas fa-list"></i>
+                                </a>
+                                <a href="#" class="btn btn-sm btn-secondary" hx-boost="true" data-bs-toggle="tooltip" title="Preview">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="#" class="btn btn-sm btn-dark" hx-boost="true" data-bs-toggle="tooltip" title="Share">
+                                    <i class="fas fa-share-alt"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No questionnaires found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Responses -->
+<div class="card shadow mb-4 transition-all hover:shadow-lg stagger-item">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-success">Recent Responses</h6>
+        <a href="{% url 'feedback:response_list' %}" class="btn btn-sm btn-success" hx-boost="true">View All</a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Questionnaire</th>
+                        <th>Respondent</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Score</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for response in recent_responses %}
+                    <tr class="transition-colors hover:bg-gray-50">
+                        <td>{{ response.questionnaire.title }}</td>
+                        <td>
+                            {% if response.patient_name %}
+                                {{ response.patient_name }}
+                            {% elif response.user %}
+                                {{ response.user.get_full_name|default:response.user.email }}
+                            {% elif response.patient_email %}
+                                {{ response.patient_email }}
+                            {% else %}
+                                Anonymous
+                            {% endif %}
+                        </td>
+                        <td>{{ response.completed_at|default:response.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            <span class="badge {% if response.status == 'completed' %}bg-success{% elif response.status == 'in_progress' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                {{ response.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ response.score|default:"-" }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'feedback:response_detail' pk=response.pk %}" class="btn btn-sm btn-info" hx-boost="true" data-bs-toggle="tooltip" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'feedback:response_analyze' pk=response.pk %}" class="btn btn-sm btn-primary" hx-boost="true" data-bs-toggle="tooltip" title="Analyze">
+                                    <i class="fas fa-chart-bar"></i>
+                                </a>
+                                <a href="#" class="btn btn-sm btn-success" hx-boost="true" data-bs-toggle="tooltip" title="Score">
+                                    <i class="fas fa-calculator"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center">No responses found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,363 @@
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
+
+{% block title %}Organizations{% endblock %}
+
+{% block page_title %}Organizations{% endblock %}
+
+{% block breadcrumbs %}
+<li aria-current="page">
+    <div class="flex items-center">
+        <i class="fas fa-chevron-right text-gray-400 text-xs mx-1"></i>
+        <span class="text-sm text-gray-500">Organizations</span>
+    </div>
+</li>
+{% endblock %}
+
+{% block content %}
+<!-- Organizations Header -->
+<div class="bg-white rounded-lg shadow mb-6">
+    <div class="p-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-800">Organizations</h2>
+                <p class="mt-1 text-sm text-gray-600">Manage organizations and their members</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input 
+                        type="text" 
+                        class="enhanced-input block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        placeholder="Search organizations..."
+                    >
+                </div>
+                <button class="btn-animated inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-plus mr-2"></i> Add Organization
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Organizations Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+    <!-- Organization Card 1 -->
+    <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
+        <div class="p-5 border-b border-gray-200">
+            <div class="flex justify-between items-start">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-hospital text-blue-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-900">General Hospital</h3>
+                        <p class="text-sm text-gray-500">Healthcare</p>
+                    </div>
+                </div>
+                <div class="flex space-x-1">
+                    <button class="p-1 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="p-5">
+            <div class="mb-4">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-user-friends text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">42 members</span>
+                </div>
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-clipboard-list text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">15 questionnaires</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-calendar-alt text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">Created: Apr 10, 2025</span>
+                </div>
+            </div>
+            <div class="flex justify-between items-center mt-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Active
+                </span>
+                <a href="#" class="text-sm text-primary-600 hover:text-primary-800 font-medium">View Details</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Organization Card 2 -->
+    <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
+        <div class="p-5 border-b border-gray-200">
+            <div class="flex justify-between items-start">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-12 w-12 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <i class="fas fa-university text-purple-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-900">State University</h3>
+                        <p class="text-sm text-gray-500">Education</p>
+                    </div>
+                </div>
+                <div class="flex space-x-1">
+                    <button class="p-1 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="p-5">
+            <div class="mb-4">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-user-friends text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">28 members</span>
+                </div>
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-clipboard-list text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">8 questionnaires</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-calendar-alt text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">Created: Apr 12, 2025</span>
+                </div>
+            </div>
+            <div class="flex justify-between items-center mt-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Active
+                </span>
+                <a href="#" class="text-sm text-primary-600 hover:text-primary-800 font-medium">View Details</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Organization Card 3 -->
+    <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
+        <div class="p-5 border-b border-gray-200">
+            <div class="flex justify-between items-start">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-12 w-12 rounded-lg bg-green-100 flex items-center justify-center">
+                        <i class="fas fa-building text-green-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Tech Innovations</h3>
+                        <p class="text-sm text-gray-500">Technology</p>
+                    </div>
+                </div>
+                <div class="flex space-x-1">
+                    <button class="p-1 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="p-5">
+            <div class="mb-4">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-user-friends text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">15 members</span>
+                </div>
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-clipboard-list text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">5 questionnaires</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-calendar-alt text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">Created: Apr 15, 2025</span>
+                </div>
+            </div>
+            <div class="flex justify-between items-center mt-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Active
+                </span>
+                <a href="#" class="text-sm text-primary-600 hover:text-primary-800 font-medium">View Details</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Organization Card 4 -->
+    <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
+        <div class="p-5 border-b border-gray-200">
+            <div class="flex justify-between items-start">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-12 w-12 rounded-lg bg-red-100 flex items-center justify-center">
+                        <i class="fas fa-heartbeat text-red-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Mental Health Clinic</h3>
+                        <p class="text-sm text-gray-500">Healthcare</p>
+                    </div>
+                </div>
+                <div class="flex space-x-1">
+                    <button class="p-1 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="p-5">
+            <div class="mb-4">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-user-friends text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">22 members</span>
+                </div>
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-clipboard-list text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">12 questionnaires</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-calendar-alt text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">Created: Apr 18, 2025</span>
+                </div>
+            </div>
+            <div class="flex justify-between items-center mt-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Active
+                </span>
+                <a href="#" class="text-sm text-primary-600 hover:text-primary-800 font-medium">View Details</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Organization Card 5 -->
+    <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
+        <div class="p-5 border-b border-gray-200">
+            <div class="flex justify-between items-start">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-12 w-12 rounded-lg bg-yellow-100 flex items-center justify-center">
+                        <i class="fas fa-users text-yellow-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Community Center</h3>
+                        <p class="text-sm text-gray-500">Non-profit</p>
+                    </div>
+                </div>
+                <div class="flex space-x-1">
+                    <button class="p-1 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="p-5">
+            <div class="mb-4">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-user-friends text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">10 members</span>
+                </div>
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-clipboard-list text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">3 questionnaires</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-calendar-alt text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">Created: Apr 20, 2025</span>
+                </div>
+            </div>
+            <div class="flex justify-between items-center mt-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    Pending
+                </span>
+                <a href="#" class="text-sm text-primary-600 hover:text-primary-800 font-medium">View Details</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Organization Card 6 -->
+    <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
+        <div class="p-5 border-b border-gray-200">
+            <div class="flex justify-between items-start">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                        <i class="fas fa-briefcase text-gray-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Corporate Wellness</h3>
+                        <p class="text-sm text-gray-500">Corporate</p>
+                    </div>
+                </div>
+                <div class="flex space-x-1">
+                    <button class="p-1 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="p-5">
+            <div class="mb-4">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-user-friends text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">5 members</span>
+                </div>
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-clipboard-list text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">2 questionnaires</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-calendar-alt text-gray-400 w-5"></i>
+                    <span class="text-sm text-gray-600 ml-2">Created: Apr 22, 2025</span>
+                </div>
+            </div>
+            <div class="flex justify-between items-center mt-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    Inactive
+                </span>
+                <a href="#" class="text-sm text-primary-600 hover:text-primary-800 font-medium">View Details</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+<div class="bg-white px-4 py-3 flex items-center justify-between border border-gray-200 rounded-lg shadow sm:px-6 mb-6">
+    <div class="flex-1 flex justify-between sm:hidden">
+        <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            Previous
+        </a>
+        <a href="#" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            Next
+        </a>
+    </div>
+    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+        <div>
+            <p class="text-sm text-gray-700">
+                Showing
+                <span class="font-medium">1</span>
+                to
+                <span class="font-medium">6</span>
+                of
+                <span class="font-medium">12</span>
+                results
+            </p>
+        </div>
+        <div>
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <span class="sr-only">Previous</span>
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <a href="#" aria-current="page" class="z-10 bg-primary-50 border-primary-500 text-primary-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                    1
+                </a>
+                <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                    2
+                </a>
+                <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 hidden md:inline-flex relative items-center px-4 py-2 border text-sm font-medium">
+                    3
+                </a>
+                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                    ...
+                </span>
+                <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                    8
+                </a>
+                <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <span class="sr-only">Next</span>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %}

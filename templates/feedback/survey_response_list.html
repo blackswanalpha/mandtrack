@@ -1,0 +1,244 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Responses for {{ survey.title }} - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <div class="flex items-center">
+                    <a href="{% url 'surveys:survey_detail' pk=survey.pk %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <h1 class="text-3xl font-display font-bold text-gray-900">Responses</h1>
+                </div>
+                <p class="mt-2 text-gray-600">Viewing responses for "{{ survey.title }}"</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex space-x-3">
+                <a href="{% url 'feedback:export_survey_responses' survey_pk=survey.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-file-export mr-2"></i> Export All
+                </a>
+                <a href="{% url 'analytics:survey_dashboard' survey_pk=survey.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-chart-bar mr-2"></i> View Analytics
+                </a>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-gray-50 rounded-lg p-4 mb-8">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Filters</h2>
+            <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select id="status" name="status" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                        <option value="">All Statuses</option>
+                        {% for value, label in statuses %}
+                            <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="risk_level" class="block text-sm font-medium text-gray-700 mb-1">Risk Level</label>
+                    <select id="risk_level" name="risk_level" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                        <option value="">All Risk Levels</option>
+                        {% for value, label in risk_levels %}
+                            <option value="{{ value }}" {% if request.GET.risk_level == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <i class="fas fa-filter mr-2"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'feedback:survey_response_list' survey_pk=survey.pk %}" class="ml-2 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <i class="fas fa-times mr-2"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-sm font-medium text-gray-500">Total Responses</h3>
+                <p class="mt-1 text-3xl font-semibold text-gray-900">{{ total_responses }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-sm font-medium text-gray-500">Completed</h3>
+                <p class="mt-1 text-3xl font-semibold text-green-600">{{ completed_responses }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-sm font-medium text-gray-500">Average Score</h3>
+                <p class="mt-1 text-3xl font-semibold text-primary-600">{{ average_score|floatformat:1 }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-sm font-medium text-gray-500">High Risk Responses</h3>
+                <p class="mt-1 text-3xl font-semibold text-red-600">{{ high_risk_responses }}</p>
+            </div>
+        </div>
+
+        <!-- Responses List -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+            <ul class="divide-y divide-gray-200">
+                {% if responses %}
+                    {% for response in responses %}
+                        <li>
+                            <a href="{% url 'feedback:response_detail' pk=response.pk %}" class="block hover:bg-gray-50">
+                                <div class="px-4 py-4 sm:px-6">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-10 w-10 rounded-full 
+                                                {% if response.risk_level == 'critical' %}bg-red-100
+                                                {% elif response.risk_level == 'high' %}bg-orange-100
+                                                {% elif response.risk_level == 'medium' %}bg-yellow-100
+                                                {% elif response.risk_level == 'low' %}bg-green-100
+                                                {% else %}bg-gray-100{% endif %} 
+                                                flex items-center justify-center">
+                                                <i class="fas fa-clipboard-check 
+                                                    {% if response.risk_level == 'critical' %}text-red-600
+                                                    {% elif response.risk_level == 'high' %}text-orange-600
+                                                    {% elif response.risk_level == 'medium' %}text-yellow-600
+                                                    {% elif response.risk_level == 'low' %}text-green-600
+                                                    {% else %}text-gray-600{% endif %}"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <p class="text-sm font-medium text-primary-600 truncate">
+                                                    {% if response.respondent_name %}
+                                                        {{ response.respondent_name }}
+                                                    {% elif response.respondent %}
+                                                        {{ response.respondent.get_full_name|default:response.respondent.email }}
+                                                    {% elif response.respondent_email %}
+                                                        {{ response.respondent_email }}
+                                                    {% else %}
+                                                        Anonymous
+                                                    {% endif %}
+                                                </p>
+                                                <p class="text-sm text-gray-500 truncate">
+                                                    Response ID: <span class="font-mono">{{ response.response_id }}</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col items-end">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                {% if response.status == 'completed' %}bg-green-100 text-green-800
+                                                {% elif response.status == 'in_progress' %}bg-yellow-100 text-yellow-800
+                                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                {{ response.get_status_display }}
+                                            </span>
+                                            {% if response.risk_level != 'none' %}
+                                                <span class="mt-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                    {% if response.risk_level == 'critical' %}bg-red-100 text-red-800
+                                                    {% elif response.risk_level == 'high' %}bg-orange-100 text-orange-800
+                                                    {% elif response.risk_level == 'medium' %}bg-yellow-100 text-yellow-800
+                                                    {% elif response.risk_level == 'low' %}bg-green-100 text-green-800
+                                                    {% endif %}">
+                                                    {{ response.get_risk_level_display }} Risk
+                                                </span>
+                                            {% endif %}
+                                            {% if response.total_score is not None %}
+                                                <div class="mt-1 flex items-center text-sm text-gray-500">
+                                                    <i class="fas fa-star mr-1.5 text-gray-400"></i>
+                                                    <p>Score: {{ response.total_score }}</p>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 sm:flex sm:justify-between">
+                                        <div class="sm:flex">
+                                            <p class="flex items-center text-sm text-gray-500">
+                                                <i class="fas fa-calendar mr-1.5 text-gray-400"></i>
+                                                Started {{ response.started_at|date:"M d, Y" }}
+                                            </p>
+                                            {% if response.completed_at %}
+                                                <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                                                    <i class="fas fa-check-circle mr-1.5 text-gray-400"></i>
+                                                    Completed {{ response.completed_at|date:"M d, Y" }}
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                                            <i class="fas fa-question-circle mr-1.5 text-gray-400"></i>
+                                            <p>{{ response.get_answer_count }} answers</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <li class="px-4 py-8 text-center">
+                        <div class="text-gray-500">
+                            <i class="fas fa-clipboard-check text-4xl mb-4"></i>
+                            <p class="text-lg font-medium">No responses found</p>
+                            <p class="mt-1">Share your survey to collect responses</p>
+                            <a href="{% url 'surveys:generate_qr_code' pk=survey.pk %}" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                <i class="fas fa-qrcode mr-2"></i> Get QR Code
+                            </a>
+                        </div>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+        
+        <!-- Pagination -->
+        {% if responses.has_other_pages %}
+            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    {% if responses.has_previous %}
+                        <a href="?page={{ responses.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}" 
+                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Previous
+                        </a>
+                    {% endif %}
+                    {% if responses.has_next %}
+                        <a href="?page={{ responses.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}" 
+                           class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Next
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Showing <span class="font-medium">{{ responses.start_index }}</span> to <span class="font-medium">{{ responses.end_index }}</span> of <span class="font-medium">{{ responses.paginator.count }}</span> results
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            {% if responses.has_previous %}
+                                <a href="?page={{ responses.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}" 
+                                   class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Previous</span>
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            {% endif %}
+                            
+                            {% for i in responses.paginator.page_range %}
+                                {% if responses.number == i %}
+                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-primary-50 text-sm font-medium text-primary-600">
+                                        {{ i }}
+                                    </span>
+                                {% elif i > responses.number|add:'-3' and i < responses.number|add:'3' %}
+                                    <a href="?page={{ i }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}" 
+                                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        {{ i }}
+                                    </a>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if responses.has_next %}
+                                <a href="?page={{ responses.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}" 
+                                   class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Next</span>
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            {% endif %}
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

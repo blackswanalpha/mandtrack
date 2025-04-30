@@ -1,0 +1,209 @@
+{% extends 'admin_portal/modern_base.html' %}
+
+{% block title %}{% if is_edit %}Edit Survey{% else %}Create Survey{% endif %} - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-display font-bold text-gray-900">
+                {% if is_edit %}Edit Survey{% else %}Create New Survey{% endif %}
+            </h1>
+            <p class="mt-2 text-gray-600">
+                {% if is_edit %}
+                    Update your survey information
+                {% else %}
+                    Create a new questionnaire for mental health assessment
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <form method="post" enctype="multipart/form-data" class="space-y-6">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="rounded-md bg-red-50 p-4 mb-6">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-red-800">There were errors with your submission</h3>
+                                    <div class="mt-2 text-sm text-red-700">
+                                        <ul class="list-disc pl-5 space-y-1">
+                                            {% for error in form.non_field_errors %}
+                                                <li>{{ error }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Title -->
+                    <div>
+                        <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Survey Title <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <input type="text" name="{{ form.title.name }}" id="{{ form.title.id_for_label }}"
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.title.errors %}border-red-300{% endif %}"
+                                   value="{{ form.title.value|default:'' }}" required>
+                        </div>
+                        {% if form.title.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.title.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Description
+                        </label>
+                        <div class="mt-1">
+                            <textarea name="{{ form.description.name }}" id="{{ form.description.id_for_label }}" rows="4"
+                                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.description.errors %}border-red-300{% endif %}">{{ form.description.value|default:'' }}</textarea>
+                        </div>
+                        {% if form.description.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Brief description of the survey's purpose</p>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div>
+                        <label for="{{ form.instructions.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Instructions
+                        </label>
+                        <div class="mt-1">
+                            <textarea name="{{ form.instructions.name }}" id="{{ form.instructions.id_for_label }}" rows="4"
+                                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.instructions.errors %}border-red-300{% endif %}">{{ form.instructions.value|default:'' }}</textarea>
+                        </div>
+                        {% if form.instructions.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.instructions.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Instructions for respondents completing the survey</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Category -->
+                        <div>
+                            <label for="{{ form.category.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Category <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                <select name="{{ form.category.name }}" id="{{ form.category.id_for_label }}"
+                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.category.errors %}border-red-300{% endif %}">
+                                    {% for value, label in form.fields.category.choices %}
+                                        <option value="{{ value }}" {% if form.category.value == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% if form.category.errors %}
+                                <p class="mt-2 text-sm text-red-600">{{ form.category.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Type -->
+                        <div>
+                            <label for="{{ form.type.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Type <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-1">
+                                <select name="{{ form.type.name }}" id="{{ form.type.id_for_label }}"
+                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.type.errors %}border-red-300{% endif %}">
+                                    {% for value, label in form.fields.type.choices %}
+                                        <option value="{{ value }}" {% if form.type.value == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% if form.type.errors %}
+                                <p class="mt-2 text-sm text-red-600">{{ form.type.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div>
+                        <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Status <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <select name="{{ form.status.name }}" id="{{ form.status.id_for_label }}"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.status.errors %}border-red-300{% endif %}">
+                                {% for value, label in form.fields.status.choices %}
+                                    <option value="{{ value }}" {% if form.status.value == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if form.status.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.status.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Draft surveys are not visible to respondents</p>
+                    </div>
+
+                    <!-- Organization -->
+                    <div>
+                        <label for="{{ form.organization.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Organization
+                        </label>
+                        <div class="mt-1">
+                            <select name="{{ form.organization.name }}" id="{{ form.organization.id_for_label }}"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.organization.errors %}border-red-300{% endif %}">
+                                <option value="">Personal Survey</option>
+                                {% for org in form.fields.organization.queryset %}
+                                    <option value="{{ org.pk }}" {% if form.organization.value|stringformat:"s" == org.pk|stringformat:"s" %}selected{% endif %}>{{ org.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if form.organization.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.organization.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Associate this survey with an organization (optional)</p>
+                    </div>
+
+                    <!-- Template Selection (only for new surveys) -->
+                    {% if not is_edit and template_questionnaires %}
+                        <div class="border-t border-gray-200 pt-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Use a Template (Optional)</h3>
+                            <p class="text-sm text-gray-500 mb-4">Select a template to pre-populate your survey with questions</p>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {% for template in template_questionnaires %}
+                                    <div class="border border-gray-200 rounded-md p-4 hover:border-primary-500 cursor-pointer"
+                                         onclick="document.getElementById('template_id').value = '{{ template.pk }}';">
+                                        <div class="flex items-center">
+                                            <input type="radio" name="template_radio" id="template_{{ template.pk }}"
+                                                   class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                                                   onclick="document.getElementById('template_id').value = '{{ template.pk }}';">
+                                            <label for="template_{{ template.pk }}" class="ml-3 block text-sm font-medium text-gray-700">
+                                                {{ template.title }}
+                                            </label>
+                                        </div>
+                                        <p class="mt-2 text-sm text-gray-500">{{ template.description|truncatechars:100 }}</p>
+                                        <p class="mt-1 text-xs text-gray-400">{{ template.get_question_count }} questions</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <input type="hidden" name="template_id" id="template_id" value="">
+                        </div>
+                    {% endif %}
+
+                    <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                        <a href="{% if is_edit %}{% url 'surveys:survey_detail' pk=questionnaire.pk %}{% else %}{% url 'surveys:survey_list' %}{% endif %}"
+                           class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            Cancel
+                        </a>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            {% if is_edit %}Save Changes{% else %}Create Survey{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

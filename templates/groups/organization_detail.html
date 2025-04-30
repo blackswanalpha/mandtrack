@@ -1,0 +1,283 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{{ organization.name }} - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% url 'groups:organization_list' %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">{{ organization.name }}</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                {{ organization.get_type_display }} Organization
+            </p>
+        </div>
+
+        <!-- Organization Header -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6 flex justify-between items-start">
+                <div class="flex items-center">
+                    {% if organization.logo %}
+                        <img src="{{ organization.logo.url }}" alt="{{ organization.name }}" class="h-16 w-16 rounded-full object-cover">
+                    {% else %}
+                        <div class="h-16 w-16 rounded-full bg-primary-100 flex items-center justify-center">
+                            <span class="text-primary-800 font-bold text-2xl">{{ organization.name|slice:":1" }}</span>
+                        </div>
+                    {% endif %}
+                    <div class="ml-4">
+                        <h2 class="text-xl font-medium text-gray-900">{{ organization.name }}</h2>
+                        <p class="text-sm text-gray-500">Created {{ organization.created_at|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    {% if is_admin %}
+                        <a href="{% url 'groups:organization_edit' pk=organization.pk %}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <i class="fas fa-edit mr-1.5"></i> Edit
+                        </a>
+                        <a href="{% url 'groups:organization_delete' pk=organization.pk %}" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            <i class="fas fa-trash-alt mr-1.5"></i> Delete
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="border-t border-gray-200">
+                <dl>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Description</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ organization.description|default:"No description provided." }}</dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Type</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ organization.get_type_display }}</dd>
+                    </div>
+                    {% if organization.website %}
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">Website</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                <a href="{{ organization.website }}" target="_blank" class="text-primary-600 hover:text-primary-900">
+                                    {{ organization.website }} <i class="fas fa-external-link-alt ml-1 text-xs"></i>
+                                </a>
+                            </dd>
+                        </div>
+                    {% endif %}
+                    {% if organization.email %}
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">Email</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                <a href="mailto:{{ organization.email }}" class="text-primary-600 hover:text-primary-900">
+                                    {{ organization.email }}
+                                </a>
+                            </dd>
+                        </div>
+                    {% endif %}
+                    {% if organization.phone %}
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">Phone</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                <a href="tel:{{ organization.phone }}" class="text-primary-600 hover:text-primary-900">
+                                    {{ organization.phone }}
+                                </a>
+                            </dd>
+                        </div>
+                    {% endif %}
+                    {% if organization.address %}
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">Address</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ organization.address|linebreaks }}</dd>
+                        </div>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+        
+        <!-- Stats Section -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-sm font-medium text-gray-500">Members</h3>
+                <p class="mt-1 text-3xl font-semibold text-gray-900">{{ organization.get_member_count }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-sm font-medium text-gray-500">Surveys</h3>
+                <p class="mt-1 text-3xl font-semibold text-primary-600">{{ organization.get_survey_count }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-sm font-medium text-gray-500">Your Role</h3>
+                <p class="mt-1 text-3xl font-semibold text-gray-900">{{ user_role }}</p>
+            </div>
+        </div>
+        
+        <!-- Members Section -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900">Members</h2>
+                    <p class="mt-1 text-sm text-gray-500">People in this organization.</p>
+                </div>
+                {% if is_admin %}
+                    <a href="{% url 'groups:invite_member' pk=organization.pk %}" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <i class="fas fa-user-plus mr-1.5"></i> Invite Member
+                    </a>
+                {% endif %}
+            </div>
+            <div class="border-t border-gray-200">
+                <ul class="divide-y divide-gray-200">
+                    {% for member in members %}
+                        <li class="px-4 py-4 sm:px-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                        <span class="font-medium text-gray-600">{{ member.user.get_full_name|default:member.user.email|slice:":2"|upper }}</span>
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="text-sm font-medium text-gray-900">{{ member.user.get_full_name|default:member.user.email }}</p>
+                                        <div class="flex items-center">
+                                            <span class="text-sm text-gray-500">{{ member.user.email }}</span>
+                                            {% if member.title %}
+                                                <span class="mx-1 text-gray-300">•</span>
+                                                <span class="text-sm text-gray-500">{{ member.title }}</span>
+                                            {% endif %}
+                                            {% if member.department %}
+                                                <span class="mx-1 text-gray-300">•</span>
+                                                <span class="text-sm text-gray-500">{{ member.department }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if member.role == 'admin' %}bg-red-100 text-red-800
+                                        {% elif member.role == 'manager' %}bg-blue-100 text-blue-800
+                                        {% elif member.role == 'provider' %}bg-green-100 text-green-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ member.get_role_display }}
+                                    </span>
+                                    
+                                    {% if is_admin and member.user != request.user %}
+                                        <div class="ml-4 relative" x-data="{ open: false }">
+                                            <button @click="open = !open" type="button" class="text-gray-500 hover:text-gray-700">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <div x-show="open" @click.away="open = false" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                                                <div class="py-1" role="none">
+                                                    <a href="{% url 'groups:edit_member' org_pk=organization.pk member_pk=member.pk %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">
+                                                        <i class="fas fa-edit mr-2 text-gray-400"></i> Edit Role
+                                                    </a>
+                                                    <form method="post" action="{% url 'groups:remove_member' org_pk=organization.pk member_pk=member.pk %}">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 hover:text-red-900" role="menuitem">
+                                                            <i class="fas fa-user-minus mr-2"></i> Remove
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </li>
+                    {% empty %}
+                        <li class="px-4 py-5 sm:px-6 text-center">
+                            <p class="text-gray-500">No members found.</p>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Surveys Section -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900">Surveys</h2>
+                    <p class="mt-1 text-sm text-gray-500">Surveys created for this organization.</p>
+                </div>
+                {% if can_create_surveys %}
+                    <a href="{% url 'surveys:survey_create' %}?organization={{ organization.pk }}" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <i class="fas fa-plus mr-1.5"></i> Create Survey
+                    </a>
+                {% endif %}
+            </div>
+            <div class="border-t border-gray-200">
+                <ul class="divide-y divide-gray-200">
+                    {% for survey in surveys %}
+                        <li>
+                            <a href="{% url 'surveys:survey_detail' pk=survey.pk %}" class="block hover:bg-gray-50">
+                                <div class="px-4 py-4 sm:px-6">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                                                <i class="fas fa-clipboard-list text-primary-600"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <p class="text-sm font-medium text-primary-600 truncate">{{ survey.title }}</p>
+                                                <p class="text-sm text-gray-500 truncate">{{ survey.description|truncatechars:100 }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col items-end">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                {% if survey.status == 'active' %}bg-green-100 text-green-800
+                                                {% elif survey.status == 'draft' %}bg-yellow-100 text-yellow-800
+                                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                {{ survey.get_status_display }}
+                                            </span>
+                                            <div class="mt-2 flex items-center text-sm text-gray-500">
+                                                <i class="fas fa-question-circle mr-1.5 text-gray-400"></i>
+                                                <p>{{ survey.get_question_count }} questions</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 sm:flex sm:justify-between">
+                                        <div class="sm:flex">
+                                            <p class="flex items-center text-sm text-gray-500">
+                                                <i class="fas fa-tag mr-1.5 text-gray-400"></i>
+                                                {{ survey.get_category_display }}
+                                            </p>
+                                            <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                                                <i class="fas fa-user mr-1.5 text-gray-400"></i>
+                                                {{ survey.created_by.get_full_name|default:survey.created_by.email }}
+                                            </p>
+                                        </div>
+                                        <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                                            <i class="fas fa-calendar mr-1.5 text-gray-400"></i>
+                                            <p>Created {{ survey.created_at|date:"M d, Y" }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                    {% empty %}
+                        <li class="px-4 py-5 sm:px-6 text-center">
+                            <p class="text-gray-500">No surveys found for this organization.</p>
+                            {% if can_create_surveys %}
+                                <a href="{% url 'surveys:survey_create' %}?organization={{ organization.pk }}" class="mt-2 inline-flex items-center text-sm text-primary-600 hover:text-primary-900">
+                                    <i class="fas fa-plus mr-1.5"></i> Create the first survey
+                                </a>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex justify-between">
+            <a href="{% url 'groups:organization_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Organizations
+            </a>
+            
+            {% if is_member and not is_admin %}
+                <form method="post" action="{% url 'groups:leave_organization' pk=organization.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Leave Organization
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

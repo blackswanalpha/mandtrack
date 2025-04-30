@@ -1,0 +1,436 @@
+# AdminDashboardPro Frontend Structure (NextJS 15)
+
+## Overview
+This document outlines the complete frontend structure for the AdminDashboardPro application built with NextJS 15. It follows the App Router pattern with route groups, layouts, and pages organized in a hierarchical structure.
+
+## Root Structure
+```
+app/
+├── (auth)/                  # Auth route group (grouped but not in URL)
+│   ├── login/               # Login route
+│   │   └── page.tsx         # Login page
+│   ├── register/            # Register route
+│   │   └── page.tsx         # Register page
+│   ├── forgot-password/     # Forgot password route
+│   │   └── page.tsx         # Forgot password page
+│   ├── reset-password/      # Reset password route
+│   │   └── page.tsx         # Reset password page
+│   └── layout.tsx           # Auth layout (shared across auth pages)
+│
+├── (admin)/                 # Admin route group (grouped but not in URL)
+│   ├── dashboard/           # Dashboard route
+│   │   ├── page.tsx         # Dashboard main page
+│   │   └── layout.tsx       # Dashboard layout
+│   │
+│   ├── questionnaires/      # Questionnaires management
+│   │   ├── page.tsx         # Questionnaires list page
+│   │   ├── [id]/            # Dynamic route for single questionnaire
+│   │   │   ├── page.tsx     # Questionnaire details page
+│   │   │   ├── edit/        # Edit questionnaire route
+│   │   │   │   └── page.tsx # Edit questionnaire page
+│   │   │   ├── questions/   # Questions management
+│   │   │   │   ├── page.tsx # Questions list page
+│   │   │   │   └── [questionId]/ # Dynamic route for single question
+│   │   │   │       ├── page.tsx  # Question details page
+│   │   │   │       └── edit/     # Edit question route
+│   │   │   │           └── page.tsx # Edit question page
+│   │   │   ├── responses/   # Responses for this questionnaire
+│   │   │   │   ├── page.tsx # Responses list page
+│   │   │   │   └── [responseId]/ # Dynamic route for single response
+│   │   │   │       └── page.tsx  # Response details page
+│   │   │   └── qr-code/     # QR code generation
+│   │   │       └── page.tsx # QR code page
+│   │   └── create/          # Create questionnaire route
+│   │       └── page.tsx     # Create questionnaire page
+│   │
+│   ├── responses/           # All responses management
+│   │   ├── page.tsx         # All responses list page
+│   │   └── [id]/            # Dynamic route for single response
+│   │       ├── page.tsx     # Response details page
+│   │       └── answers/     # Answers for this response
+│   │           └── page.tsx # Answers page
+│   │
+│   ├── organizations/       # Organizations management
+│   │   ├── page.tsx         # Organizations list page
+│   │   ├── [id]/            # Dynamic route for single organization
+│   │   │   ├── page.tsx     # Organization details page
+│   │   │   ├── edit/        # Edit organization route
+│   │   │   │   └── page.tsx # Edit organization page
+│   │   │   ├── members/     # Members management
+│   │   │   │   ├── page.tsx # Members list page
+│   │   │   │   └── [memberId]/ # Dynamic route for single member
+│   │   │   │       └── page.tsx # Member details page
+│   │   │   └── questionnaires/ # Questionnaires for this organization
+│   │   │       └── page.tsx    # Organization questionnaires page
+│   │   └── create/          # Create organization route
+│   │       └── page.tsx     # Create organization page
+│   │
+│   ├── users/               # Users management
+│   │   ├── page.tsx         # Users list page
+│   │   ├── [id]/            # Dynamic route for single user
+│   │   │   ├── page.tsx     # User details page
+│   │   │   └── edit/        # Edit user route
+│   │   │       └── page.tsx # Edit user page
+│   │   └── create/          # Create user route
+│   │       └── page.tsx     # Create user page
+│   │
+│   ├── analytics/           # Analytics dashboard
+│   │   ├── page.tsx         # Main analytics page
+│   │   ├── responses/       # Response analytics
+│   │   │   └── page.tsx     # Response analytics page
+│   │   ├── users/           # User analytics
+│   │   │   └── page.tsx     # User analytics page
+│   │   └── organizations/   # Organization analytics
+│   │       └── page.tsx     # Organization analytics page
+│   │
+│   ├── ai-analysis/         # AI analysis tools
+│   │   ├── page.tsx         # Main AI analysis page
+│   │   └── [responseId]/    # Analysis for specific response
+│   │       └── page.tsx     # Response analysis page
+│   │
+│   ├── email/               # Email management
+│   │   ├── page.tsx         # Email dashboard page
+│   │   ├── templates/       # Email templates
+│   │   │   ├── page.tsx     # Templates list page
+│   │   │   ├── [id]/        # Dynamic route for single template
+│   │   │   │   ├── page.tsx # Template details page
+│   │   │   │   └── edit/    # Edit template route
+│   │   │   │       └── page.tsx # Edit template page
+│   │   │   └── create/      # Create template route
+│   │   │       └── page.tsx # Create template page
+│   │   └── send/            # Send email
+│   │       └── page.tsx     # Send email page
+│   │
+│   ├── settings/            # Application settings
+│   │   ├── page.tsx         # Main settings page
+│   │   ├── profile/         # User profile settings
+│   │   │   └── page.tsx     # Profile settings page
+│   │   ├── account/         # Account settings
+│   │   │   └── page.tsx     # Account settings page
+│   │   └── application/     # Application settings
+│   │       └── page.tsx     # Application settings page
+│   │
+│   └── layout.tsx           # Admin layout with sidebar and navbar (shared across admin pages)
+│
+├── (client)/                # Client route group (grouped but not in URL)
+│   ├── questionnaire/       # Public questionnaire routes
+│   │   └── [id]/            # Dynamic route for single questionnaire
+│   │       ├── page.tsx     # Questionnaire response page
+│   │       └── layout.tsx   # Questionnaire layout
+│   ├── complete/            # Completion page
+│   │   └── page.tsx         # Completion page
+│   └── layout.tsx           # Client layout (shared across client pages)
+│
+├── api/                     # API routes
+│   ├── auth/                # Auth API routes
+│   │   ├── [...nextauth]/   # NextAuth.js API route
+│   │   │   └── route.ts     # NextAuth.js configuration
+│   │   ├── login/           # Login API route
+│   │   │   └── route.ts     # Login handler
+│   │   └── register/        # Register API route
+│   │       └── route.ts     # Register handler
+│   └── webhook/             # Webhook API routes
+│       └── route.ts         # Webhook handler
+│
+├── page.tsx                 # Root landing page
+├── layout.tsx               # Root layout (includes global providers)
+├── not-found.tsx            # Custom 404 page
+├── error.tsx                # Global error page
+├── loading.tsx              # Global loading state
+└── globals.css              # Global CSS
+```
+
+## Component Structure
+```
+components/
+├── ui/                      # UI components (shadcn/ui)
+│   ├── button.tsx           # Button component
+│   ├── card.tsx             # Card component
+│   ├── dialog.tsx           # Dialog component
+│   ├── dropdown-menu.tsx    # Dropdown menu component
+│   ├── form.tsx             # Form components
+│   ├── input.tsx            # Input component
+│   ├── select.tsx           # Select component
+│   ├── table.tsx            # Table component
+│   ├── tabs.tsx             # Tabs component
+│   ├── toast.tsx            # Toast component
+│   └── ...                  # Other UI components
+│
+├── auth/                    # Authentication components
+│   ├── login-form.tsx       # Login form
+│   ├── register-form.tsx    # Register form
+│   ├── forgot-password-form.tsx # Forgot password form
+│   └── reset-password-form.tsx  # Reset password form
+│
+├── dashboard/               # Dashboard components
+│   ├── sidebar.tsx          # Sidebar navigation
+│   ├── navbar.tsx           # Top navigation bar
+│   ├── dashboard-shell.tsx  # Dashboard shell layout
+│   ├── dashboard-header.tsx # Dashboard header
+│   ├── stats-card.tsx       # Statistics card
+│   ├── recent-activity.tsx  # Recent activity component
+│   └── welcome-banner.tsx   # Welcome banner
+│
+├── questionnaire/           # Questionnaire components
+│   ├── questionnaire-form.tsx    # Questionnaire form
+│   ├── question-form.tsx         # Question form
+│   ├── question-list.tsx         # Question list
+│   ├── questionnaire-card.tsx    # Questionnaire card
+│   ├── questionnaire-filter.tsx  # Questionnaire filter
+│   └── qr-code-generator.tsx     # QR code generator
+│
+├── response/                # Response components
+│   ├── response-table.tsx        # Response table
+│   ├── response-detail.tsx       # Response detail
+│   ├── response-filter.tsx       # Response filter
+│   ├── answer-list.tsx           # Answer list
+│   └── response-stats.tsx        # Response statistics
+│
+├── organization/            # Organization components
+│   ├── organization-form.tsx     # Organization form
+│   ├── organization-card.tsx     # Organization card
+│   ├── member-list.tsx           # Member list
+│   └── member-form.tsx           # Member form
+│
+├── analytics/               # Analytics components
+│   ├── response-chart.tsx        # Response chart
+│   ├── user-chart.tsx            # User chart
+│   ├── timeline-chart.tsx        # Timeline chart
+│   └── distribution-chart.tsx    # Distribution chart
+│
+├── ai/                      # AI components
+│   ├── analysis-form.tsx         # Analysis form
+│   ├── analysis-result.tsx       # Analysis result
+│   └── recommendation-card.tsx   # Recommendation card
+│
+├── email/                   # Email components
+│   ├── email-form.tsx            # Email form
+│   ├── template-form.tsx         # Template form
+│   ├── template-card.tsx         # Template card
+│   └── recipient-selector.tsx    # Recipient selector
+│
+└── shared/                  # Shared components
+    ├── error-display.tsx         # Error display
+    ├── loading-spinner.tsx       # Loading spinner
+    ├── pagination.tsx            # Pagination
+    ├── search-bar.tsx            # Search bar
+    ├── file-upload.tsx           # File upload
+    └── confirmation-dialog.tsx   # Confirmation dialog
+```
+
+## Page Details
+
+### Landing Page (`app/page.tsx`)
+- Hero section with call-to-action
+- Features overview
+- Testimonials
+- Pricing information
+- Contact form
+
+### Auth Pages
+
+#### Login Page (`app/(auth)/login/page.tsx`)
+- Email/password login form
+- Social login options
+- "Remember me" option
+- Forgot password link
+- Register link
+
+#### Register Page (`app/(auth)/register/page.tsx`)
+- Registration form with name, email, password
+- Terms and conditions acceptance
+- Email verification notice
+- Login link for existing users
+
+### Admin Dashboard
+
+#### Dashboard Home (`app/(admin)/dashboard/page.tsx`)
+- Overview statistics
+- Recent responses
+- Activity timeline
+- Quick action buttons
+
+#### Questionnaires List (`app/(admin)/questionnaires/page.tsx`)
+- Table of all questionnaires
+- Filtering and sorting options
+- Create new questionnaire button
+- Bulk actions
+
+#### Questionnaire Detail (`app/(admin)/questionnaires/[id]/page.tsx`)
+- Questionnaire information
+- Questions list
+- Response statistics
+- Edit and delete options
+- QR code generation
+
+#### Responses List (`app/(admin)/responses/page.tsx`)
+- Table of all responses
+- Filtering by questionnaire, date, risk level
+- Export options
+- Detailed view links
+
+#### Response Detail (`app/(admin)/responses/[id]/page.tsx`)
+- Respondent information
+- Response metadata
+- Answer list
+- Risk assessment
+- AI analysis option
+
+#### Organizations List (`app/(admin)/organizations/page.tsx`)
+- Table of all organizations
+- Organization type filtering
+- Create new organization button
+- Member count and activity indicators
+
+#### Organization Detail (`app/(admin)/organizations/[id]/page.tsx`)
+- Organization information
+- Member list
+- Associated questionnaires
+- Activity statistics
+
+#### Analytics Dashboard (`app/(admin)/analytics/page.tsx`)
+- Response trends over time
+- Risk level distribution
+- Completion rate statistics
+- User engagement metrics
+
+#### AI Analysis (`app/(admin)/ai-analysis/page.tsx`)
+- Analysis request form
+- Previous analyses
+- Recommendation summaries
+- Export options
+
+#### Email Management (`app/(admin)/email/page.tsx`)
+- Email sending interface
+- Template selection
+- Recipient management
+- Scheduling options
+
+#### Settings (`app/(admin)/settings/page.tsx`)
+- User profile settings
+- Application preferences
+- Notification settings
+- API key management
+
+### Client Pages
+
+#### Questionnaire Response (`app/(client)/questionnaire/[id]/page.tsx`)
+- Questionnaire title and description
+- Question list with appropriate input types
+- Progress indicator
+- Submit button
+- Save draft option
+
+#### Completion Page (`app/(client)/complete/page.tsx`)
+- Thank you message
+- Next steps information
+- Contact details
+- Return to home option
+
+## Layout Details
+
+### Root Layout (`app/layout.tsx`)
+- HTML and body tags
+- Metadata
+- Global styles
+- Theme provider
+- Authentication provider
+- Toast provider
+
+### Auth Layout (`app/(auth)/layout.tsx`)
+- Centered content
+- Logo
+- Background design
+- No navigation
+
+### Admin Layout (`app/(admin)/layout.tsx`)
+- Sidebar with navigation links
+- Top navbar with:
+  - User profile dropdown
+  - Notifications
+  - Search
+  - Help button
+- Main content area
+- Footer with version and copyright
+
+### Client Layout (`app/(client)/layout.tsx`)
+- Minimal header with logo
+- Clean, distraction-free design
+- Footer with privacy policy and terms links
+
+### Dashboard Layout (`app/(admin)/dashboard/layout.tsx`)
+- Inherits from admin layout
+- Additional dashboard-specific navigation
+- Context providers for dashboard state
+
+### Questionnaire Layout (`app/(client)/questionnaire/[id]/layout.tsx`)
+- Progress indicator
+- Save and exit button
+- Timer (if applicable)
+- Mobile-responsive design
+
+## Route Groups
+
+### Auth Route Group (`app/(auth)/`)
+- Grouped for authentication-related pages
+- Shares common auth layout
+- Not included in URL path
+
+### Admin Route Group (`app/(admin)/`)
+- Grouped for admin dashboard pages
+- Shares common admin layout with sidebar and navbar
+- Not included in URL path
+- Protected by authentication middleware
+
+### Client Route Group (`app/(client)/`)
+- Grouped for client-facing pages
+- Shares common client layout
+- Not included in URL path
+- May have optional authentication
+
+## Special Pages
+
+### Not Found Page (`app/not-found.tsx`)
+- Custom 404 page
+- Search functionality
+- Links to common destinations
+- Report broken link option
+
+### Error Page (`app/error.tsx`)
+- Global error handling
+- Error details (in development)
+- Retry button
+- Contact support option
+
+### Loading Page (`app/loading.tsx`)
+- Global loading state
+- Animated spinner
+- Skeleton UI
+
+## Middleware
+
+### Authentication Middleware (`middleware.ts`)
+- Protects admin routes
+- Redirects unauthenticated users to login
+- Handles role-based access control
+- Manages session expiration
+
+## Additional Files
+
+### `next.config.js`
+- Environment variable configuration
+- Image optimization settings
+- Redirects and rewrites
+- Internationalization settings
+
+### `tailwind.config.js`
+- Theme customization
+- Plugin configuration
+- Extended color palette
+- Custom utilities
+
+### `tsconfig.json`
+- TypeScript configuration
+- Path aliases
+- Compiler options
+- Type definitions

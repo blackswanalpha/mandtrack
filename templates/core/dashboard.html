@@ -1,0 +1,241 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Dashboard - MindTrack{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block page_actions %}
+    <div class="btn-group me-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-primary">
+        <i class="fas fa-calendar-alt me-1"></i>
+        This Week
+    </button>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-muted mb-0">Total Questionnaires</h6>
+                        <h2 class="mt-2 mb-0">{{ total_surveys }}</h2>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-clipboard-list fa-2x text-primary"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="{% url 'surveys:survey_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                    <a href="{% url 'surveys:survey_create' %}" class="btn btn-sm btn-primary">Create New</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-muted mb-0">Total Responses</h6>
+                        <h2 class="mt-2 mb-0">{{ total_responses }}</h2>
+                    </div>
+                    <div class="bg-success bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-comment-dots fa-2x text-success"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="{% url 'feedback:response_list' %}" class="btn btn-sm btn-outline-success">View All</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-muted mb-0">Organizations</h6>
+                        <h2 class="mt-2 mb-0">{{ total_organizations }}</h2>
+                    </div>
+                    <div class="bg-info bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-building fa-2x text-info"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="{% url 'groups:organization_list' %}" class="btn btn-sm btn-outline-info">View All</a>
+                    <a href="{% url 'groups:organization_create' %}" class="btn btn-sm btn-info">Create New</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Response Trends</h5>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-secondary active">Week</button>
+                    <button type="button" class="btn btn-outline-secondary">Month</button>
+                    <button type="button" class="btn btn-outline-secondary">Year</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height:300px;">
+                    <canvas id="responseTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Questionnaire Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height:300px;">
+                    <canvas id="questionnaireDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Recent Responses</h5>
+                <a href="{% url 'feedback:response_list' %}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Questionnaire</th>
+                                <th scope="col">Date</th>
+                                <th scope="col">Score</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for response in recent_responses %}
+                            <tr>
+                                <th scope="row">{{ response.id }}</th>
+                                <td>{{ response.survey }}</td>
+                                <td>{{ response.date }}</td>
+                                <td>
+                                    <span class="badge bg-{% if response.score > 10 %}warning{% else %}success{% endif %}">
+                                        {{ response.score }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'feedback:response_detail' response.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'feedback:response_analyze' response.id %}" class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-chart-line"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No responses yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Response Trend Chart
+        const trendCtx = document.getElementById('responseTrendChart').getContext('2d');
+        const trendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+                datasets: [{
+                    label: 'Responses',
+                    data: [5, 8, 12, 7, 10, 3, 6],
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Questionnaire Distribution Chart
+        const distributionCtx = document.getElementById('questionnaireDistributionChart').getContext('2d');
+        const distributionChart = new Chart(distributionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Anxiety', 'Depression', 'Stress', 'General'],
+                datasets: [{
+                    data: [35, 25, 20, 20],
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.8)',
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(239, 68, 68, 0.8)',
+                        'rgba(245, 158, 11, 0.8)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+    });
+</script>
+{% endblock %}

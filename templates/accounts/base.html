@@ -1,0 +1,428 @@
+{% extends "base/base.html" %}
+
+{% block title %}Admin Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Admin Header */
+    .admin-header {
+        background-color: #212529;
+        color: white;
+        padding: 15px 0;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+    }
+
+    /* Admin Sidebar */
+    .admin-sidebar {
+        background-color: #343a40;
+        min-height: calc(100vh - 56px);
+        color: white;
+        transition: all 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 56px;
+        height: calc(100vh - 56px);
+        overflow-y: auto;
+    }
+
+    .admin-sidebar a {
+        color: rgba(255, 255, 255, 0.8);
+        padding: 10px 15px;
+        display: block;
+        text-decoration: none;
+        transition: all 0.3s;
+        border-radius: 5px;
+        margin: 2px 8px;
+    }
+
+    .admin-sidebar a:hover, .admin-sidebar a.active {
+        color: white;
+        background-color: rgba(255, 255, 255, 0.1);
+        transform: translateX(5px);
+    }
+
+    .admin-sidebar a.active {
+        border-left: 3px solid #0ea5e9;
+    }
+
+    /* Admin Content */
+    .admin-content {
+        padding: 20px;
+        transition: all 0.3s ease;
+    }
+
+    /* Mobile Sidebar */
+    @media (max-width: 767.98px) {
+        .admin-sidebar {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 80%;
+            height: 100vh;
+            z-index: 1030;
+            transition: all 0.3s ease;
+        }
+
+        .admin-sidebar.show {
+            left: 0;
+        }
+
+        .admin-content {
+            width: 100%;
+            padding: 15px;
+        }
+
+        body.sidebar-open {
+            overflow: hidden;
+        }
+
+        /* Overlay when sidebar is open */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1025;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+    }
+
+    /* Dropdown Styling */
+    .dropdown-menu {
+        border: none;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        padding: 10px 0;
+    }
+
+    .dropdown-item {
+        padding: 8px 20px;
+        transition: all 0.2s;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f8f9fa;
+        transform: translateX(5px);
+    }
+
+    /* Card Styling */
+    .card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .card-header {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        background-color: transparent;
+        padding: 15px 20px;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    /* Button Styling */
+    .btn {
+        border-radius: 5px;
+        padding: 8px 16px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: #0ea5e9;
+        border-color: #0ea5e9;
+    }
+
+    .btn-primary:hover {
+        background-color: #0284c7;
+        border-color: #0284c7;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Table Styling */
+    .table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table th {
+        font-weight: 600;
+        border-bottom-width: 1px;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(14, 165, 233, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-6 col-md-4">
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-dark d-md-none me-2" type="button" id="sidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="h3 mb-0 slide-in-left">Admin Portal</h1>
+                </div>
+            </div>
+            <div class="col-6 col-md-8 text-end">
+                {% if user.is_authenticated %}
+                <div class="d-flex align-items-center justify-content-end">
+                    <div class="dropdown d-none d-md-block me-3">
+                        <button class="btn btn-dark dropdown-toggle" type="button" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                3
+                                <span class="visually-hidden">unread notifications</span>
+                            </span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown" style="width: 300px;">
+                            <li><h6 class="dropdown-header">Notifications</h6></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-user-plus text-primary"></i>
+                                    </div>
+                                    <div class="ms-2">
+                                        <p class="mb-0">New user registered</p>
+                                        <small class="text-muted">5 minutes ago</small>
+                                    </div>
+                                </div>
+                            </a></li>
+                            <li><a class="dropdown-item" href="#">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-clipboard-check text-success"></i>
+                                    </div>
+                                    <div class="ms-2">
+                                        <p class="mb-0">New response submitted</p>
+                                        <small class="text-muted">1 hour ago</small>
+                                    </div>
+                                </div>
+                            </a></li>
+                            <li><a class="dropdown-item" href="#">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                                    </div>
+                                    <div class="ms-2">
+                                        <p class="mb-0">System alert</p>
+                                        <small class="text-muted">Yesterday</small>
+                                    </div>
+                                </div>
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-center" href="#">View all notifications</a></li>
+                        </ul>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-dark dropdown-toggle d-flex align-items-center" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if user.profile_image %}
+                                <img src="{{ user.profile_image.url }}" alt="{{ user.get_full_name }}" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                    <span class="text-white">{{ user.first_name|first|upper }}</span>
+                                </div>
+                            {% endif %}
+                            <span class="d-none d-md-inline">{{ user.get_full_name|default:user.username }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="{% url 'admin_profile' %}">
+                                <i class="fas fa-user me-2"></i> My Profile
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'admin_change_password' %}">
+                                <i class="fas fa-key me-2"></i> Change Password
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'admin_logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i> Logout
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 col-lg-2 admin-sidebar" id="sidebar">
+            <div class="pt-3">
+                <div class="d-flex justify-content-between align-items-center mb-4 px-3 d-md-none">
+                    <h5 class="mb-0">Menu</h5>
+                    <button type="button" class="btn-close text-white" id="sidebarClose"></button>
+                </div>
+
+                {% if user.is_authenticated %}
+                <div class="text-center mb-4 d-none d-md-block">
+                    {% if user.profile_image %}
+                        <img src="{{ user.profile_image.url }}" alt="{{ user.get_full_name }}" class="rounded-circle mb-3" style="width: 80px; height: 80px; object-fit: cover;">
+                    {% else %}
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                            <span class="text-white h3">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
+                        </div>
+                    {% endif %}
+                    <h6 class="mb-0 text-white">{{ user.get_full_name|default:user.username }}</h6>
+                    <small class="text-white-50">{{ user.email }}</small>
+                </div>
+                {% endif %}
+
+                <ul class="nav flex-column">
+                    <li class="nav-item slide-in-left" style="animation-delay: 100ms;">
+                        <a href="{% url 'admin_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item slide-in-left" style="animation-delay: 150ms;">
+                        <a href="{% url 'admin_profile' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_profile' %}active{% endif %}">
+                            <i class="fas fa-user me-2"></i> My Profile
+                        </a>
+                    </li>
+                    <li class="nav-item slide-in-left" style="animation-delay: 200ms;">
+                        <a href="{% url 'admin_users' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_users' %}active{% endif %}">
+                            <i class="fas fa-users me-2"></i> Admin Users
+                        </a>
+                    </li>
+
+                    <li class="nav-item mt-2 slide-in-left" style="animation-delay: 250ms;">
+                        <div class="px-3">
+                            <small class="text-uppercase text-white-50">Questionnaires</small>
+                        </div>
+                    </li>
+                    <li class="nav-item slide-in-left" style="animation-delay: 300ms;">
+                        <a href="{% url 'surveys:survey_list' %}" class="nav-link">
+                            <i class="fas fa-clipboard-list me-2"></i> All Questionnaires
+                        </a>
+                    </li>
+                    <li class="nav-item slide-in-left" style="animation-delay: 350ms;">
+                        <a href="{% url 'surveys:survey_create' %}" class="nav-link">
+                            <i class="fas fa-plus-circle me-2"></i> Create New
+                        </a>
+                    </li>
+                    <li class="nav-item slide-in-left" style="animation-delay: 400ms;">
+                        <a href="{% url 'surveys:qr_code_list' %}" class="nav-link">
+                            <i class="fas fa-qrcode me-2"></i> QR Codes
+                        </a>
+                    </li>
+
+                    <li class="nav-item mt-2 slide-in-left" style="animation-delay: 450ms;">
+                        <div class="px-3">
+                            <small class="text-uppercase text-white-50">Reports</small>
+                        </div>
+                    </li>
+                    <li class="nav-item slide-in-left" style="animation-delay: 500ms;">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-chart-bar me-2"></i> Analytics
+                        </a>
+                    </li>
+                    <li class="nav-item slide-in-left" style="animation-delay: 550ms;">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-file-export me-2"></i> Export Data
+                        </a>
+                    </li>
+
+                    <li class="nav-item mt-2 slide-in-left" style="animation-delay: 600ms;">
+                        <div class="px-3">
+                            <small class="text-uppercase text-white-50">Settings</small>
+                        </div>
+                    </li>
+                    <li class="nav-item slide-in-left" style="animation-delay: 650ms;">
+                        <a href="{% url 'admin_change_password' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_change_password' %}active{% endif %}">
+                            <i class="fas fa-key me-2"></i> Change Password
+                        </a>
+                    </li>
+                    <li class="nav-item slide-in-left" style="animation-delay: 700ms;">
+                        <a href="{% url 'admin:index' %}" class="nav-link" target="_blank">
+                            <i class="fas fa-cog me-2"></i> Django Admin
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-9 col-lg-10 admin-content">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show slide-in-down" role="alert">
+                    <div class="d-flex align-items-center">
+                        {% if message.tags == 'success' %}
+                            <i class="fas fa-check-circle me-2"></i>
+                        {% elif message.tags == 'error' %}
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                        {% else %}
+                            <i class="fas fa-info-circle me-2"></i>
+                        {% endif %}
+                        <div>{{ message }}</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            {% block admin_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mobile sidebar toggle
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarClose = document.getElementById('sidebarClose');
+        const sidebar = document.getElementById('sidebar');
+
+        if (sidebarToggle && sidebar) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.add('show');
+                document.body.style.overflow = 'hidden'; // Prevent scrolling
+            });
+        }
+
+        if (sidebarClose && sidebar) {
+            sidebarClose.addEventListener('click', function() {
+                sidebar.classList.remove('show');
+                document.body.style.overflow = ''; // Restore scrolling
+            });
+        }
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            if (sidebar && sidebar.classList.contains('show') &&
+                !sidebar.contains(event.target) &&
+                event.target !== sidebarToggle) {
+                sidebar.classList.remove('show');
+                document.body.style.overflow = ''; // Restore scrolling
+            }
+        });
+
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

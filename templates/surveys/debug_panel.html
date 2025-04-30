@@ -1,0 +1,41 @@
+{% load debug_filters %}
+
+{% if debug_info %}
+<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-6">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            <i class="fas fa-bug text-yellow-400"></i>
+        </div>
+        <div class="ml-3">
+            <h3 class="text-sm font-medium text-yellow-800">Debug Information</h3>
+            <div class="mt-2 text-sm text-yellow-700">
+                <div class="mb-3">
+                    <h4 class="font-semibold">Form Data:</h4>
+                    <pre class="bg-gray-100 p-2 rounded overflow-auto max-h-40">{{ debug_info.form_data|pprint }}</pre>
+                </div>
+
+                {% if debug_info.form_errors %}
+                <div class="mb-3">
+                    <h4 class="font-semibold">Form Errors:</h4>
+                    <pre class="bg-gray-100 p-2 rounded overflow-auto max-h-40">{{ debug_info.form_errors|pprint }}</pre>
+                </div>
+                {% endif %}
+
+                {% if debug_info.post_data %}
+                <div class="mb-3">
+                    <h4 class="font-semibold">POST Data:</h4>
+                    <pre class="bg-gray-100 p-2 rounded overflow-auto max-h-40">{{ debug_info.post_data|pprint }}</pre>
+                </div>
+                {% endif %}
+
+                {% if debug_info.exception %}
+                <div class="mb-3">
+                    <h4 class="font-semibold">Exception:</h4>
+                    <pre class="bg-red-100 p-2 rounded overflow-auto max-h-40">{{ debug_info.exception }}</pre>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

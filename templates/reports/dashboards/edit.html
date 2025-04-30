@@ -1,0 +1,125 @@
+{% extends "reports/base.html" %}
+
+{% block title %}Edit Dashboard - MindTrack{% endblock %}
+
+{% block breadcrumbs %}
+<span class="mx-2">/</span>
+<a href="{% url 'dashboard_list' %}" class="text-indigo-600 hover:text-indigo-900">Dashboards</a>
+<span class="mx-2">/</span>
+<a href="{% url 'dashboard_detail' id=dashboard.id|default:'1' %}" class="text-indigo-600 hover:text-indigo-900">{{ dashboard.name|default:"Dashboard" }}</a>
+<span class="mx-2">/</span>
+<span class="text-gray-900">Edit</span>
+{% endblock %}
+
+{% block reports_content %}
+<div class="mb-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-semibold text-gray-900">Edit Dashboard</h1>
+    </div>
+</div>
+
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">Dashboard Information</h3>
+        <p class="mt-1 text-sm text-gray-500">Update the dashboard details.</p>
+    </div>
+    <div class="px-4 py-5 sm:p-6">
+        <form action="{% url 'dashboard_edit' id=dashboard.id|default:'1' %}" method="POST" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                <div class="sm:col-span-4">
+                    <label for="name" class="block text-sm font-medium text-gray-700">Dashboard Name *</label>
+                    <div class="mt-1">
+                        <input type="text" name="name" id="name" required value="{{ dashboard.name|default:'Mental Health Overview' }}" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                </div>
+
+                <div class="sm:col-span-6">
+                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <div class="mt-1">
+                        <textarea id="description" name="description" rows="3" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">{{ dashboard.description|default:'Dashboard showing key mental health metrics' }}</textarea>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">Brief description of the dashboard.</p>
+                </div>
+
+                <div class="sm:col-span-3">
+                    <label for="icon" class="block text-sm font-medium text-gray-700">Icon</label>
+                    <div class="mt-1">
+                        <select id="icon" name="icon" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            <option value="dashboard" {% if dashboard.icon == 'dashboard' or not dashboard.icon %}selected{% endif %}>Dashboard</option>
+                            <option value="chart" {% if dashboard.icon == 'chart' %}selected{% endif %}>Chart</option>
+                            <option value="people" {% if dashboard.icon == 'people' %}selected{% endif %}>People</option>
+                            <option value="health" {% if dashboard.icon == 'health' %}selected{% endif %}>Health</option>
+                            <option value="analytics" {% if dashboard.icon == 'analytics' %}selected{% endif %}>Analytics</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="sm:col-span-3">
+                    <label for="layout_type" class="block text-sm font-medium text-gray-700">Layout Type</label>
+                    <div class="mt-1">
+                        <select id="layout_type" name="layout_type" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            {% for key, value in layout_types.items %}
+                                <option value="{{ key }}" {% if dashboard.layout_type == key or not dashboard.layout_type and key == 'grid' %}selected{% endif %}>{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="sm:col-span-3">
+                    <label for="refresh_interval" class="block text-sm font-medium text-gray-700">Auto-Refresh Interval</label>
+                    <div class="mt-1">
+                        <select id="refresh_interval" name="refresh_interval" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            {% for key, value in refresh_intervals.items %}
+                                <option value="{{ key }}" {% if dashboard.refresh_interval == key or not dashboard.refresh_interval and key == 0 %}selected{% endif %}>{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="sm:col-span-6">
+                    <label for="global_filters" class="block text-sm font-medium text-gray-700">Global Filters (JSON)</label>
+                    <div class="mt-1">
+                        <textarea id="global_filters" name="global_filters" rows="3" class="font-mono shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">{{ dashboard.global_filters|default:'{}' }}</textarea>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">JSON object defining global filters for all charts in this dashboard.</p>
+                </div>
+
+                <div class="sm:col-span-6">
+                    <div class="relative flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="is_public" name="is_public" type="checkbox" {% if dashboard.is_public|default:True %}checked{% endif %} class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="is_public" class="font-medium text-gray-700">Public Dashboard</label>
+                            <p class="text-gray-500">Make this dashboard visible to all users in the organization.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sm:col-span-6">
+                    <div class="relative flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="allow_filter_override" name="allow_filter_override" type="checkbox" {% if dashboard.allow_filter_override|default:True %}checked{% endif %} class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="allow_filter_override" class="font-medium text-gray-700">Allow Filter Override</label>
+                            <p class="text-gray-500">Allow users to override global filters when viewing the dashboard.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-5 border-t border-gray-200 flex justify-end">
+                <a href="{% url 'dashboard_detail' id=dashboard.id|default:'1' %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mr-3">
+                    Cancel
+                </a>
+                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

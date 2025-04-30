@@ -1,0 +1,98 @@
+{% extends "base/base.html" %}
+
+{% block title %}Client Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .client-sidebar {
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 56px);
+        border-right: 1px solid #dee2e6;
+    }
+    .client-sidebar a {
+        color: #495057;
+        padding: 10px 15px;
+        display: block;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+    .client-sidebar a:hover, .client-sidebar a.active {
+        color: #007bff;
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+    .client-content {
+        padding: 20px;
+    }
+    .client-header {
+        background-color: #ffffff;
+        border-bottom: 1px solid #dee2e6;
+        padding: 15px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="client-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="h3 mb-0">Client Portal</h1>
+            </div>
+            <div class="col-md-6 text-end">
+                {% if user.is_authenticated %}
+                <span class="me-3">Welcome, {{ user.get_full_name|default:user.username }}</span>
+                <a href="{% url 'client_logout' %}" class="btn btn-outline-primary btn-sm">Logout</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 col-lg-2 client-sidebar">
+            <div class="pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a href="{% url 'client_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'client_dashboard' %}active{% endif %}">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'client_profile' %}" class="nav-link {% if request.resolver_match.url_name == 'client_profile' %}active{% endif %}">
+                            <i class="fas fa-user me-2"></i> My Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-clipboard-list me-2"></i> My Questionnaires
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-comment-dots me-2"></i> My Responses
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'client_change_password' %}" class="nav-link {% if request.resolver_match.url_name == 'client_change_password' %}active{% endif %}">
+                            <i class="fas fa-key me-2"></i> Change Password
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-9 col-lg-10 client-content">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% block client_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

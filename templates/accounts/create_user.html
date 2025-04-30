@@ -1,0 +1,37 @@
+{% extends "accounts/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Create Admin User{% endblock %}
+
+{% block admin_content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">Create Admin User</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">New Admin User</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">Create User</button>
+                        <a href="{% url 'admin_users' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer">
+                <div class="small text-muted">
+                    <p><strong>Note:</strong> After creating the user, they will be able to log in with the provided credentials. Make sure to communicate the password securely.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

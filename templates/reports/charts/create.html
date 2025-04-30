@@ -1,0 +1,249 @@
+{% extends 'reports/base.html' %}
+{% load static %}
+
+{% block reports_content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold">Add Chart to Report</h1>
+    <p class="text-gray-600 mt-1">Create a new chart for "{{ report.name }}"</p>
+</div>
+
+<form method="post" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- Basic Information -->
+    <div class="bg-gray-50 p-4 rounded-lg">
+        <h2 class="text-lg font-semibold mb-4">Chart Information</h2>
+        <div class="grid grid-cols-1 gap-4">
+            <div>
+                <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Chart Title *</label>
+                <input type="text" name="title" id="title" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+            </div>
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea name="description" id="description" rows="2" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Type and Data Source -->
+    <div class="bg-gray-50 p-4 rounded-lg">
+        <h2 class="text-lg font-semibold mb-4">Chart Configuration</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Chart Type *</label>
+                <select name="type" id="type" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                    <option value="">Select a chart type</option>
+                    {% for type_code, type_name in chart_types %}
+                    <option value="{{ type_code }}">{{ type_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="data_source" class="block text-sm font-medium text-gray-700 mb-1">Data Source *</label>
+                <select name="data_source" id="data_source" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                    <option value="">Select a data source</option>
+                    {% for source_code, source_name in data_sources %}
+                    <option value="{{ source_code }}">{{ source_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Chart Preview -->
+        <div class="mt-6">
+            <h3 class="text-md font-medium text-gray-700 mb-2">Chart Preview</h3>
+            <div class="bg-white border border-gray-200 rounded-lg p-4" style="height: 300px;">
+                <canvas id="chart-preview"></canvas>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">This is a preview with sample data. The actual chart will use data from your selected data source.</p>
+        </div>
+    </div>
+
+    <!-- Data Query -->
+    <div class="bg-gray-50 p-4 rounded-lg" x-data="{ showEditor: false }">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold">Data Query</h2>
+            <button type="button" @click="showEditor = !showEditor" class="text-blue-600 hover:text-blue-800">
+                <span x-text="showEditor ? 'Hide Editor' : 'Show Editor'"></span>
+            </button>
+        </div>
+        <div x-show="showEditor">
+            <p class="text-sm text-gray-600 mb-2">Define the data query in JSON format</p>
+            <textarea name="data_query" id="data_query" rows="5" class="w-full font-mono text-sm rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">{
+  "measure": "count",
+  "group_by": "month",
+  "filters": {}
+}</textarea>
+        </div>
+        <div x-show="!showEditor" class="text-sm text-gray-600">
+            Using default data query settings
+        </div>
+    </div>
+
+    <!-- Chart Options -->
+    <div class="bg-gray-50 p-4 rounded-lg" x-data="{ showEditor: false }">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold">Chart Options</h2>
+            <button type="button" @click="showEditor = !showEditor" class="text-blue-600 hover:text-blue-800">
+                <span x-text="showEditor ? 'Hide Editor' : 'Show Editor'"></span>
+            </button>
+        </div>
+        <div x-show="showEditor">
+            <p class="text-sm text-gray-600 mb-2">Define chart options in JSON format</p>
+            <textarea name="options" id="options" rows="5" class="w-full font-mono text-sm rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">{
+  "scales": {
+    "y": {
+      "beginAtZero": true
+    }
+  },
+  "plugins": {
+    "legend": {
+      "position": "top"
+    }
+  }
+}</textarea>
+        </div>
+        <div x-show="!showEditor" class="text-sm text-gray-600">
+            Using default chart options
+        </div>
+    </div>
+
+    <!-- Appearance and Customization -->
+    <div class="bg-gray-50 p-4 rounded-lg">
+        <h2 class="text-lg font-semibold mb-4">Appearance and Customization</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="color_scheme" class="block text-sm font-medium text-gray-700 mb-1">Color Scheme</label>
+                <select name="color_scheme" id="color_scheme" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                    <option value="default">Default</option>
+                    <option value="pastel">Pastel</option>
+                    <option value="vibrant">Vibrant</option>
+                    <option value="monochrome">Monochrome</option>
+                    <option value="cool">Cool</option>
+                    <option value="warm">Warm</option>
+                    <option value="neon">Neon</option>
+                    <option value="earth">Earth</option>
+                </select>
+            </div>
+            <div>
+                <label for="legend_position" class="block text-sm font-medium text-gray-700 mb-1">Legend Position</label>
+                <select name="legend_position" id="legend_position" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                    <option value="top">Top</option>
+                    <option value="bottom">Bottom</option>
+                    <option value="left">Left</option>
+                    <option value="right">Right</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div class="flex items-center">
+                <input type="checkbox" name="show_legend" id="show_legend" checked class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                <label for="show_legend" class="ml-2 block text-sm text-gray-700">Show Legend</label>
+            </div>
+            <div class="flex items-center">
+                <input type="checkbox" name="enable_animations" id="enable_animations" checked class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                <label for="enable_animations" class="ml-2 block text-sm text-gray-700">Enable Animations</label>
+            </div>
+            <div class="flex items-center">
+                <input type="checkbox" name="enable_tooltips" id="enable_tooltips" checked class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                <label for="enable_tooltips" class="ml-2 block text-sm text-gray-700">Enable Tooltips</label>
+            </div>
+            <div class="flex items-center">
+                <input type="checkbox" name="enable_data_labels" id="enable_data_labels" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                <label for="enable_data_labels" class="ml-2 block text-sm text-gray-700">Show Data Labels</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactivity -->
+    <div class="bg-gray-50 p-4 rounded-lg">
+        <h2 class="text-lg font-semibold mb-4">Interactivity</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="flex items-center">
+                <input type="checkbox" name="is_interactive" id="is_interactive" checked class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                <label for="is_interactive" class="ml-2 block text-sm text-gray-700">Interactive Chart</label>
+            </div>
+            <div class="flex items-center">
+                <input type="checkbox" name="allow_zooming" id="allow_zooming" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                <label for="allow_zooming" class="ml-2 block text-sm text-gray-700">Allow Zooming</label>
+            </div>
+            <div class="flex items-center">
+                <input type="checkbox" name="allow_panning" id="allow_panning" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                <label for="allow_panning" class="ml-2 block text-sm text-gray-700">Allow Panning</label>
+            </div>
+            <div class="flex items-center">
+                <input type="checkbox" name="allow_filtering" id="allow_filtering" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                <label for="allow_filtering" class="ml-2 block text-sm text-gray-700">Allow Filtering</label>
+            </div>
+            <div class="flex items-center">
+                <input type="checkbox" name="allow_sorting" id="allow_sorting" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                <label for="allow_sorting" class="ml-2 block text-sm text-gray-700">Allow Sorting</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Layout -->
+    <div class="bg-gray-50 p-4 rounded-lg">
+        <h2 class="text-lg font-semibold mb-4">Layout</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label for="width" class="block text-sm font-medium text-gray-700 mb-1">Width (columns)</label>
+                <input type="number" name="width" id="width" min="1" max="12" value="12" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                <p class="text-xs text-gray-500 mt-1">1-12 columns in grid layout</p>
+            </div>
+            <div>
+                <label for="height" class="block text-sm font-medium text-gray-700 mb-1">Height (pixels)</label>
+                <input type="number" name="height" id="height" min="100" value="400" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+            </div>
+            <div>
+                <label for="order" class="block text-sm font-medium text-gray-700 mb-1">Display Order</label>
+                <input type="number" name="order" id="order" min="0" value="0" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                <p class="text-xs text-gray-500 mt-1">Lower numbers appear first</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Options -->
+    <div class="bg-gray-50 p-4 rounded-lg" x-data="{ showAdvanced: false }">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold">Advanced Options</h2>
+            <button type="button" @click="showAdvanced = !showAdvanced" class="text-blue-600 hover:text-blue-800">
+                <span x-text="showAdvanced ? 'Hide Advanced Options' : 'Show Advanced Options'"></span>
+            </button>
+        </div>
+        <div x-show="showAdvanced">
+            <div class="grid grid-cols-1 gap-4">
+                <div>
+                    <label for="custom_css" class="block text-sm font-medium text-gray-700 mb-1">Custom CSS</label>
+                    <textarea name="custom_css" id="custom_css" rows="3" class="w-full font-mono text-sm rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50" placeholder=".chart-container { box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }"></textarea>
+                    <p class="text-xs text-gray-500 mt-1">Custom CSS to apply to the chart container</p>
+                </div>
+                <div>
+                    <label for="custom_js" class="block text-sm font-medium text-gray-700 mb-1">Custom JavaScript</label>
+                    <textarea name="custom_js" id="custom_js" rows="3" class="w-full font-mono text-sm rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50" placeholder="// Custom JavaScript for advanced chart functionality"></textarea>
+                    <p class="text-xs text-gray-500 mt-1">Custom JavaScript for advanced chart functionality</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Buttons -->
+    <div class="flex justify-end space-x-3">
+        <a href="{% url 'report_detail' id=report.id %}" class="bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-md hover:bg-gray-50 transition duration-300">
+            Cancel
+        </a>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-300">
+            Add Chart
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block reports_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        // Alpine.js initialization if needed
+    });
+</script>
+{% endblock %}

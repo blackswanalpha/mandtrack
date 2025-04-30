@@ -1,0 +1,181 @@
+<!-- Responses List Partial Template for HTMX -->
+<div class="bg-white shadow overflow-hidden sm:rounded-md">
+    <ul class="divide-y divide-gray-200">
+        {% if responses %}
+            {% for response in responses %}
+                <li class="transition-all duration-300 ease-in-out transform hover:scale-[1.01] hover:shadow-md">
+                    <a href="{% url 'feedback:response_detail' pk=response.pk|default:response.id %}" 
+                       class="block hover:bg-gray-50 transition-colors duration-300">
+                        <div class="px-4 py-4 sm:px-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 rounded-full
+                                        {% if response.risk_level == 'critical' %}bg-red-100
+                                        {% elif response.risk_level == 'high' %}bg-orange-100
+                                        {% elif response.risk_level == 'medium' %}bg-yellow-100
+                                        {% elif response.risk_level == 'low' %}bg-green-100
+                                        {% else %}bg-gray-100{% endif %}
+                                        flex items-center justify-center transition-all duration-300 ease-in-out">
+                                        <i class="fas fa-clipboard-check
+                                            {% if response.risk_level == 'critical' %}text-red-600
+                                            {% elif response.risk_level == 'high' %}text-orange-600
+                                            {% elif response.risk_level == 'medium' %}text-yellow-600
+                                            {% elif response.risk_level == 'low' %}text-green-600
+                                            {% else %}text-gray-600{% endif %}"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="text-sm font-medium text-primary-600 truncate">{{ response.survey.title }}</p>
+                                        <p class="text-sm text-gray-500 truncate">
+                                            {% if response.respondent_name %}
+                                                {{ response.respondent_name }}
+                                            {% elif response.respondent %}
+                                                {{ response.respondent.get_full_name|default:response.respondent.email }}
+                                            {% elif response.respondent_email %}
+                                                {{ response.respondent_email }}
+                                            {% else %}
+                                                Anonymous
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col items-end">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                        {% if response.status == 'completed' %}bg-green-100 text-green-800
+                                        {% elif response.status == 'in_progress' %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}
+                                        transition-all duration-300 ease-in-out">
+                                        {{ response.get_status_display }}
+                                    </span>
+                                    {% if response.risk_level != 'none' %}
+                                        <span class="mt-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                            {% if response.risk_level == 'critical' %}bg-red-100 text-red-800
+                                            {% elif response.risk_level == 'high' %}bg-orange-100 text-orange-800
+                                            {% elif response.risk_level == 'medium' %}bg-yellow-100 text-yellow-800
+                                            {% elif response.risk_level == 'low' %}bg-green-100 text-green-800
+                                            {% endif %}
+                                            transition-all duration-300 ease-in-out">
+                                            {{ response.get_risk_level_display }} Risk
+                                        </span>
+                                    {% endif %}
+                                    {% if response.total_score is not None %}
+                                        <div class="mt-1 flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-star mr-1.5 text-gray-400"></i>
+                                            <p>Score: {{ response.total_score }}</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="mt-2 sm:flex sm:justify-between">
+                                <div class="sm:flex">
+                                    <p class="flex items-center text-sm text-gray-500">
+                                        <i class="fas fa-calendar mr-1.5 text-gray-400"></i>
+                                        Started {{ response.started_at|date:"M d, Y" }}
+                                    </p>
+                                    {% if response.completed_at %}
+                                        <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                                            <i class="fas fa-check-circle mr-1.5 text-gray-400"></i>
+                                            Completed {{ response.completed_at|date:"M d, Y" }}
+                                        </p>
+                                    {% endif %}
+                                </div>
+                                <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                                    <i class="fas fa-question-circle mr-1.5 text-gray-400"></i>
+                                    <p>{{ response.get_answer_count }} answers</p>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </li>
+            {% endfor %}
+        {% else %}
+            <li class="px-4 py-8 text-center">
+                <div class="text-gray-500 animate-pulse">
+                    <i class="fas fa-clipboard-check text-4xl mb-4 text-gray-400"></i>
+                    <p class="text-lg font-medium">No responses found</p>
+                    <p class="mt-1">Share your surveys to collect responses</p>
+                    <a href="{% url 'surveys:survey_list' %}" 
+                       class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300 transform hover:scale-105">
+                        <i class="fas fa-clipboard-list mr-2"></i> View Surveys
+                    </a>
+                </div>
+            </li>
+        {% endif %}
+    </ul>
+</div>
+
+<!-- Pagination -->
+{% if responses.has_other_pages %}
+    <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 transition-all duration-300 ease-in-out hover:shadow-sm">
+        <div class="flex-1 flex justify-between sm:hidden">
+            {% if responses.has_previous %}
+                <a href="?page={{ responses.previous_page_number }}{% if request.GET.survey %}&survey={{ request.GET.survey }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                   hx-get="{% url 'feedback:response_list' %}?page={{ responses.previous_page_number }}{% if request.GET.survey %}&survey={{ request.GET.survey }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                   hx-target="#responses-container"
+                   hx-indicator="#pagination-indicator"
+                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-all duration-300 transform hover:scale-105">
+                    <i class="fas fa-chevron-left mr-1"></i> Previous
+                </a>
+            {% endif %}
+            {% if responses.has_next %}
+                <a href="?page={{ responses.next_page_number }}{% if request.GET.survey %}&survey={{ request.GET.survey }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                   hx-get="{% url 'feedback:response_list' %}?page={{ responses.next_page_number }}{% if request.GET.survey %}&survey={{ request.GET.survey }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                   hx-target="#responses-container"
+                   hx-indicator="#pagination-indicator"
+                   class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-all duration-300 transform hover:scale-105">
+                    Next <i class="fas fa-chevron-right ml-1"></i>
+                </a>
+            {% endif %}
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-gray-700">
+                    Showing <span class="font-medium">{{ responses.start_index }}</span> to <span class="font-medium">{{ responses.end_index }}</span> of <span class="font-medium">{{ responses.paginator.count }}</span> results
+                </p>
+            </div>
+            <div class="flex items-center">
+                <div id="pagination-indicator" class="htmx-indicator mr-3">
+                    <i class="fas fa-spinner fa-spin text-primary-500"></i> Loading...
+                </div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    {% if responses.has_previous %}
+                        <a href="?page={{ responses.previous_page_number }}{% if request.GET.survey %}&survey={{ request.GET.survey }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                           hx-get="{% url 'feedback:response_list' %}?page={{ responses.previous_page_number }}{% if request.GET.survey %}&survey={{ request.GET.survey }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                           hx-target="#responses-container"
+                           hx-indicator="#pagination-indicator"
+                           class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all duration-300">
+                            <span class="sr-only">Previous</span>
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    {% endif %}
+
+                    {% for i in responses.paginator.page_range %}
+                        {% if responses.number == i %}
+                            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-primary-50 text-sm font-medium text-primary-600 transition-all duration-300">
+                                {{ i }}
+                            </span>
+                        {% elif i > responses.number|add:'-3' and i < responses.number|add:'3' %}
+                            <a href="?page={{ i }}{% if request.GET.survey %}&survey={{ request.GET.survey }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                               hx-get="{% url 'feedback:response_list' %}?page={{ i }}{% if request.GET.survey %}&survey={{ request.GET.survey }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                               hx-target="#responses-container"
+                               hx-indicator="#pagination-indicator"
+                               class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all duration-300">
+                                {{ i }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if responses.has_next %}
+                        <a href="?page={{ responses.next_page_number }}{% if request.GET.survey %}&survey={{ request.GET.survey }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                           hx-get="{% url 'feedback:response_list' %}?page={{ responses.next_page_number }}{% if request.GET.survey %}&survey={{ request.GET.survey }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.risk_level %}&risk_level={{ request.GET.risk_level }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                           hx-target="#responses-container"
+                           hx-indicator="#pagination-indicator"
+                           class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all duration-300">
+                            <span class="sr-only">Next</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </div>
+{% endif %}

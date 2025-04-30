@@ -123,8 +123,30 @@ def collect_static():
 def run_migrations():
     """Run database migrations."""
     print("Running migrations...")
-    call_command('migrate', '--noinput')
-    print("Migrations completed.")
+    try:
+        # Print database connection info for debugging
+        from django.conf import settings
+        print(f"Database engine: {settings.DATABASES['default']['ENGINE']}")
+        if 'NAME' in settings.DATABASES['default']:
+            print(f"Database name: {settings.DATABASES['default']['NAME']}")
+
+        # Run showmigrations to see the current state
+        print("Current migration status:")
+        call_command('showmigrations')
+
+        # Run migrate
+        print("Applying migrations...")
+        call_command('migrate', '--noinput')
+
+        # Verify migrations were applied
+        print("Migration status after applying:")
+        call_command('showmigrations')
+
+        print("Migrations completed successfully.")
+    except Exception as e:
+        print(f"Error running migrations: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
 
 def create_superuser():
     """Create a superuser if it doesn't exist."""
@@ -155,6 +177,34 @@ def create_superuser():
         print(f"Error creating superuser: {str(e)}")
         return None
 
+def test_database_connection():
+    """Test the database connection."""
+    print("Testing database connection...")
+    try:
+        from django.db import connection
+
+        # Test the connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            result = cursor.fetchone()
+            print(f"Database connection test result: {result}")
+
+        # Test creating and querying a temporary table
+        with connection.cursor() as cursor:
+            cursor.execute("CREATE TABLE IF NOT EXISTS vercel_test (id serial PRIMARY KEY, test_value varchar(100))")
+            cursor.execute("INSERT INTO vercel_test (test_value) VALUES ('test_value')")
+            cursor.execute("SELECT * FROM vercel_test")
+            result = cursor.fetchall()
+            print(f"Test table query result: {result}")
+
+        print("Database connection test successful!")
+        return True
+    except Exception as e:
+        print(f"Error testing database connection: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return False
+
 def main():
     """Main build function."""
     print("Starting Vercel build process...")
@@ -162,13 +212,19 @@ def main():
     # Collect static files
     collect_static()
 
-    # Run migrations
-    run_migrations()
+    # Test database connection
+    db_connection_successful = test_database_connection()
 
-    # Create superuser
-    create_superuser()
+    if db_connection_successful:
+        # Run migrations
+        run_migrations()
 
-    print("Vercel build process completed successfully!")
+        # Create superuser
+        create_superuser()
+    else:
+        print("WARNING: Database connection test failed. Skipping migrations and superuser creation.")
+
+    print("Vercel build process completed!")
 
 if __name__ == '__main__':
     main()

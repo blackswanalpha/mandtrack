@@ -23,25 +23,20 @@ MIDDLEWARE = [
 # Configure the database for Vercel
 import dj_database_url
 
-# Use Neon PostgreSQL database from environment variable
-DATABASE_URL = os.environ.get('DATABASE_URL')
+# Use Neon PostgreSQL database
+DATABASE_URL = "postgresql://mindtrack_db_owner:npg_AUV4r3qElnDN@ep-steep-base-a2xkorr1-pooler.eu-central-1.aws.neon.tech/mindtrack_db?sslmode=require"
 
-if DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=True
-        )
-    }
-else:
-    # Fallback to in-memory SQLite if no DATABASE_URL is provided
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': ':memory:',
-        }
-    }
+# Print the database URL for debugging (will be visible in Vercel logs)
+print(f"Using database URL: {DATABASE_URL}")
+
+# Configure the database
+DATABASES = {
+    'default': dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        ssl_require=True
+    )
+}
 
 # Simplified logging configuration for Vercel
 LOGGING = {
@@ -74,8 +69,10 @@ LOGIN_REDIRECT_URL = '/dashboard/admin/'
 LOGOUT_REDIRECT_URL = '/'
 
 # Session settings
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-SESSION_CACHE_ALIAS = 'default'
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 86400 * 7  # 7 days
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
 
 # Cache settings
 CACHES = {

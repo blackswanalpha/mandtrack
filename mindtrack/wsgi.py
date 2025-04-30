@@ -28,5 +28,22 @@ from django.core.wsgi import get_wsgi_application
 
 application = get_wsgi_application()
 
+# Test database connection on Vercel
+if is_vercel:
+    try:
+        from django.db import connection
+
+        # Test the connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            result = cursor.fetchone()
+            print(f"WSGI Database connection test result: {result}")
+
+        print("WSGI Database connection test successful!")
+    except Exception as e:
+        print(f"WSGI Error testing database connection: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+
 # Vercel deployment handler
 app = application

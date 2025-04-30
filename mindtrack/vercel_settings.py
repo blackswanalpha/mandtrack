@@ -28,7 +28,11 @@ DATABASE_URL = "postgresql://mindtrack_db_owner:npg_AUV4r3qElnDN@ep-steep-base-a
 
 # Print the database URL for debugging (will be visible in Vercel logs)
 print(f"Using database URL: {DATABASE_URL}")
+# URL path for static assets
+STATIC_URL = '/static/'
 
+# Where collectstatic will put files
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Configure the database
 DATABASES = {
     'default': dj_database_url.config(

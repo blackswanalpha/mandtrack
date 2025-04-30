@@ -1,10 +1,13 @@
 import logging
 import traceback
+import uuid
 from django.shortcuts import redirect
 from django.urls import resolve
 from django.contrib import messages
 from django.http import HttpResponse
 from django.conf import settings
+from django.utils.deprecation import MiddlewareMixin
+from .error_handlers import handle_exception, ErrorCategory, ErrorSeverity
 
 logger = logging.getLogger(__name__)
 
@@ -115,6 +118,58 @@ class QRCodeMiddleware:
 
         # Continue with the request
         return None
+
+
+class AdminPortalErrorMiddleware(MiddlewareMixin):
+    """
+    Middleware to handle errors in the admin portal.
+    This middleware adds request IDs and handles exceptions in admin portal routes.
+    """
+    def __init__(self, get_response=None):
+        super().__init__(get_response)
+        self.get_response = get_response
+
+    def process_request(self, request):
+        """Add a unique request ID to each request."""
+        request.id = str(uuid.uuid4())
+
+        # Check if this is an admin portal request
+        if self._is_admin_portal_request(request):
+            request.is_admin_portal = True
+        else:
+            request.is_admin_portal = False
+
+        return None
+
+    def process_exception(self, request, exception):
+        """Handle exceptions for admin portal requests."""
+        if hasattr(request, 'is_admin_portal') and request.is_admin_portal:
+            return handle_exception(request, exception)
+        return None
+
+    def _is_admin_portal_request(self, request):
+        """Check if the request is for the admin portal."""
+        path = request.path_info.lstrip('/')
+
+        # Check if path starts with admin-portal or dashboard/admin
+        if path.startswith('admin-portal/') or path.startswith('dashboard/admin'):
+            return True
+
+        # Check if this is a Django admin URL
+        if path.startswith('admin/'):
+            return True
+
+        # Try to resolve the URL and check the namespace
+        try:
+            resolver_match = resolve(request.path_info)
+            if resolver_match.namespace in ['accounts', 'dashboard:admin']:
+                return True
+            if resolver_match.url_name and resolver_match.url_name.startswith('admin_'):
+                return True
+        except:
+            pass
+
+        return False
 
 
 class VercelDebugMiddleware:

@@ -10,8 +10,17 @@ https://docs.djangoproject.com/en/5.2/howto/deployment/wsgi/
 import os
 
 # Check if we're running on Vercel
-if 'VERCEL' in os.environ or '/var/task' in os.getcwd():
+is_vercel = 'VERCEL' in os.environ or '/var/task' in os.getcwd()
+
+if is_vercel:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mindtrack.vercel_settings')
+
+    # Run build script on Vercel during cold start
+    try:
+        import vercel_build
+        vercel_build.main()
+    except Exception as e:
+        print(f"Error running build script: {str(e)}")
 else:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mindtrack.settings')
 

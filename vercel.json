@@ -4,20 +4,17 @@
     {
       "src": "mindtrack/wsgi.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb", "runtime": "python3.10" }
-    },
-    {
-      "src": "build_files.sh",
-      "use": "@vercel/static-build",
       "config": {
-        "distDir": "staticfiles"
+        "maxLambdaSize": "15mb",
+        "runtime": "python3.10",
+        "pip": ["dj-database-url==2.1.0"]
       }
     }
   ],
   "routes": [
     {
       "src": "/static/(.*)",
-      "dest": "/static/$1"
+      "dest": "/staticfiles/$1"
     },
     {
       "src": "/(.*)",
@@ -26,6 +23,7 @@
   ],
   "env": {
     "DEBUG": "False",
-    "ALLOWED_HOSTS": ".vercel.app,localhost,127.0.0.1"
+    "ALLOWED_HOSTS": ".vercel.app,localhost,127.0.0.1",
+    "DATABASE_URL": "postgresql://mindtrack_db_owner:npg_AUV4r3qElnDN@ep-steep-base-a2xkorr1-pooler.eu-central-1.aws.neon.tech/mindtrack_db?sslmode=require"
   }
 }

@@ -233,39 +233,21 @@ LOGGING = {
             'style': '{',
         },
     },
-    'filters': {
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        },
-    },
     'handlers': {
         'console': {
             'level': 'INFO',
-            'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
-            'formatter': 'detailed',
-        },
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'debug.log'),
-            'formatter': 'detailed',
-        },
-        'surveys_file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'surveys_debug.log'),
             'formatter': 'detailed',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
         },
         'surveys': {
-            'handlers': ['console', 'surveys_file'],
+            'handlers': ['console'],
             'level': 'DEBUG',
             'propagate': False,
         },

@@ -152,29 +152,51 @@ def create_superuser():
     """Create a superuser if it doesn't exist."""
     print("Creating superuser...")
     try:
-        # Try to create the specified admin user
-        superuser = User.objects.create_superuser(
-            email='admin12@example.com',
-            password='admin1234',
-            first_name='Admin',
-            last_name='User',
-            is_active=True,
-        )
-        print("Superuser 'admin12@example.com' created successfully!")
-        return superuser
-    except IntegrityError:
-        print("Superuser 'admin12@example.com' already exists.")
-        # Check if we need to update the password
+        # Try to create the specified admin user using Django ORM
         try:
-            admin_user = User.objects.get(email='admin12@example.com')
-            admin_user.set_password('admin1234')
-            admin_user.save()
-            print("Updated password for 'admin12@example.com'")
+            # Try to create the specified admin user
+            superuser = User.objects.create_superuser(
+                email='admin12@example.com',
+                password='admin1234',
+                first_name='Admin',
+                last_name='User',
+                is_active=True,
+            )
+            print("Superuser 'admin12@example.com' created successfully via Django ORM!")
+            return superuser
+        except IntegrityError:
+            print("Superuser 'admin12@example.com' already exists.")
+            # Check if we need to update the password
+            try:
+                admin_user = User.objects.get(email='admin12@example.com')
+                admin_user.set_password('admin1234')
+                admin_user.save()
+                print("Updated password for 'admin12@example.com' via Django ORM")
+            except Exception as e:
+                print(f"Error updating admin password via Django ORM: {str(e)}")
+            return None
         except Exception as e:
-            print(f"Error updating admin password: {str(e)}")
+            print(f"Error creating superuser via Django ORM: {str(e)}")
+
+        # If Django ORM approach fails, try direct database connection
+        print("Attempting to create/update admin user via direct database connection...")
+        try:
+            import vercel_upload_admin
+            success = vercel_upload_admin.create_admin_user()
+            if success:
+                print("Admin user created/updated successfully via direct database connection!")
+            else:
+                print("Failed to create/update admin user via direct database connection.")
+        except Exception as e:
+            print(f"Error running direct database admin creation: {str(e)}")
+            import traceback
+            traceback.print_exc()
+
         return None
     except Exception as e:
-        print(f"Error creating superuser: {str(e)}")
+        print(f"Error in superuser creation process: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def test_database_connection():

@@ -7,7 +7,7 @@
       "config": {
         "maxLambdaSize": "15mb",
         "runtime": "python3.10",
-        "pip": ["dj-database-url==2.1.0"]
+        "pip": ["dj-database-url==2.1.0", "psycopg2-binary==2.9.10"]
       }
     },
     {

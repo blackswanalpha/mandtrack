@@ -26,7 +26,7 @@ def create_password_hash(password):
     """
     # Generate a random salt
     salt = uuid.uuid4().hex
-    
+
     # Hash the password with the salt
     hashed = hashlib.pbkdf2_hmac(
         'sha256',
@@ -35,7 +35,7 @@ def create_password_hash(password):
         150000,  # Django's default iterations
         dklen=32
     ).hex()
-    
+
     # Format the hash in Django's format
     return f"pbkdf2_sha256$150000${salt}${hashed}"
 
@@ -48,83 +48,111 @@ def create_admin_user(email, password, first_name="Admin", last_name="User"):
         print(f"Connecting to database: {DATABASE_URL}")
         conn = psycopg2.connect(DATABASE_URL)
         cursor = conn.cursor()
-        
+
         # Check if the users_user table exists
         cursor.execute("""
             SELECT EXISTS (
-                SELECT FROM information_schema.tables 
+                SELECT FROM information_schema.tables
                 WHERE table_schema = 'public'
                 AND table_name = 'users_user'
             );
         """)
         table_exists = cursor.fetchone()[0]
-        
+
         if not table_exists:
             print("Error: The users_user table does not exist. Make sure migrations have been applied.")
             return False
-        
+
         # Check if the user already exists
         cursor.execute("SELECT id FROM users_user WHERE email = %s", (email,))
         user = cursor.fetchone()
-        
+
         if user:
             user_id = user[0]
             print(f"User with email {email} already exists (ID: {user_id}). Updating password...")
-            
+
+            # Generate a username from the email if needed
+            username = email.split('@')[0]
+
+            # Get current timestamp
+            now = datetime.datetime.now()
+
             # Update the existing user
             cursor.execute("""
-                UPDATE users_user 
-                SET password = %s, 
-                    first_name = %s, 
-                    last_name = %s, 
-                    is_active = TRUE, 
-                    is_staff = TRUE, 
+                UPDATE users_user
+                SET password = %s,
+                    username = %s,
+                    first_name = %s,
+                    last_name = %s,
+                    is_active = TRUE,
+                    is_staff = TRUE,
                     is_superuser = TRUE,
-                    updated_at = %s
+                    updated_at = %s,
+                    date_joined = COALESCE(date_joined, %s),
+                    role = COALESCE(role, 'admin'),
+                    email_verified = TRUE,
+                    failed_login_attempts = 0,
+                    force_password_change = FALSE
                 WHERE id = %s
             """, (
                 create_password_hash(password),
+                username,
                 first_name,
                 last_name,
-                datetime.datetime.now(),
+                now,
+                now,  # date_joined (only used if current value is NULL)
                 user_id
             ))
-            
+
             print(f"User {email} updated successfully!")
         else:
             # Create a new user
             print(f"Creating new admin user with email: {email}")
-            
-            # Get the next available ID
-            cursor.execute("SELECT MAX(id) FROM users_user")
-            max_id = cursor.fetchone()[0]
-            next_id = 1 if max_id is None else max_id + 1
-            
-            # Insert the new user
+
+            # Generate a username from the email
+            username = email.split('@')[0]
+
+            # Get current timestamp
+            now = datetime.datetime.now()
+
+            # Generate a UUID for the user ID
+            user_id = str(uuid.uuid4())
+
+            # Insert the new user with a generated UUID
             cursor.execute("""
                 INSERT INTO users_user (
-                    id, email, password, first_name, last_name, 
-                    is_active, is_staff, is_superuser, 
-                    created_at, updated_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    id, email, username, password, first_name, last_name,
+                    is_active, is_staff, is_superuser,
+                    created_at, updated_at, date_joined, role, email_verified,
+                    failed_login_attempts, force_password_change
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
             """, (
-                next_id,
+                user_id,
                 email,
+                username,
                 create_password_hash(password),
                 first_name,
                 last_name,
                 True,  # is_active
                 True,  # is_staff
                 True,  # is_superuser
-                datetime.datetime.now(),
-                datetime.datetime.now()
+                now,
+                now,
+                now,  # date_joined
+                'admin',  # role
+                True,  # email_verified
+                0,  # failed_login_attempts
+                False  # force_password_change
             ))
-            
+
+            # Get the generated ID
+            next_id = cursor.fetchone()[0]
+
             print(f"Admin user {email} created successfully with ID: {next_id}!")
-        
+
         # Commit the changes
         conn.commit()
-        
+
         # Verify the user exists
         cursor.execute("SELECT id, email, is_superuser FROM users_user WHERE email = %s", (email,))
         user = cursor.fetchone()
@@ -132,15 +160,15 @@ def create_admin_user(email, password, first_name="Admin", last_name="User"):
             print(f"Verified user exists: ID={user[0]}, Email={user[1]}, Is Superuser={user[2]}")
         else:
             print("Warning: Could not verify user after creation/update.")
-        
+
         return True
-    
+
     except Exception as e:
         print(f"Error creating admin user: {str(e)}")
         import traceback
         traceback.print_exc()
         return False
-    
+
     finally:
         if 'conn' in locals():
             conn.close()
@@ -153,17 +181,17 @@ def main():
     parser.add_argument('--first-name', default='Admin', help='Admin first name')
     parser.add_argument('--last-name', default='User', help='Admin last name')
     parser.add_argument('--password', help='Admin password (if not provided, will use default or prompt)')
-    
+
     args = parser.parse_args()
-    
+
     # Get the password
     password = args.password
     if not password:
         password = 'admin1234'  # Default password
-    
+
     # Create the admin user
     success = create_admin_user(args.email, password, args.first_name, args.last_name)
-    
+
     if success:
         print("Admin user creation/update completed successfully.")
     else:

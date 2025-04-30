@@ -21,25 +21,18 @@ MIDDLEWARE = [
 ] + MIDDLEWARE
 
 # Configure the database for Vercel
-# Using in-memory SQLite for now (temporary solution)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',  # Use in-memory database
-    }
-}
+import dj_database_url
 
-# For a more permanent solution, uncomment and configure this:
-# import dj_database_url
-# DATABASE_URL = os.environ.get('DATABASE_URL')
-# if DATABASE_URL:
-#     DATABASES = {
-#         'default': dj_database_url.config(
-#             default=DATABASE_URL,
-#             conn_max_age=600,
-#             ssl_require=True
-#         )
-#     }
+# Use Neon PostgreSQL database
+DATABASE_URL = "postgresql://mindtrack_db_owner:npg_AUV4r3qElnDN@ep-steep-base-a2xkorr1-pooler.eu-central-1.aws.neon.tech/mindtrack_db?sslmode=require"
+
+DATABASES = {
+    'default': dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        ssl_require=True
+    )
+}
 
 # Simplified logging configuration for Vercel
 LOGGING = {

@@ -1,6 +1,12 @@
+import logging
+import traceback
 from django.shortcuts import redirect
 from django.urls import resolve
 from django.contrib import messages
+from django.http import HttpResponse
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 class RoleBasedRedirectMiddleware:
     """
@@ -109,3 +115,32 @@ class QRCodeMiddleware:
 
         # Continue with the request
         return None
+
+
+class VercelDebugMiddleware:
+    """
+    Middleware to help debug issues on Vercel.
+    Only active when VERCEL_DEBUG is True in settings.
+    """
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.is_active = getattr(settings, 'VERCEL_DEBUG', False)
+
+    def __call__(self, request):
+        if not self.is_active:
+            return self.get_response(request)
+
+        try:
+            response = self.get_response(request)
+            return response
+        except Exception as e:
+            # Log the full traceback
+            logger.error(f"Vercel Debug Exception: {str(e)}")
+            logger.error(traceback.format_exc())
+
+            # Only show detailed error in debug mode
+            if settings.DEBUG:
+                error_message = f"Error: {str(e)}\n\n{traceback.format_exc()}"
+                return HttpResponse(f"<pre>{error_message}</pre>", status=500)
+            else:
+                return HttpResponse("Internal Server Error", status=500)

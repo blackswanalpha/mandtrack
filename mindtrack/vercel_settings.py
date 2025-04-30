@@ -9,16 +9,37 @@ from .settings import *
 # Debug should be False in production
 DEBUG = False
 
+# Enable Vercel debug middleware
+VERCEL_DEBUG = True
+
 # Update allowed hosts
 ALLOWED_HOSTS = ['.vercel.app', 'localhost', '127.0.0.1']
 
+# Add Vercel debug middleware
+MIDDLEWARE = [
+    'core.middleware.VercelDebugMiddleware',  # Add this first to catch all exceptions
+] + MIDDLEWARE
+
 # Configure the database for Vercel
+# Using in-memory SQLite for now (temporary solution)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'NAME': ':memory:',  # Use in-memory database
     }
 }
+
+# For a more permanent solution, uncomment and configure this:
+# import dj_database_url
+# DATABASE_URL = os.environ.get('DATABASE_URL')
+# if DATABASE_URL:
+#     DATABASES = {
+#         'default': dj_database_url.config(
+#             default=DATABASE_URL,
+#             conn_max_age=600,
+#             ssl_require=True
+#         )
+#     }
 
 # Simplified logging configuration for Vercel
 LOGGING = {
@@ -43,6 +64,23 @@ LOGGING = {
             'level': 'INFO',
         },
     },
+}
+
+# Authentication settings
+LOGIN_URL = '/admin-portal/login/'
+LOGIN_REDIRECT_URL = '/dashboard/admin/'
+LOGOUT_REDIRECT_URL = '/'
+
+# Session settings
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+
+# Cache settings
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
 }
 
 # Security settings for production

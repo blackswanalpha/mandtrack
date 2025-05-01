@@ -393,47 +393,111 @@ def create_admin_user(settings_module):
             logger.info("Admin user already exists.")
             return True
 
+        # Check if User model requires username
+        requires_username = 'username' in [field.name for field in User._meta.fields]
+        logger.info(f"User model requires username: {requires_username}")
+
         # Create admin user
         logger.info("Creating admin user...")
-        admin_user = User.objects.create_superuser(
-            email='admin@example.com',
-            password='admin123',
-            is_active=True,
-            is_staff=True,
-            is_superuser=True
-        )
+        try:
+            # Try to create user with username if required
+            if requires_username:
+                admin_user = User.objects.create_superuser(
+                    username='admin',
+                    email='admin@example.com',
+                    password='admin123',
+                    is_active=True,
+                    is_staff=True,
+                    is_superuser=True
+                )
+            else:
+                admin_user = User.objects.create_superuser(
+                    email='admin@example.com',
+                    password='admin123',
+                    is_active=True,
+                    is_staff=True,
+                    is_superuser=True
+                )
 
-        # Set additional fields if they exist on the User model
-        if hasattr(admin_user, 'first_name'):
-            admin_user.first_name = 'Admin'
-        if hasattr(admin_user, 'last_name'):
-            admin_user.last_name = 'User'
-        if hasattr(admin_user, 'is_admin'):
-            admin_user.is_admin = True
+            # Set additional fields if they exist on the User model
+            if hasattr(admin_user, 'first_name'):
+                admin_user.first_name = 'Admin'
+            if hasattr(admin_user, 'last_name'):
+                admin_user.last_name = 'User'
+            if hasattr(admin_user, 'is_admin'):
+                admin_user.is_admin = True
 
-        admin_user.save()
-        logger.info("Admin user created successfully.")
+            admin_user.save()
+            logger.info("Admin user created successfully.")
 
-        # Create a second admin user with different credentials
-        logger.info("Creating second admin user...")
-        admin_user2 = User.objects.create_superuser(
-            email='admin12@example.com',
-            password='admin1234',
-            is_active=True,
-            is_staff=True,
-            is_superuser=True
-        )
+            # Create a second admin user with different credentials
+            logger.info("Creating second admin user...")
+            if requires_username:
+                admin_user2 = User.objects.create_superuser(
+                    username='admin12',
+                    email='admin12@example.com',
+                    password='admin1234',
+                    is_active=True,
+                    is_staff=True,
+                    is_superuser=True
+                )
+            else:
+                admin_user2 = User.objects.create_superuser(
+                    email='admin12@example.com',
+                    password='admin1234',
+                    is_active=True,
+                    is_staff=True,
+                    is_superuser=True
+                )
 
-        # Set additional fields if they exist on the User model
-        if hasattr(admin_user2, 'first_name'):
-            admin_user2.first_name = 'Admin'
-        if hasattr(admin_user2, 'last_name'):
-            admin_user2.last_name = 'User'
-        if hasattr(admin_user2, 'is_admin'):
-            admin_user2.is_admin = True
+            # Set additional fields if they exist on the User model
+            if hasattr(admin_user2, 'first_name'):
+                admin_user2.first_name = 'Admin'
+            if hasattr(admin_user2, 'last_name'):
+                admin_user2.last_name = 'User'
+            if hasattr(admin_user2, 'is_admin'):
+                admin_user2.is_admin = True
 
-        admin_user2.save()
-        logger.info("Second admin user created successfully.")
+            admin_user2.save()
+            logger.info("Second admin user created successfully.")
+        except TypeError as e:
+            # If we get a TypeError, it might be because we're missing required arguments
+            logger.error(f"TypeError creating user: {e}")
+            # Try to inspect the create_superuser method
+            import inspect
+            try:
+                sig = inspect.signature(User.objects.create_superuser)
+                logger.info(f"create_superuser signature: {sig}")
+                # Try with just the required parameters
+                params = {}
+                for param_name, param in sig.parameters.items():
+                    if param.default == inspect.Parameter.empty and param_name != 'self':
+                        if param_name == 'username':
+                            params[param_name] = 'admin'
+                        elif param_name == 'email':
+                            params[param_name] = 'admin@example.com'
+                        elif param_name == 'password':
+                            params[param_name] = 'admin123'
+
+                logger.info(f"Trying with parameters: {params}")
+                admin_user = User.objects.create_superuser(**params)
+                admin_user.is_active = True
+                admin_user.is_staff = True
+                admin_user.is_superuser = True
+                admin_user.save()
+                logger.info("Admin user created successfully with minimal parameters.")
+            except Exception as inner_e:
+                logger.error(f"Failed to create user with inspect method: {inner_e}")
+                # Last resort: try with hardcoded username and email
+                try:
+                    admin_user = User.objects.create_superuser(
+                        username='admin',
+                        email='admin@example.com',
+                        password='admin123'
+                    )
+                    logger.info("Admin user created with hardcoded parameters.")
+                except Exception as last_e:
+                    logger.error(f"All attempts to create admin user failed: {last_e}")
 
         return True
     except Exception as e:

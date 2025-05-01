@@ -171,6 +171,40 @@ def check_dependencies():
     # Return list of missing dependencies
     return missing_deps
 
+def ensure_sqlite_database():
+    """Ensure SQLite is used as the database."""
+    try:
+        # Import Django settings
+        import django
+        from django.conf import settings
+        import django.conf
+
+        # Check current database engine
+        current_engine = settings.DATABASES['default']['ENGINE']
+        logger.info(f"Current database engine: {current_engine}")
+
+        # If not SQLite, update to SQLite
+        if 'sqlite3' not in current_engine:
+            logger.info("Switching to SQLite database...")
+
+            # Update database settings
+            django.conf.settings.DATABASES = {
+                'default': {
+                    'ENGINE': 'django.db.backends.sqlite3',
+                    'NAME': os.path.join(settings.BASE_DIR, 'db.sqlite3'),
+                }
+            }
+
+            logger.info(f"Database engine updated to: {django.conf.settings.DATABASES['default']['ENGINE']}")
+            return True
+        else:
+            logger.info("Already using SQLite database.")
+            return True
+    except Exception as e:
+        logger.error(f"Failed to ensure SQLite database: {e}")
+        logger.error(traceback.format_exc())
+        return False
+
 def check_django_project():
     """Check if the Django project is properly configured."""
     try:
@@ -191,10 +225,12 @@ def check_django_project():
 
         # Check database configuration
         db_engine = settings.DATABASES['default']['ENGINE']
-        if 'sqlite3' in db_engine and not settings.DEBUG:
-            logger.warning("SQLite is being used in production. Consider using PostgreSQL.")
+        if 'sqlite3' in db_engine:
+            logger.info(f"Using SQLite database: {settings.DATABASES['default']['NAME']}")
         else:
             logger.info(f"Database engine: {db_engine}")
+            # Force SQLite for better compatibility
+            ensure_sqlite_database()
 
         # Check static files configuration
         if not hasattr(settings, 'STATIC_ROOT') or not settings.STATIC_ROOT:
@@ -349,8 +385,11 @@ def create_admin_user(settings_module):
         from django.contrib.auth import get_user_model
         User = get_user_model()
 
-        # Check if admin user exists
-        if User.objects.filter(email='admin@example.com').exists():
+        # Check if admin user exists with either email
+        admin_emails = ['admin@example.com', 'admin12@example.com']
+        admin_exists = User.objects.filter(email__in=admin_emails).exists()
+
+        if admin_exists:
             logger.info("Admin user already exists.")
             return True
 
@@ -363,8 +402,39 @@ def create_admin_user(settings_module):
             is_staff=True,
             is_superuser=True
         )
+
+        # Set additional fields if they exist on the User model
+        if hasattr(admin_user, 'first_name'):
+            admin_user.first_name = 'Admin'
+        if hasattr(admin_user, 'last_name'):
+            admin_user.last_name = 'User'
+        if hasattr(admin_user, 'is_admin'):
+            admin_user.is_admin = True
+
         admin_user.save()
         logger.info("Admin user created successfully.")
+
+        # Create a second admin user with different credentials
+        logger.info("Creating second admin user...")
+        admin_user2 = User.objects.create_superuser(
+            email='admin12@example.com',
+            password='admin1234',
+            is_active=True,
+            is_staff=True,
+            is_superuser=True
+        )
+
+        # Set additional fields if they exist on the User model
+        if hasattr(admin_user2, 'first_name'):
+            admin_user2.first_name = 'Admin'
+        if hasattr(admin_user2, 'last_name'):
+            admin_user2.last_name = 'User'
+        if hasattr(admin_user2, 'is_admin'):
+            admin_user2.is_admin = True
+
+        admin_user2.save()
+        logger.info("Second admin user created successfully.")
+
         return True
     except Exception as e:
         logger.error(f"Failed to create admin user: {e}")
@@ -679,6 +749,10 @@ def main():
         # Run migrations
         if not run_migrations(config.settings_module):
             logger.warning("Database migrations failed. Continuing anyway.")
+
+    # Ensure SQLite database is used
+    if not ensure_sqlite_database():
+        logger.warning("Failed to ensure SQLite database. Continuing anyway.")
 
     # Create admin user if it doesn't exist
     if not create_admin_user(config.settings_module):

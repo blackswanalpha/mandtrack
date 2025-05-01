@@ -50,7 +50,7 @@ if 'PASSENGER_APP_ENV' in os.environ:
     logger.info(f"Running in Passenger environment: {os.environ['PASSENGER_APP_ENV']}")
     # Set production-specific settings
     os.environ['DEBUG'] = 'False'
-    os.environ['ALLOWED_HOSTS'] = '.hostpinnacle.com,.barberianspa.com,mindtrack.barberianspa.com,localhost,127.0.0.1'
+    os.environ['ALLOWED_HOSTS'] = '.hostpinnacle.com,.barberianspa.com,mindtrack.barberianspa.com,localhost,127.0.0.1,mandtrack.onrender.com,.onrender.com'
 
 try:
     # Import Django and get the WSGI application

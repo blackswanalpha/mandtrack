@@ -1,7 +1,7 @@
 """
-Django settings for mindtrack project on barberianspa.com.
+Django settings for mindtrack project on Render.com.
 
-This file contains barberianspa.com-specific settings and overrides the base settings.
+This file contains Render.com-specific settings and overrides the base settings.
 """
 
 from .settings import *
@@ -14,22 +14,24 @@ logging.basicConfig(
     format='%(asctime)s [%(levelname)s] %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join(BASE_DIR, 'barberianspa.log'))
+        logging.FileHandler(os.path.join(BASE_DIR, 'render.log'))
     ]
 )
+
 logger = logging.getLogger(__name__)
 
 # Debug should be False in production
 DEBUG = False
 
-# Update allowed hosts for barberianspa.com
+# Update allowed hosts for Render.com
 ALLOWED_HOSTS = [
-    'mindtrack.barberianspa.com', '.barberianspa.com',
-    '.hostpinnacle.com', 'localhost', '127.0.0.1', '0.0.0.0',
+    'mandtrack.onrender.com', '.onrender.com',
+    '.barberianspa.com', '.hostpinnacle.com',
+    'localhost', '127.0.0.1', '0.0.0.0',
     'localhost:8000', 'localhost:8001', 'localhost:8009',
     '127.0.0.1:8000', '127.0.0.1:8001', '127.0.0.1:8009',
     '0.0.0.0:8000', '0.0.0.0:8001', '0.0.0.0:8009',
-    'mandtrack.onrender.com', '.onrender.com'
+    'mindtrack.barberianspa.com'
 ]
 
 # Static files configuration
@@ -40,7 +42,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Database configuration for barberianspa.com
+# Database configuration for Render.com
 # Use PostgreSQL database
 DATABASES = {
     'default': {
@@ -74,10 +76,10 @@ EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@mindtrack.barberianspa.com')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@mindtrack.com')
 
 # Site URL for generating absolute URLs
-SITE_URL = 'https://mindtrack.barberianspa.com'
+SITE_URL = 'https://mandtrack.onrender.com'
 
 # Cache configuration
 CACHES = {
@@ -91,57 +93,15 @@ CACHES = {
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 86400 * 7  # 7 days
 
-# Logging configuration
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'barberianspa.log'),
-            'formatter': 'verbose',
-        },
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['file', 'console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'mindtrack': {
-            'handlers': ['file', 'console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'error_middleware': {
-            'handlers': ['file', 'console'],
-            'level': 'ERROR',
-            'propagate': False,
-        },
-    },
-}
+# Authentication settings
+LOGIN_URL = '/admin-portal/login/'
+LOGIN_REDIRECT_URL = '/dashboard/admin/'
+LOGOUT_REDIRECT_URL = '/'
 
 # Print configuration information
-logger.info("barberianspa.com settings loaded")
+logger.info("Render.com settings loaded")
 logger.info(f"DEBUG: {DEBUG}")
 logger.info(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
 logger.info(f"DATABASE: {DATABASES['default']['ENGINE']} on {DATABASES['default']['HOST']}")
 logger.info(f"STATIC_ROOT: {STATIC_ROOT}")
 logger.info(f"MEDIA_ROOT: {MEDIA_ROOT}")
-logger.info(f"SITE_URL: {SITE_URL}")

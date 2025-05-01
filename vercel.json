@@ -34,7 +34,7 @@
   ],
   "env": {
     "DEBUG": "False",
-    "ALLOWED_HOSTS": ".vercel.app,localhost,127.0.0.1",
+    "ALLOWED_HOSTS": ".vercel.app,localhost,127.0.0.1,mandtrack.onrender.com,.onrender.com",
     "DATABASE_URL": "postgresql://mindtrack_db_owner:npg_AUV4r3qElnDN@ep-steep-base-a2xkorr1-pooler.eu-central-1.aws.neon.tech/mindtrack_db?sslmode=require"
   }
 }

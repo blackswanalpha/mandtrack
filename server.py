@@ -242,13 +242,14 @@ def update_allowed_hosts(host, port, settings_module):
             if host_port not in current_hosts:
                 hosts_to_add.append(host_port)
 
-        # Add barberianspa.com domain if not already in ALLOWED_HOSTS
-        barberian_domain = 'mindtrack.barberianspa.com'
-        if barberian_domain not in current_hosts:
-            hosts_to_add.append(barberian_domain)
+        # Add specific domains if not already in ALLOWED_HOSTS
+        specific_domains = ['mindtrack.barberianspa.com', 'mandtrack.onrender.com']
+        for domain in specific_domains:
+            if domain not in current_hosts:
+                hosts_to_add.append(domain)
 
         # Add wildcard domains if not already in ALLOWED_HOSTS
-        for domain in ['.barberianspa.com', '.hostpinnacle.com']:
+        for domain in ['.barberianspa.com', '.hostpinnacle.com', '.onrender.com']:
             if domain not in current_hosts:
                 hosts_to_add.append(domain)
 

@@ -96,7 +96,7 @@ def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description='MindTrack Production Server')
     parser.add_argument('--host', default='0.0.0.0', help='Host to bind to (default: 0.0.0.0)')
-    parser.add_argument('--port', type=int, default=8001, help='Port to bind to (default: 8001)')
+    parser.add_argument('--port', type=int, default=8009, help='Port to bind to (default: 8009)')
     parser.add_argument('--workers', type=int, default=None,
                         help='Number of worker processes (default: CPU count * 2 + 1)')
     parser.add_argument('--timeout', type=int, default=120,
@@ -229,10 +229,18 @@ def update_allowed_hosts(host, port, settings_module):
         if host not in current_hosts:
             hosts_to_add.append(host)
 
-        # Check if host:port is already in ALLOWED_HOSTS
-        host_port = f"{host}:{port}"
-        if host_port not in current_hosts:
-            hosts_to_add.append(host_port)
+        # Add all possible host:port combinations for common ports
+        common_ports = [8000, 8001, 8009]
+        for p in common_ports:
+            host_port = f"{host}:{p}"
+            if host_port not in current_hosts:
+                hosts_to_add.append(host_port)
+
+        # Add the specific host:port combination if not already added
+        if port not in common_ports:
+            host_port = f"{host}:{port}"
+            if host_port not in current_hosts:
+                hosts_to_add.append(host_port)
 
         # Add barberianspa.com domain if not already in ALLOWED_HOSTS
         barberian_domain = 'mindtrack.barberianspa.com'
@@ -243,6 +251,16 @@ def update_allowed_hosts(host, port, settings_module):
         for domain in ['.barberianspa.com', '.hostpinnacle.com']:
             if domain not in current_hosts:
                 hosts_to_add.append(domain)
+
+        # Add localhost and 127.0.0.1 with all common ports
+        for base_host in ['localhost', '127.0.0.1', '0.0.0.0']:
+            if base_host not in current_hosts:
+                hosts_to_add.append(base_host)
+
+            for p in common_ports:
+                host_port = f"{base_host}:{p}"
+                if host_port not in current_hosts:
+                    hosts_to_add.append(host_port)
 
         # Add hosts if needed
         if hosts_to_add:
@@ -255,6 +273,7 @@ def update_allowed_hosts(host, port, settings_module):
             return True
     except Exception as e:
         logger.warning(f"Failed to update ALLOWED_HOSTS: {e}")
+        logger.warning(traceback.format_exc())
 
     return False
 

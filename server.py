@@ -258,10 +258,16 @@ def update_allowed_hosts(host, port, settings_module):
             if base_host not in current_hosts:
                 hosts_to_add.append(base_host)
 
-            for p in common_ports:
+            for p in common_ports + [port]:  # Include the current port
                 host_port = f"{base_host}:{p}"
                 if host_port not in current_hosts:
                     hosts_to_add.append(host_port)
+
+        # Ensure the exact host:port combination is added
+        exact_host_port = f"{host}:{port}"
+        if exact_host_port not in current_hosts and exact_host_port not in hosts_to_add:
+            hosts_to_add.append(exact_host_port)
+            logger.info(f"Adding exact host:port combination: {exact_host_port}")
 
         # Add hosts if needed
         if hosts_to_add:
@@ -270,6 +276,9 @@ def update_allowed_hosts(host, port, settings_module):
 
             # Update ALLOWED_HOSTS at runtime
             django.conf.settings.ALLOWED_HOSTS = new_hosts
+
+            # Log the final ALLOWED_HOSTS list
+            logger.info(f"Final ALLOWED_HOSTS: {django.conf.settings.ALLOWED_HOSTS}")
 
             return True
     except Exception as e:
@@ -322,6 +331,44 @@ def run_migrations(settings_module):
         logger.error(f"Failed to run migrations: {e}")
         logger.debug(e.stdout)
         logger.debug(e.stderr)
+        return False
+
+def create_admin_user(settings_module):
+    """Create an admin user if it doesn't exist."""
+    logger.info("Checking for admin user...")
+    env = os.environ.copy()
+    env['DJANGO_SETTINGS_MODULE'] = settings_module
+
+    # Check if admin user exists
+    try:
+        # Import Django settings and User model
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings_module)
+        import django
+        django.setup()
+
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        # Check if admin user exists
+        if User.objects.filter(email='admin@example.com').exists():
+            logger.info("Admin user already exists.")
+            return True
+
+        # Create admin user
+        logger.info("Creating admin user...")
+        admin_user = User.objects.create_superuser(
+            email='admin@example.com',
+            password='admin123',
+            is_active=True,
+            is_staff=True,
+            is_superuser=True
+        )
+        admin_user.save()
+        logger.info("Admin user created successfully.")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to create admin user: {e}")
+        logger.error(traceback.format_exc())
         return False
 
 def check_database_connection(settings_module):
@@ -597,7 +644,10 @@ def run_preflight_checks(config):
         return False
 
     # Update ALLOWED_HOSTS
-    update_allowed_hosts(config.host, config.port, config.settings_module)
+    if not update_allowed_hosts(config.host, config.port, config.settings_module):
+        logger.warning("Failed to update ALLOWED_HOSTS. This may cause issues with accessing the server.")
+    else:
+        logger.info("ALLOWED_HOSTS updated successfully.")
 
     # All checks passed
     logger.info("All pre-flight checks passed.")
@@ -629,6 +679,10 @@ def main():
         # Run migrations
         if not run_migrations(config.settings_module):
             logger.warning("Database migrations failed. Continuing anyway.")
+
+    # Create admin user if it doesn't exist
+    if not create_admin_user(config.settings_module):
+        logger.warning("Failed to create admin user. Continuing anyway.")
 
     # Run the server
     run_gunicorn(config)

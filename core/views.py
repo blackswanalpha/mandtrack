@@ -1,11 +1,13 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db import connection
 from django.views.decorators.csrf import csrf_exempt
 import json
 import traceback
+import datetime
+import os
 
 def home(request):
     """
@@ -117,3 +119,26 @@ def test_database(request):
         response_data['traceback'] = traceback.format_exc()
 
     return JsonResponse(response_data)
+
+def health_check(request):
+    """
+    Health check endpoint for Render.com
+    Returns a 200 OK response with basic system information
+    """
+    data = {
+        'status': 'healthy',
+        'timestamp': datetime.datetime.now().isoformat(),
+        'service': 'MindTrack',
+        'environment': os.environ.get('DJANGO_SETTINGS_MODULE', 'unknown'),
+        'python_version': os.environ.get('PYTHON_VERSION', 'unknown'),
+    }
+
+    # Check database connection
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            data['database'] = 'connected'
+    except Exception as e:
+        data['database'] = f'error: {str(e)}'
+
+    return JsonResponse(data)

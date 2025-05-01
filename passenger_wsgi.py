@@ -50,23 +50,23 @@ if 'PASSENGER_APP_ENV' in os.environ:
     logger.info(f"Running in Passenger environment: {os.environ['PASSENGER_APP_ENV']}")
     # Set production-specific settings
     os.environ['DEBUG'] = 'False'
-    os.environ['ALLOWED_HOSTS'] = '.hostpinnacle.com,localhost,127.0.0.1'
+    os.environ['ALLOWED_HOSTS'] = '.hostpinnacle.com,.barberianspa.com,mindtrack.barberianspa.com,localhost,127.0.0.1'
 
 try:
     # Import Django and get the WSGI application
     from django.core.wsgi import get_wsgi_application
-    
+
     # This is the WSGI application object that Passenger will use
     application = get_wsgi_application()
-    
+
     # Log successful initialization
     logger.info("Django WSGI application initialized successfully")
-    
+
 except Exception as e:
     logger.error(f"Error initializing Django WSGI application: {e}")
     import traceback
     logger.error(traceback.format_exc())
-    
+
     # Provide a fallback application that returns an error message
     def application(environ, start_response):
         status = '500 Internal Server Error'

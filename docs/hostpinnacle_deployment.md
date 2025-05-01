@@ -59,7 +59,7 @@ Add the following environment variables:
 ```
 DEBUG=False
 SECRET_KEY=your-secret-key-here
-ALLOWED_HOSTS=your-domain.com,www.your-domain.com
+ALLOWED_HOSTS=your-domain.com,www.your-domain.com,mindtrack.barberianspa.com
 DATABASE_URL=postgresql://mindtrack_db_owner:npg_AUV4r3qElnDN@ep-steep-base-a2xkorr1-pooler.eu-central-1.aws.neon.tech/mindtrack_db?sslmode=require
 EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
 EMAIL_HOST=your-smtp-server.com
@@ -77,16 +77,40 @@ SITE_URL=https://your-domain.com
 python manage.py collectstatic --noinput --settings=mindtrack.hostpinnacle_settings
 ```
 
+#### Deploying to barberianspa.com
+
+If you're deploying to the barberianspa.com domain, use the barberianspa_settings module instead:
+
+```bash
+python manage.py collectstatic --noinput --settings=mindtrack.barberianspa_settings
+```
+
 ### 8. Run Migrations
 
 ```bash
 python manage.py migrate --settings=mindtrack.hostpinnacle_settings
 ```
 
+#### Deploying to barberianspa.com
+
+If you're deploying to the barberianspa.com domain, use the barberianspa_settings module instead:
+
+```bash
+python manage.py migrate --settings=mindtrack.barberianspa_settings
+```
+
 ### 9. Create a Superuser
 
 ```bash
 python manage.py createsuperuser --settings=mindtrack.hostpinnacle_settings
+```
+
+#### Deploying to barberianspa.com
+
+If you're deploying to the barberianspa.com domain, use the barberianspa_settings module instead:
+
+```bash
+python manage.py createsuperuser --settings=mindtrack.barberianspa_settings
 ```
 
 ### 10. Configure Passenger
@@ -120,7 +144,21 @@ python server.py --settings=mindtrack.hostpinnacle_settings
 For production use, you might want to run it with specific parameters:
 
 ```bash
-python server.py --host=127.0.0.1 --port=8000 --workers=4 --log-level=info --settings=mindtrack.hostpinnacle_settings
+python server.py --host=127.0.0.1 --port=8009 --workers=4 --log-level=info --settings=mindtrack.hostpinnacle_settings
+```
+
+### Running on barberianspa.com
+
+For the barberianspa.com domain, use the barberianspa_settings module:
+
+```bash
+python server.py --host=127.0.0.1 --port=8009 --workers=4 --log-level=info --settings=mindtrack.barberianspa_settings
+```
+
+Alternatively, you can use the provided convenience script:
+
+```bash
+./run_barberianspa.sh
 ```
 
 ## Troubleshooting

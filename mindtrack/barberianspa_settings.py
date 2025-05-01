@@ -1,7 +1,7 @@
 """
-Django settings for mindtrack project on HostPinnacle.
+Django settings for mindtrack project on barberianspa.com.
 
-This file contains HostPinnacle-specific settings and overrides the base settings.
+This file contains barberianspa.com-specific settings and overrides the base settings.
 """
 
 from .settings import *
@@ -14,7 +14,7 @@ logging.basicConfig(
     format='%(asctime)s [%(levelname)s] %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join(BASE_DIR, 'hostpinnacle.log'))
+        logging.FileHandler(os.path.join(BASE_DIR, 'barberianspa.log'))
     ]
 )
 logger = logging.getLogger(__name__)
@@ -22,14 +22,13 @@ logger = logging.getLogger(__name__)
 # Debug should be False in production
 DEBUG = False
 
-# Update allowed hosts for HostPinnacle
+# Update allowed hosts for barberianspa.com
 ALLOWED_HOSTS = [
-    '.hostpinnacle.com', '.mindtrack.com', '.barberianspa.com',
-    'localhost', '127.0.0.1', '0.0.0.0',
+    'mindtrack.barberianspa.com', '.barberianspa.com',
+    '.hostpinnacle.com', 'localhost', '127.0.0.1', '0.0.0.0',
     'localhost:8000', 'localhost:8001', 'localhost:8009',
     '127.0.0.1:8000', '127.0.0.1:8001', '127.0.0.1:8009',
-    '0.0.0.0:8000', '0.0.0.0:8001', '0.0.0.0:8009',
-    'mindtrack.barberianspa.com'
+    '0.0.0.0:8000', '0.0.0.0:8001', '0.0.0.0:8009'
 ]
 
 # Static files configuration
@@ -40,7 +39,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Database configuration for HostPinnacle
+# Database configuration for barberianspa.com
 # Use PostgreSQL database
 DATABASES = {
     'default': {
@@ -74,7 +73,10 @@ EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@mindtrack.com')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@mindtrack.barberianspa.com')
+
+# Site URL for generating absolute URLs
+SITE_URL = 'https://mindtrack.barberianspa.com'
 
 # Cache configuration
 CACHES = {
@@ -106,7 +108,7 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'hostpinnacle.log'),
+            'filename': os.path.join(BASE_DIR, 'barberianspa.log'),
             'formatter': 'verbose',
         },
         'console': {
@@ -126,13 +128,19 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
+        'error_middleware': {
+            'handlers': ['file', 'console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
     },
 }
 
 # Print configuration information
-logger.info("HostPinnacle settings loaded")
+logger.info("barberianspa.com settings loaded")
 logger.info(f"DEBUG: {DEBUG}")
 logger.info(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
 logger.info(f"DATABASE: {DATABASES['default']['ENGINE']} on {DATABASES['default']['HOST']}")
 logger.info(f"STATIC_ROOT: {STATIC_ROOT}")
 logger.info(f"MEDIA_ROOT: {MEDIA_ROOT}")
+logger.info(f"SITE_URL: {SITE_URL}")

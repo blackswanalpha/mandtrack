@@ -31,7 +31,13 @@ SECRET_KEY = env('SECRET_KEY', default='django-insecure-y#8kh^ovpxgstblrd!_vk6ou
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=True)
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
+    'localhost', '127.0.0.1', '0.0.0.0',
+    'localhost:8000', 'localhost:8001', 'localhost:8009',
+    '127.0.0.1:8000', '127.0.0.1:8001', '127.0.0.1:8009',
+    '0.0.0.0:8000', '0.0.0.0:8001', '0.0.0.0:8009',
+    'mindtrack.barberianspa.com'
+])
 
 
 # Application definition
@@ -79,6 +85,7 @@ MIDDLEWARE = [
     'django_htmx.middleware.HtmxMiddleware',
     'core.middleware.RoleBasedRedirectMiddleware',  # Custom middleware for role-based redirects
     'core.middleware.QRCodeMiddleware',  # Custom middleware for QR code handling
+    'core.error_middleware.ErrorHandlingMiddleware',  # Custom error handling middleware
 ]
 
 ROOT_URLCONF = 'mindtrack.urls'
@@ -250,6 +257,16 @@ LOGGING = {
         'surveys': {
             'handlers': ['console'],
             'level': 'DEBUG',
+            'propagate': False,
+        },
+        'error_middleware': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'mindtrack_server': {
+            'handlers': ['console'],
+            'level': 'INFO',
             'propagate': False,
         },
     },

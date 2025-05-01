@@ -13,7 +13,14 @@ DEBUG = False
 VERCEL_DEBUG = True
 
 # Update allowed hosts
-ALLOWED_HOSTS = ['.vercel.app', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = [
+    '.vercel.app', '.barberianspa.com',
+    'localhost', '127.0.0.1', '0.0.0.0',
+    'localhost:8000', 'localhost:8001', 'localhost:8009',
+    '127.0.0.1:8000', '127.0.0.1:8001', '127.0.0.1:8009',
+    '0.0.0.0:8000', '0.0.0.0:8001', '0.0.0.0:8009',
+    'mindtrack.barberianspa.com'
+]
 
 # Add Vercel debug middleware
 MIDDLEWARE = [

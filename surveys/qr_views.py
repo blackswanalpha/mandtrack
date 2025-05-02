@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.http import require_GET
 from .models import Questionnaire, QRCode
 from .forms import QRCodeForm
 import qrcode
@@ -19,7 +20,7 @@ def qr_code_list(request):
     user_qr_codes = QRCode.objects.filter(created_by=request.user)
 
     # Get QR codes from organizations the user is a member of
-    org_qr_codes = QRCode.objects.filter(questionnaire__organization__members__user=request.user)
+    org_qr_codes = QRCode.objects.filter(survey__organization__members__user=request.user)
 
     # Combine and remove duplicates
     qr_codes = (user_qr_codes | org_qr_codes).distinct().order_by('-created_at')
@@ -27,6 +28,14 @@ def qr_code_list(request):
     return render(request, 'surveys/qr_code_list.html', {
         'qr_codes': qr_codes
     })
+
+@login_required
+@require_GET
+def qr_code_list_redirect(request):
+    """
+    Redirect to the QR codes list page
+    """
+    return redirect('surveys:qr_code_list_alt')
 
 @login_required
 def qr_code_create(request):
@@ -40,7 +49,7 @@ def qr_code_create(request):
             qr_code.created_by = request.user
 
             # Generate URL for the QR code
-            questionnaire = qr_code.questionnaire
+            questionnaire = qr_code.survey
             qr_code.url = request.build_absolute_uri(
                 reverse('surveys:survey_respond_slug', kwargs={'slug': questionnaire.slug})
             )
@@ -64,7 +73,8 @@ def qr_code_detail(request, pk):
     qr_code = get_object_or_404(QRCode, pk=pk)
 
     # Check if user has permission to view this QR code
-    if qr_code.created_by != request.user and not qr_code.questionnaire.organization.members.filter(user=request.user).exists():
+    questionnaire = qr_code.survey
+    if qr_code.created_by != request.user and not questionnaire.organization.members.filter(user=request.user).exists():
         messages.error(request, "You don't have permission to view this QR code.")
         return redirect('surveys:qr_code_list')
 
@@ -85,7 +95,7 @@ def generate_survey_qr_code(request, pk):
         return redirect('surveys:survey_list')
 
     # Check if a QR code already exists for this questionnaire
-    existing_qr_codes = QRCode.objects.filter(questionnaire=questionnaire, created_by=request.user)
+    existing_qr_codes = QRCode.objects.filter(survey=questionnaire, created_by=request.user)
     if existing_qr_codes.exists():
         # Use the most recent QR code
         qr_code = existing_qr_codes.first()
@@ -97,7 +107,7 @@ def generate_survey_qr_code(request, pk):
         )
 
         qr_code = QRCode(
-            questionnaire=questionnaire,
+            survey=questionnaire,
             name=f"QR Code for {questionnaire.title}",
             description=f"QR Code for accessing {questionnaire.title}",
             url=questionnaire_url,
@@ -107,4 +117,5 @@ def generate_survey_qr_code(request, pk):
         qr_code.save()
         messages.success(request, "QR code generated successfully.")
 
+    # Use the correct URL name with the integer pk
     return redirect('surveys:qr_code_detail', pk=qr_code.pk)

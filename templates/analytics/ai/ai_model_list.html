@@ -1,0 +1,175 @@
+{% extends 'base/base.html' %}
+
+{% block title %}AI Models - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% url 'dashboard:admin_dashboard' %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">AI Models</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                Manage AI models for analysis
+            </p>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6">
+                <h2 class="text-lg font-medium text-gray-900">Filters</h2>
+                <form method="get" class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="type" class="block text-sm font-medium text-gray-700">Model Type</label>
+                        <select id="type" name="type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                            <option value="">All Types</option>
+                            {% for value, label in model_types %}
+                                <option value="{{ value }}" {% if request.GET.type == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="is_active" class="block text-sm font-medium text-gray-700">Status</label>
+                        <select id="is_active" name="is_active" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                            <option value="">All</option>
+                            <option value="true" {% if request.GET.is_active == 'true' %}selected{% endif %}>Active</option>
+                            <option value="false" {% if request.GET.is_active == 'false' %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                            <i class="fas fa-filter mr-2"></i> Apply Filters
+                        </button>
+                        <a href="{% url 'analytics:ai_model_list' %}" class="ml-2 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                            <i class="fas fa-times mr-2"></i> Clear
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- AI Models Header -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900">AI Models</h2>
+                    <p class="mt-1 text-sm text-gray-500">Models available for analyzing questionnaire responses.</p>
+                </div>
+                <a href="{% url 'analytics:ai_model_create' %}" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                    <i class="fas fa-plus-circle mr-1.5"></i> Create AI Model
+                </a>
+            </div>
+        </div>
+
+        {% if ai_models %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for ai_model in ai_models %}
+                    <div class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="p-5">
+                            <div class="flex items-center mb-4">
+                                <div class="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center">
+                                    <i class="fas fa-brain text-indigo-800 text-lg"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-lg font-medium text-gray-900">{{ ai_model.name }}</h3>
+                                    <div class="flex items-center text-sm text-gray-500">
+                                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                                            {{ ai_model.get_model_type_display }}
+                                        </span>
+                                        <span class="ml-2 px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {% if ai_model.is_active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                            {% if ai_model.is_active %}Active{% else %}Inactive{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <p class="text-sm text-gray-600 mb-4 line-clamp-2">{{ ai_model.description|default:"No description provided." }}</p>
+                            
+                            <div class="flex justify-between items-center text-xs text-gray-500 mb-4">
+                                <div class="flex items-center">
+                                    <i class="fas fa-code-branch mr-1"></i>
+                                    <span>v{{ ai_model.version }}</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-cog mr-1"></i>
+                                    <span>{{ ai_model.questionnaire_configurations.count }} Configs</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-chart-bar mr-1"></i>
+                                    <span>{{ ai_model.analysis_results.count }} Results</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-500">
+                                    Created {{ ai_model.created_at|date:"M d, Y" }}
+                                </span>
+                                <a href="{% url 'analytics:ai_model_detail' model_id=ai_model.id %}" class="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-900 transition-colors duration-200">
+                                    View Details <i class="fas fa-arrow-right ml-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if ai_models.has_other_pages %}
+                <div class="mt-8 flex justify-center">
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        {% if ai_models.has_previous %}
+                            <a href="?page={{ ai_models.previous_page_number }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.is_active %}&is_active={{ request.GET.is_active }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <span class="sr-only">Previous</span>
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        {% else %}
+                            <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                <span class="sr-only">Previous</span>
+                                <i class="fas fa-chevron-left"></i>
+                            </span>
+                        {% endif %}
+                        
+                        {% for i in ai_models.paginator.page_range %}
+                            {% if ai_models.number == i %}
+                                <span class="relative inline-flex items-center px-4 py-2 border border-primary-500 bg-primary-50 text-sm font-medium text-primary-600">
+                                    {{ i }}
+                                </span>
+                            {% else %}
+                                <a href="?page={{ i }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.is_active %}&is_active={{ request.GET.is_active }}{% endif %}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    {{ i }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if ai_models.has_next %}
+                            <a href="?page={{ ai_models.next_page_number }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.is_active %}&is_active={{ request.GET.is_active }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <span class="sr-only">Next</span>
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        {% else %}
+                            <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                <span class="sr-only">Next</span>
+                                <i class="fas fa-chevron-right"></i>
+                            </span>
+                        {% endif %}
+                    </nav>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-8 text-center">
+                <div class="text-gray-500">
+                    <i class="fas fa-brain text-4xl mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No AI Models Found</h3>
+                    <p class="mb-4">There are no AI models available yet.</p>
+                    <a href="{% url 'analytics:ai_model_create' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                        <i class="fas fa-plus-circle mr-2"></i> Create First AI Model
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

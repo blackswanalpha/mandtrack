@@ -15,4 +15,5 @@ urlpatterns = [
 
     # Admin Portal Pages
     path('users/', views.user_management, name='user_management'),
+    path('scoring/', views.scoring_management, name='scoring_management'),
 ]

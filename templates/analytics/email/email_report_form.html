@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Email Report - {{ report.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .email-form-container {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .email-form-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 20px;
+    }
+    
+    .report-info {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .report-info-item {
+        display: flex;
+        margin-bottom: 8px;
+    }
+    
+    .report-info-label {
+        font-weight: 600;
+        width: 150px;
+        color: #666;
+    }
+    
+    .report-info-value {
+        flex-grow: 1;
+    }
+    
+    .form-actions {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">Email Report</h1>
+            <p class="text-muted">{{ report.title }}</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'analytics:report_detail' pk=report.id %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Report
+            </a>
+        </div>
+    </div>
+    
+    <div class="email-form-container">
+        <h2 class="email-form-title">Email Report</h2>
+        
+        <div class="report-info">
+            <h3 class="h5 mb-3">Report Information</h3>
+            <div class="report-info-item">
+                <div class="report-info-label">Title:</div>
+                <div class="report-info-value">{{ report.title }}</div>
+            </div>
+            <div class="report-info-item">
+                <div class="report-info-label">Type:</div>
+                <div class="report-info-value">{{ report.get_report_type_display }}</div>
+            </div>
+            <div class="report-info-item">
+                <div class="report-info-label">Created:</div>
+                <div class="report-info-value">{{ report.created_at|date:"F j, Y, g:i a" }}</div>
+            </div>
+            {% if report.questionnaire %}
+                <div class="report-info-item">
+                    <div class="report-info-label">Questionnaire:</div>
+                    <div class="report-info-value">{{ report.questionnaire.title }}</div>
+                </div>
+            {% endif %}
+            {% if report.response %}
+                <div class="report-info-item">
+                    <div class="report-info-label">Response:</div>
+                    <div class="report-info-value">{{ report.response.patient_name }} ({{ report.response.patient_email }})</div>
+                </div>
+            {% endif %}
+            <div class="report-info-item">
+                <div class="report-info-label">PDF Available:</div>
+                <div class="report-info-value">
+                    {% if report.pdf_file %}
+                        <span class="text-success"><i class="fas fa-check-circle me-1"></i> Yes</span>
+                    {% else %}
+                        <span class="text-danger"><i class="fas fa-times-circle me-1"></i> No</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <form method="post" action="{% url 'analytics:send_report_email' report_id=report.id %}">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                <label for="recipient_email" class="form-label">Recipient Email <span class="text-danger">*</span></label>
+                <input type="email" class="form-control" id="recipient_email" name="recipient_email" required>
+                <div class="form-text">Email address to send the report to.</div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="sender_name" class="form-label">Sender Name</label>
+                <input type="text" class="form-control" id="sender_name" name="sender_name" value="{{ user.get_full_name }}">
+                <div class="form-text">Your name as it will appear in the email.</div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="additional_message" class="form-label">Additional Message</label>
+                <textarea class="form-control" id="additional_message" name="additional_message" rows="4"></textarea>
+                <div class="form-text">Optional message to include in the email.</div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane me-1"></i> Send Report
+                </button>
+                <a href="{% url 'analytics:schedule_report_form_by_report' report_id=report.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-calendar-alt me-1"></i> Schedule Recurring
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Batch Report - {{ response_count }} Responses</title>
+</head>
+<body>
+    <div class="header">
+        <img src="{{ logo_path }}" alt="MindTrack Logo" class="logo">
+        <h1>Batch Report</h1>
+        <p>{{ response_count }} Responses from {{ questionnaire_count }} Questionnaires</p>
+    </div>
+    
+    <div class="summary-section">
+        <h2>Summary</h2>
+        <table class="summary-table">
+            <thead>
+                <tr>
+                    <th>Questionnaire</th>
+                    <th>Category</th>
+                    <th>Responses</th>
+                    <th>Completion Rate</th>
+                    <th>Avg Score</th>
+                    <th>High Risk %</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for questionnaire, responses in grouped_responses.items %}
+                    <tr>
+                        <td>{{ questionnaire.title }}</td>
+                        <td>{{ questionnaire.category|title }}</td>
+                        <td>{{ responses|length }}</td>
+                        <td>
+                            {% with completed=responses|filter_by_status:'completed'|length %}
+                                {% if responses|length > 0 %}
+                                    {{ completed|div:responses|length|multiply:100|floatformat:0 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td>
+                            {% with scores=responses|filter_scores %}
+                                {% if scores|length > 0 %}
+                                    {{ scores|avg|floatformat:1 }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td>
+                            {% with high_risk=responses|filter_by_risk_level:'high,critical'|length %}
+                                {% if responses|length > 0 %}
+                                    {{ high_risk|div:responses|length|multiply:100|floatformat:0 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% for questionnaire, responses in grouped_responses.items %}
+        <div class="questionnaire-section">
+            <h2 class="questionnaire-title">{{ questionnaire.title }}</h2>
+            <p>{{ questionnaire.description }}</p>
+            
+            <h3>Responses ({{ responses|length }})</h3>
+            <table class="response-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Patient</th>
+                        <th>Email</th>
+                        <th>Age</th>
+                        <th>Gender</th>
+                        <th>Score</th>
+                        <th>Risk Level</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for response in responses %}
+                        <tr>
+                            <td>{{ response.id }}</td>
+                            <td>{{ response.patient_name }}</td>
+                            <td>{{ response.patient_email }}</td>
+                            <td>{{ response.patient_age }}</td>
+                            <td>{{ response.patient_gender|title }}</td>
+                            <td>{{ response.score|default:"N/A" }}</td>
+                            <td>{{ response.risk_level|title }}</td>
+                            <td>{{ response.status|title }}</td>
+                            <td>{{ response.created_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <h3>Risk Level Distribution</h3>
+            <table class="response-table">
+                <thead>
+                    <tr>
+                        <th>Risk Level</th>
+                        <th>Count</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% with low_count=responses|filter_by_risk_level:'low'|length %}
+                        <tr>
+                            <td>Low</td>
+                            <td>{{ low_count }}</td>
+                            <td>
+                                {% if responses|length > 0 %}
+                                    {{ low_count|div:responses|length|multiply:100|floatformat:1 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endwith %}
+                    
+                    {% with medium_count=responses|filter_by_risk_level:'medium'|length %}
+                        <tr>
+                            <td>Medium</td>
+                            <td>{{ medium_count }}</td>
+                            <td>
+                                {% if responses|length > 0 %}
+                                    {{ medium_count|div:responses|length|multiply:100|floatformat:1 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endwith %}
+                    
+                    {% with high_count=responses|filter_by_risk_level:'high'|length %}
+                        <tr>
+                            <td>High</td>
+                            <td>{{ high_count }}</td>
+                            <td>
+                                {% if responses|length > 0 %}
+                                    {{ high_count|div:responses|length|multiply:100|floatformat:1 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endwith %}
+                    
+                    {% with critical_count=responses|filter_by_risk_level:'critical'|length %}
+                        <tr>
+                            <td>Critical</td>
+                            <td>{{ critical_count }}</td>
+                            <td>
+                                {% if responses|length > 0 %}
+                                    {{ critical_count|div:responses|length|multiply:100|floatformat:1 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endwith %}
+                </tbody>
+            </table>
+        </div>
+    {% endfor %}
+    
+    <div class="footer">
+        <p>Generated on: {{ generated_at }}</p>
+        <p>This report was generated by MindTrack Batch Reporting System.</p>
+        <p>&copy; {% now "Y" %} MindTrack. All rights reserved.</p>
+    </div>
+</body>
+</html>

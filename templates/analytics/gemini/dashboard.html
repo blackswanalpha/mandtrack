@@ -1,0 +1,359 @@
+{% extends 'base/base.html' %}
+{% load analytics_filters %}
+
+{% block title %}Gemini AI Analysis - MindTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hover-scale {
+        transition: transform 0.3s ease-in-out;
+    }
+
+    .hover-scale:hover {
+        transform: scale(1.03);
+    }
+
+    .pulse {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8 fade-in">
+            <div class="flex items-center">
+                <a href="{% url 'dashboard:admin_dashboard' %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Gemini AI Analysis</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                Analyze questionnaires and responses using Google's Gemini AI
+            </p>
+        </div>
+
+        <!-- Analysis Options -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8 fade-in" style="animation-delay: 0.1s;">
+            <div class="px-4 py-5 sm:px-6">
+                <h2 class="text-lg font-medium text-gray-900">Analysis Options</h2>
+                <p class="mt-1 text-sm text-gray-500">Select what you want to analyze.</p>
+            </div>
+            <div class="border-t border-gray-200">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
+                    <div class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow hover-scale pulse">
+                        <div class="p-5">
+                            <div class="flex items-center mb-4">
+                                <div class="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center">
+                                    <i class="fas fa-clipboard-list text-indigo-800 text-lg"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-lg font-medium text-gray-900">Analyze Questionnaire</h3>
+                                    <div class="flex items-center text-sm text-gray-500">
+                                        <span class="text-xs">Full questionnaire analysis</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p class="text-sm text-gray-600 mb-4">Analyze all responses to a questionnaire to identify patterns, themes, and insights.</p>
+
+                            <div class="flex justify-end">
+                                <button type="button" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200" onclick="showQuestionnaires()">
+                                    Select Questionnaire <i class="fas fa-arrow-right ml-1.5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow hover-scale">
+                        <div class="p-5">
+                            <div class="flex items-center mb-4">
+                                <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                                    <i class="fas fa-comment-alt text-green-800 text-lg"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-lg font-medium text-gray-900">Analyze Response</h3>
+                                    <div class="flex items-center text-sm text-gray-500">
+                                        <span class="text-xs">Individual response analysis</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p class="text-sm text-gray-600 mb-4">Analyze a single response to understand sentiment, themes, and key points.</p>
+
+                            <div class="flex justify-end">
+                                <a href="{% url 'feedback:response_list' %}" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
+                                    Select Response <i class="fas fa-arrow-right ml-1.5"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow hover-scale">
+                        <div class="p-5">
+                            <div class="flex items-center mb-4">
+                                <div class="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
+                                    <i class="fas fa-font text-purple-800 text-lg"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-lg font-medium text-gray-900">Analyze Text</h3>
+                                    <div class="flex items-center text-sm text-gray-500">
+                                        <span class="text-xs">Custom text analysis</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p class="text-sm text-gray-600 mb-4">Analyze any text for sentiment, themes, or generate a summary.</p>
+
+                            <div class="flex justify-end">
+                                <a href="{% url 'analytics:analyze_text' %}" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200">
+                                    Analyze Text <i class="fas fa-arrow-right ml-1.5"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Questionnaire Selection (Hidden by default) -->
+        <div id="questionnaire-selection" class="bg-white shadow overflow-hidden sm:rounded-lg mb-8 hidden fade-in">
+            <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900">Select Questionnaire</h2>
+                    <p class="mt-1 text-sm text-gray-500">Choose a questionnaire to analyze.</p>
+                </div>
+                <button type="button" class="text-gray-400 hover:text-gray-500" onclick="hideQuestionnaires()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="border-t border-gray-200">
+                {% if questionnaires %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+                        {% for questionnaire in questionnaires %}
+                            <div class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow hover-scale">
+                                <div class="p-5">
+                                    <div class="flex items-center mb-4">
+                                        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                                            <i class="fas fa-clipboard-list text-blue-800 text-lg"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <h3 class="text-lg font-medium text-gray-900">{{ questionnaire.title }}</h3>
+                                            <div class="flex items-center text-sm text-gray-500">
+                                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                    {{ questionnaire.get_type_display }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <p class="text-sm text-gray-600 mb-4 line-clamp-2">{{ questionnaire.description|default:"No description provided." }}</p>
+
+                                    <div class="flex justify-end">
+                                        <a href="{% url 'analytics:analyze_questionnaire' questionnaire_id=questionnaire.id %}" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                                            Analyze <i class="fas fa-arrow-right ml-1.5"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="px-6 py-4 text-center text-sm text-gray-500">
+                        <p>No questionnaires found.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Analysis Results -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8 fade-in" style="animation-delay: 0.2s;">
+            <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900">Recent Analysis Results</h2>
+                    <p class="mt-1 text-sm text-gray-500">Your recently completed analyses.</p>
+                </div>
+                <a href="{% url 'analytics:ai_model_list' %}" class="text-primary-600 hover:text-primary-900 transition-colors duration-200">
+                    View All Results
+                </a>
+            </div>
+            <div class="border-t border-gray-200">
+                {% if recent_results %}
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Response
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        AI Model
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Summary
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Confidence
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Analyzed At
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for result in recent_results %}
+                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900">{{ result.response.id|truncatechars:8 }}</div>
+                                            <div class="text-xs text-gray-500">{{ result.response.survey.title|truncatechars:20 }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                                                {{ result.ai_model.name }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-900 line-clamp-2">{{ result.summary|truncatechars:50 }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="w-full bg-gray-200 rounded-full h-2.5 w-16">
+                                                <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ result.confidence_score|floatformat:2|multiply:100 }}%"></div>
+                                            </div>
+                                            <span class="text-xs text-gray-500">{{ result.confidence_score|floatformat:2|multiply:100 }}%</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ result.analyzed_at|date:"M d, Y H:i" }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <a href="{% url 'analytics:analysis_result_detail' result_id=result.id %}" class="text-primary-600 hover:text-primary-900 transition-colors duration-150">
+                                                View Details
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="px-6 py-4 text-center text-sm text-gray-500">
+                        <p>No analysis results yet.</p>
+                        <p class="mt-2">Start by analyzing a questionnaire or response.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Insights -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg fade-in" style="animation-delay: 0.3s;">
+            <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900">Recent Insights</h2>
+                    <p class="mt-1 text-sm text-gray-500">AI-generated insights from your questionnaires.</p>
+                </div>
+                <a href="{% url 'analytics:dashboard' %}" class="text-primary-600 hover:text-primary-900 transition-colors duration-200">
+                    View All Analytics
+                </a>
+            </div>
+            <div class="border-t border-gray-200">
+                {% if recent_insights %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+                        {% for insight in recent_insights %}
+                            <div class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow hover-scale">
+                                <div class="p-5">
+                                    <div class="flex items-center mb-4">
+                                        <div class="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
+                                            <i class="fas fa-lightbulb text-purple-800 text-lg"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <h3 class="text-lg font-medium text-gray-900">{{ insight.title }}</h3>
+                                            <div class="flex items-center text-sm text-gray-500">
+                                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                                                    {{ insight.get_insight_type_display }}
+                                                </span>
+                                                {% if insight.severity %}
+                                                    <span class="ml-2 px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                                                        {% if insight.severity == 'low' %}bg-green-100 text-green-800
+                                                        {% elif insight.severity == 'medium' %}bg-yellow-100 text-yellow-800
+                                                        {% elif insight.severity == 'high' %}bg-orange-100 text-orange-800
+                                                        {% elif insight.severity == 'critical' %}bg-red-100 text-red-800
+                                                        {% endif %}">
+                                                        {{ insight.get_severity_display }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <p class="text-sm text-gray-600 mb-4 line-clamp-3">{{ insight.description }}</p>
+
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xs text-gray-500">
+                                            {{ insight.created_at|date:"M d, Y" }}
+                                        </span>
+                                        <a href="{% url 'analytics:ai_insight_detail' insight_id=insight.id %}" class="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-900 transition-colors duration-200">
+                                            View Details <i class="fas fa-arrow-right ml-1"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="px-6 py-4 text-center text-sm text-gray-500">
+                        <p>No insights generated yet.</p>
+                        <p class="mt-2">Analyze questionnaires to generate insights.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    function showQuestionnaires() {
+        document.getElementById('questionnaire-selection').classList.remove('hidden');
+        document.getElementById('questionnaire-selection').classList.add('fade-in');
+    }
+
+    function hideQuestionnaires() {
+        document.getElementById('questionnaire-selection').classList.add('hidden');
+    }
+
+    // Add fade-in effect to elements as they scroll into view
+    document.addEventListener('DOMContentLoaded', function() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

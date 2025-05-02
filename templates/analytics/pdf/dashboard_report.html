@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Dashboard Report - {{ questionnaire.title }}</title>
+</head>
+<body>
+    <div class="header">
+        <img src="data:image/png;base64,{{ logo_base64 }}" alt="MindTrack Logo" class="logo">
+        <h1>Dashboard Report</h1>
+        <p>{{ questionnaire.title }}</p>
+        <p>{{ questionnaire.description }}</p>
+    </div>
+    
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.total_responses }}</div>
+            <div class="stat-label">Total Responses</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.avg_score|floatformat:1 }}</div>
+            <div class="stat-label">Average Score</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.completion_rate|floatformat:0 }}%</div>
+            <div class="stat-label">Completion Rate</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.high_risk_percentage|floatformat:0 }}%</div>
+            <div class="stat-label">High Risk Responses</div>
+        </div>
+    </div>
+    
+    <h2>Overview</h2>
+    
+    <div class="two-column">
+        <div class="column">
+            <div class="chart-container">
+                <h3 class="chart-title">Response Distribution by Risk Level</h3>
+                <p class="chart-description">Distribution of responses across different risk levels based on scoring.</p>
+                {% if charts.risk_distribution_chart %}
+                    <img src="data:image/png;base64,{{ charts.risk_distribution_chart }}" alt="Risk Distribution Chart" class="chart-img">
+                {% else %}
+                    <p>No data available for this chart.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="column">
+            <div class="chart-container">
+                <h3 class="chart-title">Score Distribution</h3>
+                <p class="chart-description">Histogram showing the distribution of scores across all responses.</p>
+                {% if charts.score_distribution_chart %}
+                    <img src="data:image/png;base64,{{ charts.score_distribution_chart }}" alt="Score Distribution Chart" class="chart-img">
+                {% else %}
+                    <p>No data available for this chart.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="chart-container">
+        <h3 class="chart-title">Response Trend</h3>
+        <p class="chart-description">Trend of responses and average scores over time.</p>
+        {% if charts.response_trend_chart %}
+            <img src="data:image/png;base64,{{ charts.response_trend_chart }}" alt="Response Trend Chart" class="chart-img">
+        {% else %}
+            <p>No data available for this chart.</p>
+        {% endif %}
+    </div>
+    
+    <div class="two-column">
+        <div class="column">
+            <div class="chart-container">
+                <h3 class="chart-title">Completion Time Distribution</h3>
+                <p class="chart-description">Distribution of time taken to complete the questionnaire.</p>
+                {% if charts.completion_time_chart %}
+                    <img src="data:image/png;base64,{{ charts.completion_time_chart }}" alt="Completion Time Chart" class="chart-img">
+                {% else %}
+                    <p>No data available for this chart.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="column">
+            <div class="chart-container">
+                <h3 class="chart-title">Comparative Analysis</h3>
+                <p class="chart-description">Comparison with other questionnaires in the same category.</p>
+                {% if charts.comparative_analysis_chart %}
+                    <img src="data:image/png;base64,{{ charts.comparative_analysis_chart }}" alt="Comparative Analysis Chart" class="chart-img">
+                {% else %}
+                    <p>No data available for this chart.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <h2>Demographics</h2>
+    
+    <div class="two-column">
+        <div class="column">
+            <div class="chart-container">
+                <h3 class="chart-title">Score Distribution by Age Group</h3>
+                <p class="chart-description">Comparison of scores across different age groups.</p>
+                {% if charts.age_distribution_chart %}
+                    <img src="data:image/png;base64,{{ charts.age_distribution_chart }}" alt="Age Distribution Chart" class="chart-img">
+                {% else %}
+                    <p>No data available for this chart.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="column">
+            <div class="chart-container">
+                <h3 class="chart-title">Score Distribution by Gender</h3>
+                <p class="chart-description">Comparison of scores across different genders.</p>
+                {% if charts.gender_distribution_chart %}
+                    <img src="data:image/png;base64,{{ charts.gender_distribution_chart }}" alt="Gender Distribution Chart" class="chart-img">
+                {% else %}
+                    <p>No data available for this chart.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <h2>AI Analysis</h2>
+    
+    <div class="two-column">
+        <div class="column">
+            <div class="chart-container">
+                <h3 class="chart-title">AI Analysis Sentiment Distribution</h3>
+                <p class="chart-description">Distribution of sentiment analysis from AI results.</p>
+                {% if charts.sentiment_chart %}
+                    <img src="data:image/png;base64,{{ charts.sentiment_chart }}" alt="Sentiment Chart" class="chart-img">
+                {% else %}
+                    <p>No data available for this chart.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="column">
+            <div class="chart-container">
+                <h3 class="chart-title">Common AI Recommendations</h3>
+                <p class="chart-description">Frequency of common recommendations from AI analyses.</p>
+                {% if charts.recommendations_chart %}
+                    <img src="data:image/png;base64,{{ charts.recommendations_chart }}" alt="Recommendations Chart" class="chart-img">
+                {% else %}
+                    <p>No data available for this chart.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>Generated on: {{ generated_at }}</p>
+        <p>This report was generated by MindTrack Analytics Dashboard.</p>
+        <p>&copy; {% now "Y" %} MindTrack. All rights reserved.</p>
+    </div>
+</body>
+</html>

@@ -74,6 +74,60 @@
     <!-- AOS - Animate On Scroll Library -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
+    <style>
+        /* Base Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .animate-slide-in {
+            animation: slideInRight 0.5s ease-in-out;
+        }
+
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        .hover-scale {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .hover-scale:hover {
+            transform: scale(1.03);
+        }
+
+        /* Spinner Animation */
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 3px solid rgba(79, 70, 229, 0.1);
+            border-top-color: rgba(79, 70, 229, 0.8);
+            animation: spin 1s linear infinite;
+        }
+    </style>
+
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
@@ -82,40 +136,46 @@
             {% include 'base/header.html' %}
         {% endblock %}
 
-        <main class="flex-grow">
-            {% if messages %}
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-                    {% for message in messages %}
-                        <div class="rounded-md p-4 mb-4 {% if message.tags == 'success' %}bg-green-50 text-green-800{% elif message.tags == 'error' %}bg-red-50 text-red-800{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800{% else %}bg-blue-50 text-blue-800{% endif %} flex">
-                            <div class="flex-shrink-0">
-                                {% if message.tags == 'success' %}
-                                    <i class="fas fa-check-circle text-green-400"></i>
-                                {% elif message.tags == 'error' %}
-                                    <i class="fas fa-exclamation-circle text-red-400"></i>
-                                {% elif message.tags == 'warning' %}
-                                    <i class="fas fa-exclamation-triangle text-yellow-400"></i>
-                                {% else %}
-                                    <i class="fas fa-info-circle text-blue-400"></i>
-                                {% endif %}
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm">{{ message }}</p>
-                            </div>
-                            <div class="ml-auto pl-3">
-                                <div class="-mx-1.5 -my-1.5">
-                                    <button type="button" class="inline-flex rounded-md p-1.5 {% if message.tags == 'success' %}text-green-500 hover:bg-green-100{% elif message.tags == 'error' %}text-red-500 hover:bg-red-100{% elif message.tags == 'warning' %}text-yellow-500 hover:bg-yellow-100{% else %}text-blue-500 hover:bg-blue-100{% endif %} focus:outline-none"
-                                            onclick="this.parentElement.parentElement.parentElement.remove()">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
+        <div class="flex flex-1 overflow-hidden">
+            {% if request.user.is_authenticated and not is_landing_page %}
+                {% include 'base/sidebar.html' %}
             {% endif %}
 
-            {% block content %}{% endblock %}
-        </main>
+            <main class="flex-1 overflow-y-auto bg-gray-50">
+                {% if messages %}
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+                        {% for message in messages %}
+                            <div class="rounded-md p-4 mb-4 {% if message.tags == 'success' %}bg-green-50 text-green-800{% elif message.tags == 'error' %}bg-red-50 text-red-800{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800{% else %}bg-blue-50 text-blue-800{% endif %} flex animate-fade-in">
+                                <div class="flex-shrink-0">
+                                    {% if message.tags == 'success' %}
+                                        <i class="fas fa-check-circle text-green-400"></i>
+                                    {% elif message.tags == 'error' %}
+                                        <i class="fas fa-exclamation-circle text-red-400"></i>
+                                    {% elif message.tags == 'warning' %}
+                                        <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                                    {% else %}
+                                        <i class="fas fa-info-circle text-blue-400"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm">{{ message }}</p>
+                                </div>
+                                <div class="ml-auto pl-3">
+                                    <div class="-mx-1.5 -my-1.5">
+                                        <button type="button" class="inline-flex rounded-md p-1.5 {% if message.tags == 'success' %}text-green-500 hover:bg-green-100{% elif message.tags == 'error' %}text-red-500 hover:bg-red-100{% elif message.tags == 'warning' %}text-yellow-500 hover:bg-yellow-100{% else %}text-blue-500 hover:bg-blue-100{% endif %} focus:outline-none transition-colors duration-200"
+                                                onclick="this.parentElement.parentElement.parentElement.remove()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
 
         {% block footer %}
             {% include 'base/footer.html' %}
@@ -140,6 +200,60 @@
 
     <!-- Custom JavaScript -->
     <script src="{% static 'js/main.js' %}?v=1.0.1"></script>
+
+    <!-- Sidebar JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sidebar toggle functionality
+            const openSidebarBtn = document.getElementById('open-sidebar');
+            const closeSidebarBtn = document.getElementById('close-sidebar');
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+
+            if (openSidebarBtn && closeSidebarBtn && sidebar && backdrop) {
+                // Open sidebar
+                openSidebarBtn.addEventListener('click', function() {
+                    sidebar.classList.remove('-translate-x-full');
+                    backdrop.classList.remove('hidden');
+                    document.body.classList.add('overflow-hidden');
+                });
+
+                // Close sidebar
+                closeSidebarBtn.addEventListener('click', function() {
+                    sidebar.classList.add('-translate-x-full');
+                    backdrop.classList.add('hidden');
+                    document.body.classList.remove('overflow-hidden');
+                });
+
+                // Close sidebar when clicking on backdrop
+                backdrop.addEventListener('click', function() {
+                    sidebar.classList.add('-translate-x-full');
+                    backdrop.classList.add('hidden');
+                    document.body.classList.remove('overflow-hidden');
+                });
+            }
+
+            // Dropdown functionality
+            const dropdownToggles = document.querySelectorAll('[data-collapse-toggle]');
+
+            dropdownToggles.forEach(toggle => {
+                toggle.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-collapse-toggle');
+                    const target = document.getElementById(targetId);
+
+                    if (target) {
+                        target.classList.toggle('hidden');
+
+                        // Rotate arrow icon
+                        const arrow = this.querySelector('svg:last-child');
+                        if (arrow) {
+                            arrow.classList.toggle('rotate-180');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
 
     <!-- HTMX Enhancement for Animations -->
     <script>

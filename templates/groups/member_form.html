@@ -1,0 +1,166 @@
+{% extends 'admin_portal/modern_base.html' %}
+
+{% block title %}{% if member %}Edit Member{% else %}Add Member{% endif %} - {{ organization.name }} - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% url 'groups:member_list' pk=organization.id %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">
+                    {% if member %}Edit Member{% else %}Add Member{% endif %}
+                </h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                {% if member %}
+                    Update member information for {{ organization.name }}
+                {% else %}
+                    Add a new member to {{ organization.name }}
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="rounded-md bg-red-50 p-4 mb-6">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-red-800">There were errors with your submission</h3>
+                                    <div class="mt-2 text-sm text-red-700">
+                                        <ul class="list-disc pl-5 space-y-1">
+                                            {% for error in form.non_field_errors %}
+                                                <li>{{ error }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- User -->
+                    <div>
+                        <label for="{{ form.user.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            User <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            {% if member %}
+                                <input type="text" value="{{ member.user.get_full_name|default:member.user.email }}" class="block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm" readonly>
+                                <input type="hidden" name="{{ form.user.name }}" value="{{ member.user.id }}">
+                            {% else %}
+                                <select name="{{ form.user.name }}" id="{{ form.user.id_for_label }}" 
+                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.user.errors %}border-red-300{% endif %}"
+                                       required>
+                                    <option value="">Select a user</option>
+                                    {% for choice in form.user.field.choices %}
+                                        <option value="{{ choice.0 }}" {% if form.user.value == choice.0|stringformat:"i" %}selected{% endif %}>{{ choice.1 }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% endif %}
+                        </div>
+                        {% if form.user.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.user.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Role -->
+                    <div>
+                        <label for="{{ form.role.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Role <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <select name="{{ form.role.name }}" id="{{ form.role.id_for_label }}" 
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.role.errors %}border-red-300{% endif %}"
+                                   required>
+                                {% for choice in form.role.field.choices %}
+                                    <option value="{{ choice.0 }}" {% if form.role.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if form.role.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.role.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500">
+                            <span class="font-medium">Role permissions:</span>
+                            <br>Administrator: Full access to organization settings and members
+                            <br>Manager: Can manage surveys and view all responses
+                            <br>Healthcare Provider: Can create surveys and view assigned responses
+                            <br>Staff: Can view and respond to assigned surveys
+                            <br>Researcher: Can view anonymized data and reports
+                            <br>Viewer: Can only view assigned content
+                        </p>
+                    </div>
+                    
+                    <!-- Title -->
+                    <div>
+                        <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Title
+                        </label>
+                        <div class="mt-1">
+                            <input type="text" name="{{ form.title.name }}" id="{{ form.title.id_for_label }}" 
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.title.errors %}border-red-300{% endif %}"
+                                   value="{{ form.title.value|default:'' }}">
+                        </div>
+                        {% if form.title.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.title.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500">Job title or position within the organization</p>
+                    </div>
+                    
+                    <!-- Department -->
+                    <div>
+                        <label for="{{ form.department.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Department
+                        </label>
+                        <div class="mt-1">
+                            <input type="text" name="{{ form.department.name }}" id="{{ form.department.id_for_label }}" 
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.department.errors %}border-red-300{% endif %}"
+                                   value="{{ form.department.value|default:'' }}">
+                        </div>
+                        {% if form.department.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.department.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500">Department or team within the organization</p>
+                    </div>
+                    
+                    <!-- Is Active -->
+                    <div class="relative flex items-start">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" name="{{ form.is_active.name }}" id="{{ form.is_active.id_for_label }}" 
+                                   class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 {% if form.is_active.errors %}border-red-300{% endif %}"
+                                   {% if form.is_active.value %}checked{% endif %}>
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="{{ form.is_active.id_for_label }}" class="font-medium text-gray-700">Active</label>
+                            <p class="text-gray-500">Inactive members cannot access organization resources</p>
+                        </div>
+                    </div>
+                    {% if form.is_active.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.is_active.errors.0 }}</p>
+                    {% endif %}
+                    
+                    <!-- Submit Buttons -->
+                    <div class="flex justify-end space-x-3 pt-5 border-t border-gray-200">
+                        <a href="{% url 'groups:member_list' pk=organization.id %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                            Cancel
+                        </a>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                            {% if member %}Update Member{% else %}Add Member{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

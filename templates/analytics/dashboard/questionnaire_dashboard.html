@@ -1,0 +1,380 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - {{ questionnaire.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-container {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        padding: 15px;
+        transition: transform 0.2s;
+    }
+    
+    .chart-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .chart-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #333;
+    }
+    
+    .chart-description {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 15px;
+    }
+    
+    .chart-img {
+        width: 100%;
+        border-radius: 4px;
+    }
+    
+    .dashboard-header {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .dashboard-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .dashboard-subtitle {
+        font-size: 1.1rem;
+        color: #666;
+    }
+    
+    .dashboard-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .stat-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 15px;
+        flex: 1;
+        min-width: 200px;
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2196F3;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .risk-low {
+        color: #4CAF50;
+    }
+    
+    .risk-medium {
+        color: #FFC107;
+    }
+    
+    .risk-high {
+        color: #F44336;
+    }
+    
+    .risk-critical {
+        color: #9C27B0;
+    }
+    
+    .tab-content {
+        padding-top: 20px;
+    }
+    
+    .nav-tabs .nav-link {
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link.active {
+        font-weight: 700;
+        color: #2196F3;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="dashboard-header">
+        <div class="row">
+            <div class="col-md-8">
+                <h1 class="dashboard-title">{{ questionnaire.title }}</h1>
+                <p class="dashboard-subtitle">{{ questionnaire.description }}</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{% url 'surveys:survey_detail' pk=questionnaire.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Questionnaire
+                </a>
+                <a href="{% url 'analytics:export_dashboard' questionnaire_id=questionnaire.id %}" class="btn btn-success ms-2">
+                    <i class="fas fa-download me-1"></i> Export
+                </a>
+            </div>
+        </div>
+        
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-value">{{ total_responses }}</div>
+                <div class="stat-label">Total Responses</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ avg_score|floatformat:1 }}</div>
+                <div class="stat-label">Average Score</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ completion_rate|floatformat:0 }}%</div>
+                <div class="stat-label">Completion Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value {% if high_risk_percentage > 20 %}risk-high{% elif high_risk_percentage > 10 %}risk-medium{% else %}risk-low{% endif %}">
+                    {{ high_risk_percentage|floatformat:0 }}%
+                </div>
+                <div class="stat-label">High Risk Responses</div>
+            </div>
+        </div>
+    </div>
+    
+    <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true">
+                <i class="fas fa-chart-pie me-1"></i> Overview
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="questions-tab" data-bs-toggle="tab" data-bs-target="#questions" type="button" role="tab" aria-controls="questions" aria-selected="false">
+                <i class="fas fa-list-ul me-1"></i> Questions
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="demographics-tab" data-bs-toggle="tab" data-bs-target="#demographics" type="button" role="tab" aria-controls="demographics" aria-selected="false">
+                <i class="fas fa-users me-1"></i> Demographics
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false">
+                <i class="fas fa-robot me-1"></i> AI Analysis
+            </button>
+        </li>
+    </ul>
+    
+    <div class="tab-content" id="dashboardTabsContent">
+        <!-- Overview Tab -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Response Distribution by Risk Level</h3>
+                        <p class="chart-description">Distribution of responses across different risk levels based on scoring.</p>
+                        {% if risk_distribution_chart %}
+                            <img src="data:image/png;base64,{{ risk_distribution_chart }}" alt="Risk Distribution Chart" class="chart-img">
+                        {% else %}
+                            <div class="alert alert-info">No data available for this chart.</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Score Distribution</h3>
+                        <p class="chart-description">Histogram showing the distribution of scores across all responses.</p>
+                        {% if score_distribution_chart %}
+                            <img src="data:image/png;base64,{{ score_distribution_chart }}" alt="Score Distribution Chart" class="chart-img">
+                        {% else %}
+                            <div class="alert alert-info">No data available for this chart.</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-12">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Response Trend</h3>
+                        <p class="chart-description">Trend of responses and average scores over time.</p>
+                        {% if response_trend_chart %}
+                            <img src="data:image/png;base64,{{ response_trend_chart }}" alt="Response Trend Chart" class="chart-img">
+                        {% else %}
+                            <div class="alert alert-info">No data available for this chart.</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Completion Time Distribution</h3>
+                        <p class="chart-description">Distribution of time taken to complete the questionnaire.</p>
+                        {% if completion_time_chart %}
+                            <img src="data:image/png;base64,{{ completion_time_chart }}" alt="Completion Time Chart" class="chart-img">
+                        {% else %}
+                            <div class="alert alert-info">No data available for this chart.</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Comparative Analysis</h3>
+                        <p class="chart-description">Comparison with other questionnaires in the same category.</p>
+                        {% if comparative_analysis_chart %}
+                            <img src="data:image/png;base64,{{ comparative_analysis_chart }}" alt="Comparative Analysis Chart" class="chart-img">
+                        {% else %}
+                            <div class="alert alert-info">No data available for this chart.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Questions Tab -->
+        <div class="tab-pane fade" id="questions" role="tabpanel" aria-labelledby="questions-tab">
+            <div class="row">
+                {% for question_chart in question_charts %}
+                    <div class="col-md-6">
+                        <div class="chart-container">
+                            <h3 class="chart-title">{{ question_chart.question.text|truncatechars:50 }}</h3>
+                            <p class="chart-description">
+                                Question Type: {{ question_chart.question.get_question_type_display }}
+                                {% if question_chart.question.is_scored %}
+                                    | Scoring Weight: {{ question_chart.question.scoring_weight }}
+                                {% endif %}
+                            </p>
+                            {% if question_chart.chart %}
+                                <img src="data:image/png;base64,{{ question_chart.chart }}" alt="Question Response Chart" class="chart-img">
+                            {% else %}
+                                <div class="alert alert-info">No data available for this chart.</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="alert alert-info">No question data available.</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Demographics Tab -->
+        <div class="tab-pane fade" id="demographics" role="tabpanel" aria-labelledby="demographics-tab">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Score Distribution by Age Group</h3>
+                        <p class="chart-description">Comparison of scores across different age groups.</p>
+                        {% if age_distribution_chart %}
+                            <img src="data:image/png;base64,{{ age_distribution_chart }}" alt="Age Distribution Chart" class="chart-img">
+                        {% else %}
+                            <div class="alert alert-info">No data available for this chart.</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Score Distribution by Gender</h3>
+                        <p class="chart-description">Comparison of scores across different genders.</p>
+                        {% if gender_distribution_chart %}
+                            <img src="data:image/png;base64,{{ gender_distribution_chart }}" alt="Gender Distribution Chart" class="chart-img">
+                        {% else %}
+                            <div class="alert alert-info">No data available for this chart.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- AI Analysis Tab -->
+        <div class="tab-pane fade" id="ai-analysis" role="tabpanel" aria-labelledby="ai-analysis-tab">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h3 class="chart-title">AI Analysis Sentiment Distribution</h3>
+                        <p class="chart-description">Distribution of sentiment analysis from AI results.</p>
+                        {% if sentiment_chart %}
+                            <img src="data:image/png;base64,{{ sentiment_chart }}" alt="Sentiment Chart" class="chart-img">
+                        {% else %}
+                            <div class="alert alert-info">No data available for this chart.</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Common AI Recommendations</h3>
+                        <p class="chart-description">Frequency of common recommendations from AI analyses.</p>
+                        {% if recommendations_chart %}
+                            <img src="data:image/png;base64,{{ recommendations_chart }}" alt="Recommendations Chart" class="chart-img">
+                        {% else %}
+                            <div class="alert alert-info">No data available for this chart.</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-12">
+                    <div class="chart-container">
+                        <h3 class="chart-title">AI Analysis Insights</h3>
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Key Insights</h5>
+                                <ul class="list-group list-group-flush">
+                                    {% for insight in ai_insights %}
+                                        <li class="list-group-item">
+                                            <strong>{{ insight.title }}</strong>
+                                            <p>{{ insight.description }}</p>
+                                        </li>
+                                    {% empty %}
+                                        <li class="list-group-item">No insights available.</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+    
+    // Keep the active tab after page refresh
+    $(document).ready(function() {
+        // Check for the active tab in the URL hash
+        var hash = window.location.hash;
+        if (hash) {
+            $('#dashboardTabs a[href="' + hash + '"]').tab('show');
+        }
+        
+        // Update the URL hash when a tab is clicked
+        $('#dashboardTabs a').on('click', function(e) {
+            window.location.hash = $(this).attr('href');
+        });
+    });
+</script>
+{% endblock %}

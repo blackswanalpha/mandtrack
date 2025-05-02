@@ -6,7 +6,7 @@
 {% block page_title %}{% if is_create %}Create QR Code{% else %}Edit QR Code{% endif %}{% endblock %}
 
 {% block page_actions %}
-<a href="{% url 'surveys:qr_code_list' %}" class="btn btn-sm btn-secondary transition-all">
+<a href="{% url 'surveys:qr_code_list_alt' %}" class="btn btn-sm btn-secondary transition-all">
     <i class="fas fa-arrow-left me-1"></i> Back to QR Codes
 </a>
 {% endblock %}
@@ -19,7 +19,7 @@
     <div class="card-body">
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            
+
             <div class="row">
                 <div class="col-md-6">
                     {{ form.survey|as_crispy_field }}
@@ -28,9 +28,9 @@
                     {{ form.name|as_crispy_field }}
                 </div>
             </div>
-            
+
             {{ form.description|as_crispy_field }}
-            
+
             <div class="row">
                 <div class="col-md-6">
                     {{ form.is_active|as_crispy_field }}
@@ -39,12 +39,12 @@
                     {{ form.expires_at|as_crispy_field }}
                 </div>
             </div>
-            
+
             <div class="mt-4">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save me-1"></i> {% if is_create %}Create QR Code{% else %}Save Changes{% endif %}
                 </button>
-                <a href="{% url 'surveys:qr_code_list' %}" class="btn btn-secondary">
+                <a href="{% url 'surveys:qr_code_list_alt' %}" class="btn btn-secondary">
                     <i class="fas fa-times me-1"></i> Cancel
                 </a>
             </div>

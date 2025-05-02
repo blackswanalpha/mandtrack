@@ -1,0 +1,212 @@
+{% extends 'client/base.html' %}
+{% load static %}
+
+{% block title %}{{ questionnaire.title }} - MindTrack{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <div class="px-6 py-8">
+            <div class="mb-8 text-center">
+                <h1 class="text-3xl font-display font-bold text-gray-900">{{ questionnaire.title }}</h1>
+                {% if questionnaire.description %}
+                    <p class="mt-4 text-gray-600">{{ questionnaire.description }}</p>
+                {% endif %}
+            </div>
+
+            {% if questionnaire.instructions %}
+                <div class="bg-blue-50 rounded-lg p-4 mb-8 transform transition-all duration-500 hover:scale-[1.01] hover:shadow-md">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle text-blue-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-blue-800">Instructions</h3>
+                            <div class="mt-2 text-sm text-blue-700">
+                                {{ questionnaire.instructions|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Progress Bar -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm text-gray-600">Question <span id="current-question-num">1</span> of <span id="total-questions">{{ questions|length }}</span></span>
+                    <span class="text-sm text-gray-600" id="progress-percentage">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div id="progress-bar" class="bg-primary-600 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Questionnaire Form -->
+            <form method="post" class="space-y-8" id="questionnaireForm">
+                {% csrf_token %}
+                
+                <!-- Patient Information Section -->
+                <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8" id="patient-info-section">
+                    <div class="px-4 py-5 sm:px-6">
+                        <h2 class="text-lg font-medium text-gray-900">Your Information</h2>
+                        <p class="mt-1 text-sm text-gray-500">Please provide some basic information about yourself.</p>
+                    </div>
+                    <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                        <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                            <div class="sm:col-span-3">
+                                <label for="patient_email" class="block text-sm font-medium text-gray-700">Email</label>
+                                <div class="mt-1">
+                                    <input type="email" name="patient_email" id="patient_email" 
+                                           class="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md transition-all duration-300"
+                                           placeholder="your.email@example.com">
+                                </div>
+                            </div>
+                            <div class="sm:col-span-3">
+                                <label for="patient_age" class="block text-sm font-medium text-gray-700">Age</label>
+                                <div class="mt-1">
+                                    <input type="number" name="patient_age" id="patient_age" min="0" max="120"
+                                           class="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md transition-all duration-300">
+                                </div>
+                            </div>
+                            <div class="sm:col-span-6">
+                                <label for="patient_gender" class="block text-sm font-medium text-gray-700">Gender</label>
+                                <div class="mt-1">
+                                    <select id="patient_gender" name="patient_gender" 
+                                            class="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md transition-all duration-300">
+                                        <option value="">Select gender</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                        <option value="non-binary">Non-binary</option>
+                                        <option value="prefer_not_to_say">Prefer not to say</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Questions Container -->
+                <div id="questions-container">
+                    <!-- Questions will be displayed one at a time -->
+                    {% for question in questions %}
+                        <div class="bg-white shadow overflow-hidden sm:rounded-lg question-container"
+                             id="question-{{ question.id }}"
+                             data-question-index="{{ forloop.counter0 }}"
+                             style="display: {% if forloop.first %}block{% else %}none{% endif %};">
+                            <div class="px-4 py-5 sm:px-6">
+                                <div class="flex items-center">
+                                    <span class="w-6 h-6 flex items-center justify-center rounded-full bg-primary-100 text-primary-600 text-xs mr-2">
+                                        {{ forloop.counter }}
+                                    </span>
+                                    <h2 class="text-lg font-medium text-gray-900">{{ question.text }}</h2>
+                                    {% if question.required %}
+                                        <span class="ml-2 px-1.5 py-0.5 text-xs rounded-full bg-red-100 text-red-800">Required</span>
+                                    {% endif %}
+                                </div>
+                                {% if question.description %}
+                                    <p class="mt-1 ml-8 text-sm text-gray-500">{{ question.description }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                                <!-- Question content would go here based on question type -->
+                                <div class="space-y-4">
+                                    <!-- Placeholder for question content -->
+                                    <p class="text-gray-500 italic">Question content would appear here based on the question type.</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="flex justify-between mt-8">
+                    <button type="button" id="prev-button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300" style="display: none;">
+                        <i class="fas fa-arrow-left mr-2"></i> Previous
+                    </button>
+                    <div class="flex-grow"></div>
+                    <button type="button" id="next-button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300">
+                        Next <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                    <button type="submit" id="submit-button" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 transform hover:scale-105" style="display: none;">
+                        <i class="fas fa-check-circle mr-2"></i> Submit Response
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Wait for the DOM to be fully loaded
+    window.addEventListener('DOMContentLoaded', function() {
+        // Initialize variables
+        const questions = document.querySelectorAll('.question-container');
+        const totalQuestions = questions.length;
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercentage = document.getElementById('progress-percentage');
+        const currentQuestionNum = document.getElementById('current-question-num');
+        const totalQuestionsElement = document.getElementById('total-questions');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const submitButton = document.getElementById('submit-button');
+        const patientInfoSection = document.getElementById('patient-info-section');
+        let currentQuestionIndex = -1; // Start at -1 for patient info section
+
+        // Set total questions
+        totalQuestionsElement.textContent = totalQuestions;
+
+        // Function to update the progress bar
+        function updateProgress() {
+            // Calculate progress (add 1 because we start at -1)
+            const progress = (currentQuestionIndex + 1) / (totalQuestions + 1) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressPercentage.textContent = `${Math.round(progress)}%`;
+            
+            // Update current question number (only for actual questions, not patient info)
+            if (currentQuestionIndex >= 0) {
+                currentQuestionNum.textContent = currentQuestionIndex + 1;
+            } else {
+                currentQuestionNum.textContent = "0";
+            }
+        }
+
+        // Function to show a specific question
+        function showQuestion(index) {
+            // Hide all questions
+            patientInfoSection.style.display = 'none';
+            questions.forEach(q => q.style.display = 'none');
+            
+            // Show the selected question or patient info
+            if (index === -1) {
+                patientInfoSection.style.display = 'block';
+            } else if (index >= 0 && index < totalQuestions) {
+                questions[index].style.display = 'block';
+            }
+            
+            // Update current index
+            currentQuestionIndex = index;
+            
+            // Update navigation buttons
+            prevButton.style.display = index >= 0 ? 'inline-flex' : 'none';
+            nextButton.style.display = index < totalQuestions - 1 ? 'inline-flex' : 'none';
+            submitButton.style.display = index === totalQuestions - 1 ? 'inline-flex' : 'none';
+            
+            // Update progress
+            updateProgress();
+        }
+
+        // Initialize with patient info section
+        showQuestion(-1);
+
+        // Event listeners for navigation buttons
+        nextButton.addEventListener('click', function() {
+            showQuestion(currentQuestionIndex + 1);
+        });
+
+        prevButton.addEventListener('click', function() {
+            showQuestion(currentQuestionIndex - 1);
+        });
+    });
+</script>
+{% endblock %}

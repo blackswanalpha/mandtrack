@@ -30,6 +30,12 @@ class RoleBasedRedirectMiddleware:
         Called just before Django calls the view.
         Parameters view_func, args, and kwargs are required by Django but not used in this middleware.
         """
+        # Check for bypass flag in session
+        if request.session.get('bypass_auth_redirect', False):
+            # Clear the flag after using it
+            request.session['bypass_auth_redirect'] = False
+            return None
+
         # Skip if user is not authenticated
         if not request.user.is_authenticated:
             return None
@@ -38,6 +44,10 @@ class RoleBasedRedirectMiddleware:
         # Special case for Django admin URLs
         if request.path_info.startswith('/admin/'):
             # This is a Django admin URL, let Django's admin authentication handle it
+            return None
+
+        # Skip for client-specific minimal layout views
+        if request.path_info.startswith('/responses/client/'):
             return None
 
         try:

@@ -1,0 +1,205 @@
+{% load static %}
+
+<div id="sidebar" class="fixed inset-y-0 left-0 z-30 w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0">
+    <div class="flex flex-col h-full">
+        <!-- Sidebar Header -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+            <a href="{% url 'dashboard:admin_dashboard' %}" class="flex items-center space-x-2">
+                <img src="{% static 'images/logo.png' %}" alt="MindTrack Logo" class="h-8 w-auto">
+                <span class="text-xl font-bold text-gray-900">MindTrack</span>
+            </a>
+            <button id="close-sidebar" class="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 lg:hidden">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Sidebar Content -->
+        <div class="flex-1 overflow-y-auto py-4 px-3">
+            <ul class="space-y-2">
+                <!-- Dashboard -->
+                <li>
+                    <a href="{% url 'dashboard:admin_dashboard' %}" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200 {% if request.resolver_match.url_name == 'admin_dashboard' %}bg-gray-100{% endif %}">
+                        <svg class="w-6 h-6 text-gray-500 group-hover:text-primary-600 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        <span class="ml-3">Dashboard</span>
+                    </a>
+                </li>
+
+                <!-- Questionnaires -->
+                <li>
+                    <button type="button" class="flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200" aria-controls="dropdown-questionnaires" data-collapse-toggle="dropdown-questionnaires">
+                        <svg class="w-6 h-6 text-gray-500 group-hover:text-primary-600 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                        </svg>
+                        <span class="flex-1 ml-3 text-left whitespace-nowrap">Questionnaires</span>
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                    <ul id="dropdown-questionnaires" class="hidden py-2 space-y-2">
+                        <li>
+                            <a href="{% url 'surveys:survey_list' %}" class="flex items-center p-2 pl-11 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200">
+                                <span>All Questionnaires</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'surveys:survey_create' %}" class="flex items-center p-2 pl-11 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200">
+                                <span>Create New</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'surveys:survey_templates' %}" class="flex items-center p-2 pl-11 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200">
+                                <span>Templates</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Responses -->
+                <li>
+                    <button type="button" class="flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200" aria-controls="dropdown-responses" data-collapse-toggle="dropdown-responses">
+                        <svg class="w-6 h-6 text-gray-500 group-hover:text-primary-600 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path>
+                        </svg>
+                        <span class="flex-1 ml-3 text-left whitespace-nowrap">Responses</span>
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                    <ul id="dropdown-responses" class="hidden py-2 space-y-2">
+                        <li>
+                            <a href="{% url 'feedback:response_list' %}" class="flex items-center p-2 pl-11 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200">
+                                <span>All Responses</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'feedback:response_list' %}" class="flex items-center p-2 pl-11 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200">
+                                <span>Completion Stats</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Organizations -->
+                <li>
+                    <button type="button" class="flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200" aria-controls="dropdown-organizations" data-collapse-toggle="dropdown-organizations">
+                        <svg class="w-6 h-6 text-gray-500 group-hover:text-primary-600 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                        <span class="flex-1 ml-3 text-left whitespace-nowrap">Organizations</span>
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                    <ul id="dropdown-organizations" class="hidden py-2 space-y-2">
+                        <li>
+                            <a href="{% url 'groups:organization_list' %}" class="flex items-center p-2 pl-11 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200">
+                                <span>All Organizations</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'groups:organization_create' %}" class="flex items-center p-2 pl-11 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200">
+                                <span>Create New</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Analytics -->
+                <li>
+                    <button type="button" class="flex items-center w-full p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200" aria-controls="dropdown-analytics" data-collapse-toggle="dropdown-analytics">
+                        <svg class="w-6 h-6 text-gray-500 group-hover:text-primary-600 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <span class="flex-1 ml-3 text-left whitespace-nowrap">Analytics</span>
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                    <ul id="dropdown-analytics" class="hidden py-2 space-y-2">
+                        <li>
+                            <a href="{% url 'analytics:dashboard' %}" class="flex items-center p-2 pl-11 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200">
+                                <span>Analytics Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'analytics:report_dashboard' %}" class="flex items-center p-2 pl-11 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200">
+                                <span>Reports</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'analytics:gemini_analysis_dashboard' %}" class="flex items-center p-2 pl-11 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200">
+                                <span>AI Analysis</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Scoring -->
+                <li>
+                    <a href="{% url 'surveys:survey_list' %}" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200">
+                        <svg class="w-6 h-6 text-gray-500 group-hover:text-primary-600 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        <span class="ml-3">Scoring</span>
+                    </a>
+                </li>
+
+                <!-- QR Codes -->
+                <li>
+                    <a href="{% url 'surveys:qr_code_list' %}" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200">
+                        <svg class="w-6 h-6 text-gray-500 group-hover:text-primary-600 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                        </svg>
+                        <span class="ml-3">QR Codes</span>
+                    </a>
+                </li>
+
+                <!-- Users -->
+                <li>
+                    <a href="{% url 'users:user_list' %}" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200">
+                        <svg class="w-6 h-6 text-gray-500 group-hover:text-primary-600 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                        <span class="ml-3">Users</span>
+                    </a>
+                </li>
+
+                <!-- Settings -->
+                <li>
+                    <a href="{% url 'dashboard:user_dashboard' %}" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100 group transition-colors duration-200">
+                        <svg class="w-6 h-6 text-gray-500 group-hover:text-primary-600 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <span class="ml-3">Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Sidebar Footer -->
+        <div class="p-4 border-t border-gray-200">
+            <div class="flex items-center">
+                <img src="{% static 'images/avatar.png' %}" alt="User Avatar" class="h-8 w-8 rounded-full">
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-900">{{ request.user.get_full_name|default:request.user.email }}</p>
+                    <a href="{% url 'account_logout' %}" class="text-xs text-gray-500 hover:text-primary-600 transition-colors duration-200">Sign out</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Sidebar Toggle Button -->
+<button id="open-sidebar" class="fixed bottom-4 right-4 z-40 p-3 rounded-full bg-primary-600 text-white shadow-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200 lg:hidden">
+    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+    </svg>
+</button>
+
+<!-- Sidebar Backdrop -->
+<div id="sidebar-backdrop" class="fixed inset-0 z-20 bg-gray-900 bg-opacity-50 hidden lg:hidden"></div>

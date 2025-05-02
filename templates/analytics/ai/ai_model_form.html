@@ -1,0 +1,123 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{% if ai_model %}Edit{% else %}Create{% endif %} AI Model - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% if ai_model %}{% url 'analytics:ai_model_detail' model_id=ai_model.id %}{% else %}{% url 'analytics:ai_model_list' %}{% endif %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">
+                    {% if ai_model %}Edit{% else %}Create{% endif %} AI Model
+                </h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                {% if ai_model %}
+                    Update AI model details
+                {% else %}
+                    Create a new AI model for analysis
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <!-- Name -->
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">
+                            Name <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <input type="text" name="name" id="name" 
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                   value="{{ ai_model.name|default:'' }}" required>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">A descriptive name for this AI model</p>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">
+                            Description
+                        </label>
+                        <div class="mt-1">
+                            <textarea name="description" id="description" rows="3"
+                                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">{{ ai_model.description|default:'' }}</textarea>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Optional description of what this model does and how it works</p>
+                    </div>
+                    
+                    <!-- Model Type -->
+                    <div>
+                        <label for="model_type" class="block text-sm font-medium text-gray-700">
+                            Model Type <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <select name="model_type" id="model_type" 
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                   required>
+                                {% for value, label in model_types %}
+                                    <option value="{{ value }}" {% if ai_model.model_type == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mt-2 text-xs text-gray-500">
+                            <p class="font-medium">Model types explained:</p>
+                            <ul class="list-disc pl-5 space-y-1 mt-1">
+                                <li><span class="font-medium">Sentiment Analysis:</span> Analyze the sentiment of text responses</li>
+                                <li><span class="font-medium">Classification:</span> Categorize responses into predefined classes</li>
+                                <li><span class="font-medium">Clustering:</span> Group similar responses together</li>
+                                <li><span class="font-medium">Regression:</span> Predict numerical values from responses</li>
+                                <li><span class="font-medium">Natural Language Processing:</span> Advanced text analysis</li>
+                                <li><span class="font-medium">Custom Model:</span> Custom AI model with specific functionality</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Version -->
+                    <div>
+                        <label for="version" class="block text-sm font-medium text-gray-700">
+                            Version
+                        </label>
+                        <div class="mt-1">
+                            <input type="text" name="version" id="version" 
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                   value="{{ ai_model.version|default:'1.0' }}">
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Version number for this model (e.g., 1.0, 2.3.1)</p>
+                    </div>
+                    
+                    <!-- Is Active -->
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" name="is_active" id="is_active" 
+                                   class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                                   {% if ai_model.is_active|default:True %}checked{% endif %}>
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="is_active" class="font-medium text-gray-700">Active</label>
+                            <p class="text-gray-500">Whether this model is available for use in analysis</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Buttons -->
+                    <div class="flex justify-end space-x-3 pt-5 border-t border-gray-200">
+                        <a href="{% if ai_model %}{% url 'analytics:ai_model_detail' model_id=ai_model.id %}{% else %}{% url 'analytics:ai_model_list' %}{% endif %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                            Cancel
+                        </a>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                            {% if ai_model %}Update{% else %}Create{% endif %} AI Model
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

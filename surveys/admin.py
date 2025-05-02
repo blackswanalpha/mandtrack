@@ -37,6 +37,7 @@ class QRCodeInline(admin.TabularInline):
     show_change_link = True
     fields = ('name', 'url', 'access_count', 'is_active', 'expires_at')
     readonly_fields = ('access_count',)
+    fk_name = 'survey'
 
 class QuestionnaireAdmin(admin.ModelAdmin):
     list_display = ('title', 'type', 'category', 'status', 'is_active', 'is_public', 'created_by', 'created_at', 'get_question_count')

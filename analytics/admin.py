@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Dashboard, Widget, Report
+# Import directly from the module file, not from the package
+from analytics.models.reports import Report
+# Import from the main module file
+from analytics.models import Dashboard, Widget
 
 class WidgetInline(admin.TabularInline):
     model = Widget
@@ -27,7 +30,6 @@ class ReportAdmin(admin.ModelAdmin):
     list_filter = ('report_format', 'status', 'created_at')
     search_fields = ('title', 'description')
     readonly_fields = ('created_at', 'updated_at')
-    filter_horizontal = ('questionnaires', 'responses')
 
 admin.site.register(Dashboard, DashboardAdmin)
 admin.site.register(Widget, WidgetAdmin)

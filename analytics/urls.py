@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 
 app_name = 'analytics'
@@ -14,4 +14,31 @@ urlpatterns = [
     path('ai-analysis/<int:response_pk>/', views.response_ai_analysis, name='response_ai_analysis'),
     path('export/csv/', views.export_csv, name='export_csv'),
     path('export/pdf/', views.export_pdf, name='export_pdf'),
+
+    # Include AI Analysis URLs
+    path('', include('analytics.urls_ai')),
+
+    # Include Reports URLs
+    path('', include('analytics.urls_reports')),
+
+    # Include Gemini AI Analysis URLs
+    path('', include('analytics.urls_gemini')),
+
+    # Include Batch Analysis URLs
+    path('', include('analytics.urls_batch')),
+
+    # Include Enhanced Dashboard URLs
+    path('', include('analytics.urls_dashboard')),
+
+    # Include Enhanced AI Analysis URLs
+    path('', include('analytics.urls_enhanced_ai')),
+
+    # Include PDF URLs
+    path('', include('analytics.urls_pdf')),
+
+    # Include Comparative Analytics URLs
+    path('', include('analytics.urls_comparative')),
+
+    # Include Email Reports URLs
+    path('', include('analytics.urls_email')),
 ]

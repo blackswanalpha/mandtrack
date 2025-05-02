@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Response, Answer, AIAnalysis
+from .models import Response, Answer
+from .models.base import AIAnalysis
 
 class AnswerInline(admin.TabularInline):
     model = Answer

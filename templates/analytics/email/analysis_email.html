@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>AI Analysis Report - {{ questionnaire.title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .logo {
+            max-height: 60px;
+            margin-bottom: 10px;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196F3;
+            margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        .content {
+            margin-bottom: 20px;
+        }
+        
+        .section {
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .response-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .response-info-row {
+            display: flex;
+            margin-bottom: 5px;
+        }
+        
+        .response-info-label {
+            font-weight: bold;
+            width: 150px;
+        }
+        
+        .response-info-value {
+            flex-grow: 1;
+        }
+        
+        .risk-low {
+            color: #4CAF50;
+        }
+        
+        .risk-medium {
+            color: #FFC107;
+        }
+        
+        .risk-high {
+            color: #F44336;
+        }
+        
+        .risk-critical {
+            color: #9C27B0;
+        }
+        
+        .message {
+            background-color: #f0f7ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .chart-container {
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .chart-img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .insight-card {
+            background-color: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-left: 3px solid #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://mindtrack.barberianspa.com/static/img/logo.png" alt="MindTrack Logo" class="logo">
+            <div class="title">AI Analysis Report</div>
+            <div class="subtitle">{{ questionnaire.title }}</div>
+        </div>
+        
+        {% if message %}
+            <div class="message">
+                <p>{{ message }}</p>
+                <p>- {{ sender_name }}</p>
+            </div>
+        {% endif %}
+        
+        <div class="content">
+            <p>Dear Recipient,</p>
+            
+            <p>Attached is an AI analysis report for the following response:</p>
+            
+            <div class="response-info">
+                <div class="response-info-row">
+                    <div class="response-info-label">Respondent:</div>
+                    <div class="response-info-value">{{ response.patient_name }}</div>
+                </div>
+                <div class="response-info-row">
+                    <div class="response-info-label">Email:</div>
+                    <div class="response-info-value">{{ response.patient_email }}</div>
+                </div>
+                <div class="response-info-row">
+                    <div class="response-info-label">Questionnaire:</div>
+                    <div class="response-info-value">{{ questionnaire.title }}</div>
+                </div>
+                <div class="response-info-row">
+                    <div class="response-info-label">Score:</div>
+                    <div class="response-info-value">{{ response.score }}</div>
+                </div>
+                <div class="response-info-row">
+                    <div class="response-info-label">Risk Level:</div>
+                    <div class="response-info-value risk-{{ response.risk_level }}">{{ response.get_risk_level_display }}</div>
+                </div>
+                <div class="response-info-row">
+                    <div class="response-info-label">Completed:</div>
+                    <div class="response-info-value">{{ response.created_at|date:"F j, Y, g:i a" }}</div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Summary</div>
+                <p>{{ analysis.summary }}</p>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Key Insights</div>
+                {% if analysis.insights and analysis.insights.key_points %}
+                    {% for insight in analysis.insights.key_points %}
+                        <div class="insight-card">{{ insight }}</div>
+                    {% endfor %}
+                {% else %}
+                    <p>No key insights available.</p>
+                {% endif %}
+            </div>
+            
+            {% if charts.answer_distribution %}
+                <div class="section">
+                    <div class="section-title">Visualization Charts</div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-title">Response vs. Average Scores</div>
+                        <img src="data:image/png;base64,{{ charts.answer_distribution }}" alt="Answer Distribution Chart" class="chart-img">
+                    </div>
+                    
+                    {% if charts.sentiment_analysis %}
+                        <div class="chart-container">
+                            <div class="chart-title">Sentiment Analysis</div>
+                            <img src="data:image/png;base64,{{ charts.sentiment_analysis }}" alt="Sentiment Analysis Chart" class="chart-img">
+                        </div>
+                    {% endif %}
+                    
+                    {% if charts.keywords %}
+                        <div class="chart-container">
+                            <div class="chart-title">AI Analysis Keywords</div>
+                            <img src="data:image/png;base64,{{ charts.keywords }}" alt="Keywords Chart" class="chart-img">
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+            
+            <div class="section">
+                <div class="section-title">Recommendations</div>
+                <p>{{ analysis.recommendations|linebreaksbr }}</p>
+            </div>
+            
+            <p>For a more detailed analysis, please refer to the attached PDF report (if available) or view the full analysis in the MindTrack platform.</p>
+            
+            <p>Best regards,<br>
+            {{ sender_name }}<br>
+            MindTrack AI Analysis System</p>
+        </div>
+        
+        <div class="footer">
+            <p>This report was generated by MindTrack AI Analysis System.</p>
+            <p>&copy; {% now "Y" %} MindTrack. All rights reserved.</p>
+            <p>This report is confidential and intended for professional use only.</p>
+        </div>
+    </div>
+</body>
+</html>

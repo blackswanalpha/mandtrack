@@ -1,19 +1,101 @@
-{% extends 'admin_portal/modern_base.html' %}
+{% extends 'base/base.html' %}
 
 {% block title %}{{ survey.title }} - MindTrack{% endblock %}
 
+{% block extra_css %}
+<style>
+    .progress-container {
+        width: 100%;
+        background-color: #e5e7eb;
+        border-radius: 9999px;
+        height: 8px;
+        overflow: hidden;
+    }
+    .progress-bar {
+        height: 100%;
+        background-color: var(--primary-color, #4f46e5);
+        transition: width 0.3s ease;
+    }
+    .question-container {
+        transition: all 0.3s ease;
+    }
+    .question-enter {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    .question-enter-active {
+        opacity: 1;
+        transform: translateX(0);
+        transition: opacity 0.3s, transform 0.3s;
+    }
+    .question-exit {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    .question-exit-active {
+        opacity: 0;
+        transform: translateX(-20px);
+        transition: opacity 0.3s, transform 0.3s;
+    }
+    .nav-button {
+        transition: all 0.2s ease;
+    }
+    .nav-button:hover {
+        transform: translateY(-2px);
+    }
+    .nav-button:active {
+        transform: translateY(0);
+    }
+    .question-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s ease;
+    }
+    .question-card:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    .radio-option, .checkbox-option {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+    }
+    .radio-option:hover, .checkbox-option:hover {
+        background-color: #f9fafb;
+        border-color: #d1d5db;
+    }
+    .radio-option.selected, .checkbox-option.selected {
+        background-color: #eff6ff;
+        border-color: #3b82f6;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="min-h-screen bg-gray-50 py-12">
+<div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <!-- Survey Header -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
             <div class="px-4 py-5 sm:p-6">
-                <div class="text-center mb-8">
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ survey.title }}</h1>
+                <div class="text-center mb-4">
+                    <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ survey.title }}</h1>
                     {% if survey.description %}
-                        <p class="text-lg text-gray-500">{{ survey.description }}</p>
+                        <p class="text-base text-gray-500">{{ survey.description }}</p>
                     {% endif %}
                 </div>
-                
+
+                <!-- Progress Bar -->
+                <div class="mb-6">
+                    <div class="flex justify-between text-sm text-gray-500 mb-1">
+                        <span>Progress</span>
+                        <span id="progress-text">Question 1 of {{ survey.get_question_count }}</span>
+                    </div>
+                    <div class="progress-container">
+                        <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+
                 {% if survey.instructions %}
                     <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
                         <div class="flex">
@@ -26,22 +108,68 @@
                         </div>
                     </div>
                 {% endif %}
-                
-                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+
+                <!-- Question Display -->
+                <div id="question-container" class="question-container">
+                    <!-- This will be populated by JavaScript -->
+                    <div class="question-card p-6 mb-6">
+                        <h2 class="text-xl font-medium text-gray-900 mb-4">Sample Question</h2>
+                        <p class="text-gray-700 mb-6">This is a sample question. The actual questions will be loaded when the survey is implemented.</p>
+
+                        <!-- Sample Radio Options -->
+                        <div class="space-y-3">
+                            <div class="radio-option p-3 flex items-center">
+                                <input type="radio" id="option1" name="sample" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
+                                <label for="option1" class="ml-3 block text-gray-700">Option 1</label>
+                            </div>
+                            <div class="radio-option p-3 flex items-center">
+                                <input type="radio" id="option2" name="sample" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
+                                <label for="option2" class="ml-3 block text-gray-700">Option 2</label>
+                            </div>
+                            <div class="radio-option p-3 flex items-center">
+                                <input type="radio" id="option3" name="sample" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
+                                <label for="option3" class="ml-3 block text-gray-700">Option 3</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="flex justify-between mt-6">
+                    <button id="prev-button" class="nav-button inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50" disabled>
+                        <i class="fas fa-arrow-left mr-2"></i> Previous
+                    </button>
+                    <button id="next-button" class="nav-button inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        Next <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Card -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">About This Questionnaire</h3>
+                <p class="text-gray-500 mb-4">
+                    This questionnaire is designed to gather information about your experiences and feelings.
+                    Your responses will be kept confidential and used to provide better support and services.
+                </p>
+
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
                     <div class="flex">
                         <div class="flex-shrink-0">
                             <i class="fas fa-exclamation-triangle text-yellow-400"></i>
                         </div>
                         <div class="ml-3">
                             <p class="text-sm text-yellow-700">
-                                This is a placeholder page. In a real implementation, this would show the survey form with all questions.
+                                This is a demonstration of how the questionnaire will look. The actual implementation will load questions from the database.
                             </p>
                         </div>
                     </div>
                 </div>
-                
-                <div class="mt-8 text-center">
-                    <a href="{% url 'core:home' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+
+                <div class="mt-4 text-center">
+                    <a href="{% url 'core:home' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                         <i class="fas fa-home mr-2"></i> Return to Home
                     </a>
                 </div>
@@ -49,4 +177,81 @@
         </div>
     </div>
 </div>
+
+<!-- Set question count from server -->
+<script>
+    // Get the total number of questions from the server-side
+    var totalQuestionsValue = {% if survey.get_question_count %}{{ survey.get_question_count }}{% else %}5{% endif %};
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // This is a placeholder for the actual implementation
+        // In a real implementation, this would load questions from the server
+
+        // Sample implementation to demonstrate the UI
+        const nextButton = document.getElementById('next-button');
+        const prevButton = document.getElementById('prev-button');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+
+        let currentQuestion = 1;
+        const totalQuestions = totalQuestionsValue;
+
+        // Update progress
+        function updateProgress() {
+            const progress = (currentQuestion / totalQuestions) * 100;
+            progressBar.style.width = progress + '%';
+            progressText.textContent = 'Question ' + currentQuestion + ' of ' + totalQuestions;
+
+            // Enable/disable navigation buttons
+            prevButton.disabled = currentQuestion === 1;
+
+            if (currentQuestion === totalQuestions) {
+                nextButton.innerHTML = 'Submit <i class="fas fa-check ml-2"></i>';
+            } else {
+                nextButton.innerHTML = 'Next <i class="fas fa-arrow-right ml-2"></i>';
+            }
+        }
+
+        // Handle next button click
+        nextButton.addEventListener('click', function() {
+            if (currentQuestion < totalQuestions) {
+                currentQuestion++;
+                updateProgress();
+            } else {
+                // Submit the form
+                alert('This would submit the form in a real implementation.');
+            }
+        });
+
+        // Handle previous button click
+        prevButton.addEventListener('click', function() {
+            if (currentQuestion > 1) {
+                currentQuestion--;
+                updateProgress();
+            }
+        });
+
+        // Initialize
+        updateProgress();
+
+        // Add click handlers for radio options (for demo purposes)
+        document.querySelectorAll('.radio-option').forEach(function(option) {
+            option.addEventListener('click', function() {
+                // Remove selected class from all options
+                document.querySelectorAll('.radio-option').forEach(function(opt) {
+                    opt.classList.remove('selected');
+                });
+
+                // Add selected class to clicked option
+                this.classList.add('selected');
+
+                // Check the radio button
+                const radio = this.querySelector('input[type="radio"]');
+                radio.checked = true;
+            });
+        });
+    });
+</script>
 {% endblock %}

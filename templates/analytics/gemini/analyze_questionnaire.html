@@ -1,0 +1,219 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Analyze Questionnaire - {{ questionnaire.title }} - MindTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .hover-scale {
+        transition: transform 0.3s ease-in-out;
+    }
+    
+    .hover-scale:hover {
+        transform: scale(1.03);
+    }
+    
+    .analysis-option {
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .analysis-option.selected {
+        border-color: #4f46e5;
+        background-color: #f5f3ff;
+    }
+    
+    .loading-spinner {
+        display: none;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8 fade-in">
+            <div class="flex items-center">
+                <a href="{% url 'analytics:gemini_analysis_dashboard' %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Analyze Questionnaire</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                Analyze responses to {{ questionnaire.title }} using Gemini AI
+            </p>
+        </div>
+
+        <!-- Questionnaire Overview -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8 fade-in" style="animation-delay: 0.1s;">
+            <div class="px-4 py-5 sm:px-6">
+                <h2 class="text-lg font-medium text-gray-900">Questionnaire Overview</h2>
+                <p class="mt-1 text-sm text-gray-500">Basic information about this questionnaire.</p>
+            </div>
+            <div class="border-t border-gray-200">
+                <dl>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Title</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ questionnaire.title }}</dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Description</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ questionnaire.description|default:"No description provided." }}</dd>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Type</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ questionnaire.get_type_display }}</dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Questions</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ questionnaire.get_question_count }}</dd>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Responses</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ questionnaire.responses.count }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Analysis Options -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8 fade-in" style="animation-delay: 0.2s;">
+            <div class="px-4 py-5 sm:px-6">
+                <h2 class="text-lg font-medium text-gray-900">Analysis Options</h2>
+                <p class="mt-1 text-sm text-gray-500">Select the type of analysis to perform.</p>
+            </div>
+            <div class="border-t border-gray-200">
+                <form id="analysis-form" method="post" class="p-6">
+                    {% csrf_token %}
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        {% for value, label in analysis_types %}
+                            <div class="analysis-option bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow hover-scale p-5" data-value="{{ value }}">
+                                <div class="flex items-center mb-4">
+                                    <div class="h-5 w-5 flex items-center justify-center">
+                                        <input type="radio" name="analysis_type" id="analysis_type_{{ value }}" value="{{ value }}" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                    </div>
+                                    <div class="ml-3">
+                                        <label for="analysis_type_{{ value }}" class="text-lg font-medium text-gray-900">{{ label }}</label>
+                                    </div>
+                                </div>
+                                
+                                <div class="ml-8">
+                                    {% if value == 'sentiment' %}
+                                        <p class="text-sm text-gray-600 mb-2">Analyze the sentiment of text responses to determine if they are positive, negative, or neutral.</p>
+                                        <div class="flex space-x-2 text-sm">
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Positive</span>
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Negative</span>
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Neutral</span>
+                                        </div>
+                                    {% elif value == 'themes' %}
+                                        <p class="text-sm text-gray-600 mb-2">Identify common themes and topics in text responses.</p>
+                                        <div class="flex space-x-2 text-sm">
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Theme 1</span>
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">Theme 2</span>
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">Theme 3</span>
+                                        </div>
+                                    {% elif value == 'patterns' %}
+                                        <p class="text-sm text-gray-600 mb-2">Identify patterns and correlations in responses across different questions.</p>
+                                        <div class="text-sm text-gray-600">
+                                            <i class="fas fa-chart-line text-indigo-600 mr-1"></i> Pattern recognition
+                                        </div>
+                                    {% elif value == 'insights' %}
+                                        <p class="text-sm text-gray-600 mb-2">Generate actionable insights and recommendations based on response data.</p>
+                                        <div class="text-sm text-gray-600">
+                                            <i class="fas fa-lightbulb text-yellow-600 mr-1"></i> AI-powered insights
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button type="submit" id="analyze-button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                            <span id="button-text">Analyze Questionnaire</span>
+                            <svg id="loading-spinner" class="loading-spinner ml-2 -mr-0.5 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle analysis option selection
+        const analysisOptions = document.querySelectorAll('.analysis-option');
+        
+        analysisOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                // Clear previous selections
+                analysisOptions.forEach(opt => opt.classList.remove('selected'));
+                
+                // Select this option
+                this.classList.add('selected');
+                
+                // Check the radio button
+                const radio = this.querySelector('input[type="radio"]');
+                radio.checked = true;
+            });
+        });
+        
+        // Show loading spinner on form submission
+        const form = document.getElementById('analysis-form');
+        const button = document.getElementById('analyze-button');
+        const buttonText = document.getElementById('button-text');
+        const spinner = document.getElementById('loading-spinner');
+        
+        form.addEventListener('submit', function() {
+            // Validate that an option is selected
+            const selectedOption = document.querySelector('input[name="analysis_type"]:checked');
+            if (!selectedOption) {
+                alert('Please select an analysis type.');
+                return false;
+            }
+            
+            // Show loading state
+            button.disabled = true;
+            buttonText.textContent = 'Analyzing...';
+            spinner.style.display = 'block';
+            
+            return true;
+        });
+        
+        // Add fade-in effect to elements as they scroll into view
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

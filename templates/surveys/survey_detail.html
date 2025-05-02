@@ -112,23 +112,43 @@
             </div>
         </div>
 
-        <!-- Tabs Navigation -->
+        <!-- Tabs Navigation (Pill Style) -->
         <div class="mb-6" x-data="{ activeTab: 'overview' }">
-            <div class="border-b border-gray-200 tab-container">
-                <nav class="flex -mb-px space-x-8">
-                    <button @click="activeTab = 'overview'" :class="activeTab === 'overview' ? 'tab active' : 'tab'" class="tab">
+            <div class="bg-gray-100 p-1.5 rounded-lg inline-flex flex-wrap">
+                <nav class="flex space-x-2">
+                    <button @click="activeTab = 'overview'"
+                            :class="activeTab === 'overview'
+                                ? 'bg-white text-primary-700 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'"
+                            class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center">
                         <i class="fas fa-info-circle mr-2"></i> Overview
                     </button>
-                    <button @click="activeTab = 'questions'" :class="activeTab === 'questions' ? 'tab active' : 'tab'" class="tab">
+                    <button @click="activeTab = 'questions'"
+                            :class="activeTab === 'questions'
+                                ? 'bg-white text-primary-700 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'"
+                            class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center">
                         <i class="fas fa-question-circle mr-2"></i> Questions ({{ questions|length }})
                     </button>
-                    <button @click="activeTab = 'qrcode'" :class="activeTab === 'qrcode' ? 'tab active' : 'tab'" class="tab">
+                    <button @click="activeTab = 'qrcode'"
+                            :class="activeTab === 'qrcode'
+                                ? 'bg-white text-primary-700 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'"
+                            class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center">
                         <i class="fas fa-qrcode mr-2"></i> QR Code
                     </button>
-                    <button @click="activeTab = 'reports'" :class="activeTab === 'reports' ? 'tab active' : 'tab'" class="tab">
+                    <button @click="activeTab = 'reports'"
+                            :class="activeTab === 'reports'
+                                ? 'bg-white text-primary-700 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'"
+                            class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center">
                         <i class="fas fa-chart-bar mr-2"></i> Reports
                     </button>
-                    <button @click="activeTab = 'settings'" :class="activeTab === 'settings' ? 'tab active' : 'tab'" class="tab">
+                    <button @click="activeTab = 'settings'"
+                            :class="activeTab === 'settings'
+                                ? 'bg-white text-primary-700 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'"
+                            class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center">
                         <i class="fas fa-cog mr-2"></i> Settings
                     </button>
                 </nav>
@@ -327,24 +347,24 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div>
                                     <h3 class="text-lg font-medium text-gray-900 mb-4">Scan to access questionnaire</h3>
-                                    <div class="bg-white p-4 rounded-lg border-2 border-gray-200 shadow-sm flex items-center justify-center">
-                                        <img src="{% url 'surveys:generate_qr_code' pk=questionnaire.pk|default:questionnaire.id %}?raw=true" alt="QR Code" class="w-64 h-64">
+                                    <div class="bg-white p-4 rounded-lg border-2 border-gray-200 shadow-sm flex items-center justify-center hover:border-primary-300 transition-colors duration-300">
+                                        <img id="qr-code-image" src="{% url 'surveys:generate_qr_code' pk=questionnaire.pk|default:questionnaire.id %}?raw=true" alt="QR Code" class="w-64 h-64">
                                     </div>
                                     <div class="mt-4 flex flex-col space-y-3">
                                         <div class="flex items-center">
                                             <span class="text-sm font-medium text-gray-700 mr-2">Direct URL:</span>
                                             <input type="text" value="{{ request.scheme }}://{{ request.get_host }}/q/{{ questionnaire.pk }}/" readonly
-                                                   class="enhanced-input block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500 pr-10">
+                                                   class="enhanced-input block w-full text-sm border-2 border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500 pr-10 hover:border-gray-400 transition-colors duration-300">
                                             <button type="button" class="copy-btn -ml-8 inline-flex items-center p-1 border border-transparent rounded-md text-gray-500 hover:text-gray-700 focus:outline-none"
                                                     onclick="navigator.clipboard.writeText(this.previousElementSibling.value)">
                                                 <i class="fas fa-copy"></i>
                                             </button>
                                         </div>
                                         <div class="flex justify-center space-x-3">
-                                            <a href="{% url 'surveys:generate_qr_code' pk=questionnaire.pk|default:questionnaire.id %}?download=true" class="btn-animated inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                            <a id="download-qr-link" href="{% url 'surveys:download_qr_code' pk=questionnaire.pk|default:questionnaire.id %}" class="btn-animated inline-flex items-center px-4 py-2 border-2 border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300">
                                                 <i class="fas fa-download mr-2"></i> Download QR Code
                                             </a>
-                                            <a href="/q/{{ questionnaire.pk }}/" target="_blank" class="btn-animated inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                            <a href="/q/{{ questionnaire.pk }}/" target="_blank" class="btn-animated inline-flex items-center px-4 py-2 border-2 border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300">
                                                 <i class="fas fa-external-link-alt mr-2"></i> Open Link
                                             </a>
                                         </div>
@@ -352,10 +372,10 @@
                                 </div>
                                 <div>
                                     <h3 class="text-lg font-medium text-gray-900 mb-4">QR Code Settings</h3>
-                                    <div class="space-y-4">
+                                    <form id="qr-settings-form" class="space-y-4 border-2 border-gray-200 rounded-lg p-5 hover:border-gray-300 transition-colors duration-300">
                                         <div>
                                             <label for="qr-size" class="block text-sm font-medium text-gray-700">Size</label>
-                                            <select id="qr-size" class="enhanced-select mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
+                                            <select id="qr-size" name="size" class="enhanced-select mt-1 block w-full pl-3 pr-10 py-2 text-base border-2 border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md hover:border-gray-400 transition-colors duration-300">
                                                 <option value="small">Small (200x200)</option>
                                                 <option value="medium" selected>Medium (300x300)</option>
                                                 <option value="large">Large (400x400)</option>
@@ -364,29 +384,90 @@
                                         <div>
                                             <label for="qr-color" class="block text-sm font-medium text-gray-700">Color</label>
                                             <div class="mt-1 flex items-center space-x-2">
-                                                <input type="color" id="qr-color" value="#000000" class="h-8 w-8 border border-gray-300 rounded">
-                                                <span class="text-sm text-gray-500">Black</span>
+                                                <input type="color" id="qr-color" name="color" value="#000000" class="h-8 w-8 border-2 border-gray-300 rounded hover:border-gray-400 transition-colors duration-300">
+                                                <span id="color-name" class="text-sm text-gray-500">Black</span>
                                             </div>
                                         </div>
                                         <div>
                                             <label for="qr-format" class="block text-sm font-medium text-gray-700">Format</label>
-                                            <select id="qr-format" class="enhanced-select mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
+                                            <select id="qr-format" name="format" class="enhanced-select mt-1 block w-full pl-3 pr-10 py-2 text-base border-2 border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md hover:border-gray-400 transition-colors duration-300">
                                                 <option value="png" selected>PNG</option>
                                                 <option value="svg">SVG</option>
                                                 <option value="pdf">PDF</option>
                                             </select>
                                         </div>
                                         <div class="pt-4">
-                                            <button type="button" class="btn-animated inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                            <button type="button" id="generate-qr-btn" class="btn-animated inline-flex items-center px-4 py-2 border-2 border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300">
                                                 <i class="fas fa-sync-alt mr-2"></i> Generate QR Code
                                             </button>
                                         </div>
-                                    </div>
+                                    </form>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const qrSizeSelect = document.getElementById('qr-size');
+                        const qrColorInput = document.getElementById('qr-color');
+                        const qrFormatSelect = document.getElementById('qr-format');
+                        const generateQrBtn = document.getElementById('generate-qr-btn');
+                        const qrCodeImage = document.getElementById('qr-code-image');
+                        const downloadQrLink = document.getElementById('download-qr-link');
+                        const colorName = document.getElementById('color-name');
+
+                        // Color name mapping
+                        const colorNames = {
+                            '#000000': 'Black',
+                            '#FF0000': 'Red',
+                            '#00FF00': 'Green',
+                            '#0000FF': 'Blue',
+                            '#FF00FF': 'Magenta',
+                            '#FFFF00': 'Yellow',
+                            '#00FFFF': 'Cyan'
+                        };
+
+                        // Update color name when color input changes
+                        qrColorInput.addEventListener('input', function() {
+                            const color = this.value.toUpperCase();
+                            colorName.textContent = colorNames[color] || color;
+                        });
+
+                        // Generate QR code with selected options
+                        generateQrBtn.addEventListener('click', function() {
+                            const size = qrSizeSelect.value;
+                            const color = qrColorInput.value;
+                            const format = qrFormatSelect.value;
+
+                            // Update image source for preview
+                            qrCodeImage.src = `{% url 'surveys:generate_qr_code' pk=questionnaire.pk|default:questionnaire.id %}?raw=true&size=${size}&color=${encodeURIComponent(color)}&format=png`;
+
+                            // Update download link
+                            downloadQrLink.href = `{% url 'surveys:download_qr_code' pk=questionnaire.pk|default:questionnaire.id %}?size=${size}&color=${encodeURIComponent(color)}&format=${format}`;
+
+                            // Show success message
+                            const successMsg = document.createElement('div');
+                            successMsg.className = 'mt-2 text-sm text-green-600';
+                            successMsg.innerHTML = '<i class="fas fa-check-circle mr-1"></i> QR code updated successfully!';
+
+                            // Remove any existing success message
+                            const existingMsg = document.querySelector('.text-green-600');
+                            if (existingMsg) {
+                                existingMsg.remove();
+                            }
+
+                            // Add the new success message
+                            generateQrBtn.parentNode.appendChild(successMsg);
+
+                            // Remove the success message after 3 seconds
+                            setTimeout(() => {
+                                successMsg.remove();
+                            }, 3000);
+                        });
+                    });
+                </script>
 
                 <!-- Reports Tab -->
                 <div x-show="activeTab === 'reports'" class="fade-in">

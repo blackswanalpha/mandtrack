@@ -34,9 +34,17 @@
                         <tr class="transition-colors hover:bg-gray-50">
                             <td>{{ qr_code.name }}</td>
                             <td>
+                                {% if qr_code.survey %}
                                 <a href="{% url 'surveys:survey_detail' pk=qr_code.survey.pk %}" class="text-primary-600 hover:text-primary-900">
                                     {{ qr_code.survey.title }}
                                 </a>
+                                {% elif qr_code.questionnaire %}
+                                <a href="{% url 'surveys:survey_detail' pk=qr_code.questionnaire.pk %}" class="text-primary-600 hover:text-primary-900">
+                                    {{ qr_code.questionnaire.title }}
+                                </a>
+                                {% else %}
+                                <span class="text-gray-500">No questionnaire linked</span>
+                                {% endif %}
                             </td>
                             <td>{{ qr_code.created_at|date:"M d, Y" }}</td>
                             <td>

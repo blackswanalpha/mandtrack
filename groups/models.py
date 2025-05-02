@@ -55,7 +55,7 @@ class Organization(models.Model):
         return self.members.count()
 
     def get_survey_count(self):
-        return self.surveys.count()
+        return self.questionnaires.count()
 
 
 class OrganizationMember(models.Model):

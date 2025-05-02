@@ -1,44 +1,135 @@
 {% extends "base/base.html" %}
 
-{% block title %}Enter Email{% endblock %}
+{% block title %}Enter Email - MindTrack{% endblock %}
 
 {% block extra_css %}
 <style>
     .qr-email-container {
-        max-width: 500px;
-        margin: 80px auto;
-        padding: 30px;
-        border-radius: 8px;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: 60px auto;
+        padding: 32px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         background-color: white;
+        transition: all 0.3s ease;
     }
     .qr-email-header {
         text-align: center;
-        margin-bottom: 30px;
+        margin-bottom: 32px;
     }
     .qr-email-header h1 {
-        color: #007bff;
+        color: var(--primary-color, #4f46e5);
         font-weight: 600;
+        margin-bottom: 8px;
     }
     .qr-email-form .btn-primary {
         width: 100%;
-        padding: 10px;
+        padding: 12px;
         font-weight: 500;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        background-color: var(--primary-color, #4f46e5);
+        border-color: var(--primary-color, #4f46e5);
+    }
+    .qr-email-form .btn-primary:hover {
+        background-color: var(--primary-dark, #4338ca);
+        border-color: var(--primary-dark, #4338ca);
+        transform: translateY(-1px);
     }
     .qr-email-footer {
         text-align: center;
-        margin-top: 20px;
+        margin-top: 24px;
         font-size: 0.9rem;
+        color: #6b7280;
+    }
+    .qr-email-footer a {
+        color: var(--primary-color, #4f46e5);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .qr-email-footer a:hover {
+        text-decoration: underline;
+    }
+    .alert {
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+        border: 1px solid transparent;
+    }
+    .alert-info {
+        background-color: #eff6ff;
+        border-color: #bfdbfe;
+        color: #1e40af;
+    }
+    .alert-success {
+        background-color: #ecfdf5;
+        border-color: #a7f3d0;
+        color: #065f46;
+    }
+    .alert-danger {
+        background-color: #fef2f2;
+        border-color: #fecaca;
+        color: #b91c1c;
+    }
+    .form-control {
+        border-radius: 8px;
+        padding: 12px;
+        border: 1px solid #d1d5db;
+        transition: border-color 0.2s ease;
+    }
+    .form-control:focus {
+        border-color: var(--primary-color, #4f46e5);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+    }
+    .form-label {
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+    .form-text {
+        color: #6b7280;
+        font-size: 0.875rem;
+        margin-top: 4px;
+    }
+    .qr-info {
+        display: flex;
+        align-items: center;
+        background-color: #f9fafb;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 24px;
+        border-left: 4px solid var(--primary-color, #4f46e5);
+    }
+    .qr-info-icon {
+        font-size: 24px;
+        color: var(--primary-color, #4f46e5);
+        margin-right: 16px;
+    }
+    .qr-info-content h5 {
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 4px;
+    }
+    .qr-info-content p {
+        color: #4b5563;
+        margin-bottom: 0;
+    }
+    .fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container">
-    <div class="qr-email-container">
+    <div class="qr-email-container fade-in">
         <div class="qr-email-header">
-            <h1 class="h3">Enter Your Email</h1>
-            <p class="text-muted">Please enter your email to access the questionnaire</p>
+            <h1 class="h3">Enter Your Information</h1>
+            <p class="text-muted">Please provide your details to access the questionnaire</p>
         </div>
 
         {% if messages %}
@@ -50,28 +141,62 @@
             {% endfor %}
         {% endif %}
 
-        <div class="alert alert-info">
-            <p><strong>QR Code Detected:</strong> {{ qr_code }}</p>
-            <p>Please enter your email address to continue.</p>
+        <div class="qr-info">
+            <div class="qr-info-icon">
+                <i class="fas fa-qrcode"></i>
+            </div>
+            <div class="qr-info-content">
+                <h5>QR Code Detected</h5>
+                <p>You're about to access: <strong>{{ qr_code }}</strong></p>
+            </div>
         </div>
 
         <div class="qr-email-form">
             <form method="post">
                 {% csrf_token %}
-                <div class="mb-3">
+                <div class="mb-4">
                     <label for="email-input" class="form-label">Email Address</label>
                     <input type="email" class="form-control" id="email-input" name="email" placeholder="Enter your email" required>
                     <div class="form-text">We'll use this email to identify you and send your results.</div>
                 </div>
-                <div class="mt-4">
-                    <button type="submit" class="btn btn-primary">Continue to Questionnaire</button>
+
+                <div class="mb-4">
+                    <label for="age-input" class="form-label">Age (Optional)</label>
+                    <input type="number" class="form-control" id="age-input" name="age" placeholder="Enter your age" min="1" max="120">
+                    <div class="form-text">This helps us provide more relevant analysis.</div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Gender (Optional)</label>
+                    <div class="d-flex gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="gender" id="gender-male" value="male">
+                            <label class="form-check-label" for="gender-male">Male</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="gender" id="gender-female" value="female">
+                            <label class="form-check-label" for="gender-female">Female</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="gender" id="gender-other" value="other">
+                            <label class="form-check-label" for="gender-other">Other</label>
+                        </div>
+                    </div>
+                    <div class="form-text">This information helps with demographic analysis.</div>
+                </div>
+
+                <div class="mt-5">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-arrow-right mr-2"></i> Continue to Questionnaire
+                    </button>
                 </div>
             </form>
         </div>
 
         <div class="qr-email-footer">
             <p>Already have an account? <a href="/client-portal/login/">Sign In</a></p>
-            <p><a href="/client-portal/qr-scan/">Scan a different QR code</a></p>
+            <p><a href="/client-portal/qr-scan/"><i class="fas fa-qrcode mr-1"></i> Scan a different QR code</a></p>
+            <p><a href="/"><i class="fas fa-home mr-1"></i> Return to Home</a></p>
         </div>
     </div>
 </div>

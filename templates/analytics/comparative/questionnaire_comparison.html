@@ -1,0 +1,378 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Questionnaire Comparison{% endblock %}
+
+{% block extra_css %}
+<style>
+    .comparison-header {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .comparison-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .comparison-subtitle {
+        font-size: 1.1rem;
+        color: #666;
+    }
+    
+    .comparison-container {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .comparison-section-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 15px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+    
+    .comparison-table th {
+        background-color: #f0f0f0;
+        padding: 10px;
+        text-align: left;
+        font-weight: 600;
+        border: 1px solid #ddd;
+    }
+    
+    .comparison-table td {
+        padding: 10px;
+        border: 1px solid #ddd;
+    }
+    
+    .comparison-table tr:nth-child(even) {
+        background-color: #f8f8f8;
+    }
+    
+    .chart-container {
+        margin-bottom: 30px;
+    }
+    
+    .chart-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .chart-img {
+        width: 100%;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .questionnaire-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    
+    .questionnaire-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .questionnaire-header {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+        background-color: #f8f9fa;
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .questionnaire-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    
+    .questionnaire-category {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .questionnaire-body {
+        padding: 15px;
+    }
+    
+    .questionnaire-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .questionnaire-stat {
+        flex: 1;
+        min-width: 100px;
+        text-align: center;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+    }
+    
+    .questionnaire-stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2196F3;
+        margin-bottom: 5px;
+    }
+    
+    .questionnaire-stat-label {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .risk-distribution {
+        margin-bottom: 15px;
+    }
+    
+    .risk-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 5px;
+    }
+    
+    .progress {
+        height: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .questionnaire-footer {
+        padding: 15px;
+        border-top: 1px solid #eee;
+        text-align: right;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="comparison-header">
+        <div class="row">
+            <div class="col-md-8">
+                <h1 class="comparison-title">Questionnaire Comparison</h1>
+                <p class="comparison-subtitle">Comparing {{ questionnaires.count }} questionnaires</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{% url 'analytics:questionnaire_comparison' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Selection
+                </a>
+                <a href="{% url 'analytics:download_comparative_pdf' %}?{% for questionnaire in questionnaires %}questionnaire_ids={{ questionnaire.id }}&{% endfor %}" class="btn btn-success ms-2">
+                    <i class="fas fa-download me-1"></i> Export PDF
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="chart-container">
+        <h2 class="comparison-section-title">Comparative Analysis</h2>
+        {% if comparison_chart %}
+            <img src="data:image/png;base64,{{ comparison_chart }}" alt="Comparative Analysis Chart" class="chart-img">
+        {% else %}
+            <div class="alert alert-info">No data available for this chart.</div>
+        {% endif %}
+    </div>
+    
+    <div class="comparison-container">
+        <h2 class="comparison-section-title">Detailed Comparison</h2>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    {% for questionnaire in questionnaires %}
+                        <th>{{ questionnaire.title }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Category</td>
+                    {% for questionnaire in questionnaires %}
+                        <td>{{ questionnaire.category|title }}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td>Total Responses</td>
+                    {% for questionnaire in questionnaires %}
+                        <td>{{ questionnaire_stats|get_item:questionnaire.id|get_item:'stats'|get_item:'total_responses' }}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td>Average Score</td>
+                    {% for questionnaire in questionnaires %}
+                        <td>{{ questionnaire_stats|get_item:questionnaire.id|get_item:'stats'|get_item:'avg_score'|floatformat:2 }}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td>Completion Rate</td>
+                    {% for questionnaire in questionnaires %}
+                        <td>{{ questionnaire_stats|get_item:questionnaire.id|get_item:'stats'|get_item:'completion_rate'|floatformat:2 }}%</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td>Average Completion Time</td>
+                    {% for questionnaire in questionnaires %}
+                        <td>{{ questionnaire_stats|get_item:questionnaire.id|get_item:'stats'|get_item:'avg_completion_time'|floatformat:0 }} seconds</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td>Questions Count</td>
+                    {% for questionnaire in questionnaires %}
+                        <td>{{ questionnaire.questions.count }}</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td>Estimated Time</td>
+                    {% for questionnaire in questionnaires %}
+                        <td>{{ questionnaire.estimated_time }} minutes</td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td>Low Risk Responses</td>
+                    {% for questionnaire in questionnaires %}
+                        {% with stats=questionnaire_stats|get_item:questionnaire.id|get_item:'stats' %}
+                            <td>{{ stats.risk_levels.low }} ({{ stats.risk_levels.low|div:stats.total_responses|multiply:100|floatformat:1 }}%)</td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td>Medium Risk Responses</td>
+                    {% for questionnaire in questionnaires %}
+                        {% with stats=questionnaire_stats|get_item:questionnaire.id|get_item:'stats' %}
+                            <td>{{ stats.risk_levels.medium }} ({{ stats.risk_levels.medium|div:stats.total_responses|multiply:100|floatformat:1 }}%)</td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td>High Risk Responses</td>
+                    {% for questionnaire in questionnaires %}
+                        {% with stats=questionnaire_stats|get_item:questionnaire.id|get_item:'stats' %}
+                            <td>{{ stats.risk_levels.high }} ({{ stats.risk_levels.high|div:stats.total_responses|multiply:100|floatformat:1 }}%)</td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td>Critical Risk Responses</td>
+                    {% for questionnaire in questionnaires %}
+                        {% with stats=questionnaire_stats|get_item:questionnaire.id|get_item:'stats' %}
+                            <td>{{ stats.risk_levels.critical }} ({{ stats.risk_levels.critical|div:stats.total_responses|multiply:100|floatformat:1 }}%)</td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <h2 class="h4 mb-4">Questionnaire Details</h2>
+    
+    <div class="row">
+        {% for questionnaire in questionnaires %}
+            <div class="col-md-6">
+                <div class="questionnaire-card">
+                    <div class="questionnaire-header">
+                        <h3 class="questionnaire-title">{{ questionnaire.title }}</h3>
+                        <div class="questionnaire-category">
+                            <span class="badge bg-secondary">{{ questionnaire.category|title }}</span>
+                        </div>
+                    </div>
+                    <div class="questionnaire-body">
+                        <p class="small text-muted mb-3">{{ questionnaire.description }}</p>
+                        
+                        {% with stats=questionnaire_stats|get_item:questionnaire.id|get_item:'stats' %}
+                            <div class="questionnaire-stats">
+                                <div class="questionnaire-stat">
+                                    <div class="questionnaire-stat-value">{{ stats.total_responses }}</div>
+                                    <div class="questionnaire-stat-label">Responses</div>
+                                </div>
+                                <div class="questionnaire-stat">
+                                    <div class="questionnaire-stat-value">{{ stats.avg_score|floatformat:1 }}</div>
+                                    <div class="questionnaire-stat-label">Avg Score</div>
+                                </div>
+                                <div class="questionnaire-stat">
+                                    <div class="questionnaire-stat-value">{{ stats.completion_rate|floatformat:0 }}%</div>
+                                    <div class="questionnaire-stat-label">Completion Rate</div>
+                                </div>
+                            </div>
+                            
+                            <div class="risk-distribution">
+                                <div class="risk-label">
+                                    <span>Risk Level Distribution</span>
+                                    <span>
+                                        {% with total=stats.total_responses %}
+                                            {% if stats.risk_levels.high > 0 or stats.risk_levels.critical > 0 %}
+                                                <span class="text-danger">{{ stats.risk_levels.high|add:stats.risk_levels.critical }} high risk</span>
+                                            {% else %}
+                                                <span class="text-success">No high risk</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </span>
+                                </div>
+                                <div class="progress">
+                                    {% with total=stats.total_responses %}
+                                        {% if total > 0 %}
+                                            <div class="progress-bar bg-success" style="width: {{ stats.risk_levels.low|div:total|multiply:100 }}%" 
+                                                 data-bs-toggle="tooltip" title="Low: {{ stats.risk_levels.low }} ({{ stats.risk_levels.low|div:total|multiply:100|floatformat:1 }}%)">
+                                            </div>
+                                            <div class="progress-bar bg-warning" style="width: {{ stats.risk_levels.medium|div:total|multiply:100 }}%" 
+                                                 data-bs-toggle="tooltip" title="Medium: {{ stats.risk_levels.medium }} ({{ stats.risk_levels.medium|div:total|multiply:100|floatformat:1 }}%)">
+                                            </div>
+                                            <div class="progress-bar bg-danger" style="width: {{ stats.risk_levels.high|div:total|multiply:100 }}%" 
+                                                 data-bs-toggle="tooltip" title="High: {{ stats.risk_levels.high }} ({{ stats.risk_levels.high|div:total|multiply:100|floatformat:1 }}%)">
+                                            </div>
+                                            <div class="progress-bar bg-dark" style="width: {{ stats.risk_levels.critical|div:total|multiply:100 }}%" 
+                                                 data-bs-toggle="tooltip" title="Critical: {{ stats.risk_levels.critical }} ({{ stats.risk_levels.critical|div:total|multiply:100|floatformat:1 }}%)">
+                                            </div>
+                                        {% else %}
+                                            <div class="progress-bar bg-secondary" style="width: 100%"></div>
+                                        {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        {% endwith %}
+                    </div>
+                    <div class="questionnaire-footer">
+                        <a href="{% url 'analytics:questionnaire_dashboard' questionnaire_id=questionnaire.id %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-chart-bar me-1"></i> View Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+</script>
+{% endblock %}

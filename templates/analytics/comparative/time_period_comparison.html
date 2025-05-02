@@ -1,0 +1,549 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Time Period Comparison - {{ questionnaire.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .comparison-header {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .comparison-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .comparison-subtitle {
+        font-size: 1.1rem;
+        color: #666;
+    }
+    
+    .period-selector {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .comparison-container {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .comparison-section-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 15px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+    
+    .comparison-table th {
+        background-color: #f0f0f0;
+        padding: 10px;
+        text-align: left;
+        font-weight: 600;
+        border: 1px solid #ddd;
+    }
+    
+    .comparison-table td {
+        padding: 10px;
+        border: 1px solid #ddd;
+    }
+    
+    .comparison-table tr:nth-child(even) {
+        background-color: #f8f8f8;
+    }
+    
+    .period-label {
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .change-indicator {
+        font-weight: 600;
+        padding: 3px 6px;
+        border-radius: 4px;
+        display: inline-block;
+        min-width: 60px;
+        text-align: center;
+    }
+    
+    .change-positive {
+        color: #4CAF50;
+        background-color: rgba(76, 175, 80, 0.1);
+    }
+    
+    .change-negative {
+        color: #F44336;
+        background-color: rgba(244, 67, 54, 0.1);
+    }
+    
+    .change-neutral {
+        color: #9E9E9E;
+        background-color: rgba(158, 158, 158, 0.1);
+    }
+    
+    .chart-container {
+        margin-bottom: 30px;
+    }
+    
+    .chart-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .chart-img {
+        width: 100%;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .stat-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 15px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .stat-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .stat-value-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #2196F3;
+        margin-right: 10px;
+    }
+    
+    .stat-change {
+        font-size: 0.9rem;
+        font-weight: 600;
+        padding: 3px 6px;
+        border-radius: 4px;
+    }
+    
+    .stat-description {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="comparison-header">
+        <div class="row">
+            <div class="col-md-8">
+                <h1 class="comparison-title">Time Period Comparison</h1>
+                <p class="comparison-subtitle">{{ questionnaire.title }}</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{% url 'analytics:questionnaire_dashboard' questionnaire_id=questionnaire.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                </a>
+                <a href="{% url 'analytics:download_comparative_pdf' %}?questionnaire_ids={{ questionnaire.id }}" class="btn btn-success ms-2">
+                    <i class="fas fa-download me-1"></i> Export PDF
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="period-selector">
+        <h2 class="h5 mb-3">Select Time Periods to Compare</h2>
+        <form method="get" action="{% url 'analytics:time_period_comparison' questionnaire_id=questionnaire.id %}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white">
+                            Period 1
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="period1_start" class="form-label">Start Date</label>
+                                    <input type="date" class="form-control" id="period1_start" name="period1_start" value="{{ period1_start }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="period1_end" class="form-label">End Date</label>
+                                    <input type="date" class="form-control" id="period1_end" name="period1_end" value="{{ period1_end }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header bg-success text-white">
+                            Period 2
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="period2_start" class="form-label">Start Date</label>
+                                    <input type="date" class="form-control" id="period2_start" name="period2_start" value="{{ period2_start }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="period2_end" class="form-label">End Date</label>
+                                    <input type="date" class="form-control" id="period2_end" name="period2_end" value="{{ period2_end }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sync-alt me-1"></i> Update Comparison
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-title">Total Responses</div>
+                <div class="stat-value-container">
+                    <div class="stat-value">{{ period2_stats.total_responses }}</div>
+                    {% if changes.total_responses > 0 %}
+                        <div class="stat-change change-positive">+{{ changes.total_responses|floatformat:1 }}%</div>
+                    {% elif changes.total_responses < 0 %}
+                        <div class="stat-change change-negative">{{ changes.total_responses|floatformat:1 }}%</div>
+                    {% else %}
+                        <div class="stat-change change-neutral">0%</div>
+                    {% endif %}
+                </div>
+                <div class="stat-description">
+                    Period 1: {{ period1_stats.total_responses }} responses<br>
+                    Period 2: {{ period2_stats.total_responses }} responses
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-title">Average Score</div>
+                <div class="stat-value-container">
+                    <div class="stat-value">{{ period2_stats.avg_score|floatformat:1 }}</div>
+                    {% if changes.avg_score > 0 %}
+                        <div class="stat-change change-positive">+{{ changes.avg_score|floatformat:1 }}%</div>
+                    {% elif changes.avg_score < 0 %}
+                        <div class="stat-change change-negative">{{ changes.avg_score|floatformat:1 }}%</div>
+                    {% else %}
+                        <div class="stat-change change-neutral">0%</div>
+                    {% endif %}
+                </div>
+                <div class="stat-description">
+                    Period 1: {{ period1_stats.avg_score|floatformat:1 }} average score<br>
+                    Period 2: {{ period2_stats.avg_score|floatformat:1 }} average score
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-title">Completion Rate</div>
+                <div class="stat-value-container">
+                    <div class="stat-value">{{ period2_stats.completion_rate|floatformat:1 }}%</div>
+                    {% if changes.completion_rate > 0 %}
+                        <div class="stat-change change-positive">+{{ changes.completion_rate|floatformat:1 }}%</div>
+                    {% elif changes.completion_rate < 0 %}
+                        <div class="stat-change change-negative">{{ changes.completion_rate|floatformat:1 }}%</div>
+                    {% else %}
+                        <div class="stat-change change-neutral">0%</div>
+                    {% endif %}
+                </div>
+                <div class="stat-description">
+                    Period 1: {{ period1_stats.completion_rate|floatformat:1 }}% completion rate<br>
+                    Period 2: {{ period2_stats.completion_rate|floatformat:1 }}% completion rate
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-title">Avg. Completion Time</div>
+                <div class="stat-value-container">
+                    <div class="stat-value">{{ period2_stats.avg_completion_time|floatformat:0 }}s</div>
+                    {% if changes.avg_completion_time > 0 %}
+                        <div class="stat-change change-positive">+{{ changes.avg_completion_time|floatformat:1 }}%</div>
+                    {% elif changes.avg_completion_time < 0 %}
+                        <div class="stat-change change-negative">{{ changes.avg_completion_time|floatformat:1 }}%</div>
+                    {% else %}
+                        <div class="stat-change change-neutral">0%</div>
+                    {% endif %}
+                </div>
+                <div class="stat-description">
+                    Period 1: {{ period1_stats.avg_completion_time|floatformat:0 }} seconds<br>
+                    Period 2: {{ period2_stats.avg_completion_time|floatformat:0 }} seconds
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="comparison-container">
+        <h2 class="comparison-section-title">Risk Level Distribution</h2>
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h3 class="h6 mb-2">Period 1 ({{ period1_start }} to {{ period1_end }})</h3>
+                <div class="progress mb-2" style="height: 24px;">
+                    {% with total=period1_stats.total_responses %}
+                        {% if total > 0 %}
+                            <div class="progress-bar bg-success" style="width: {{ period1_stats.risk_levels.low|div:total|multiply:100 }}%" 
+                                 data-bs-toggle="tooltip" title="Low: {{ period1_stats.risk_levels.low }} ({{ period1_stats.risk_levels.low|div:total|multiply:100|floatformat:1 }}%)">
+                                {{ period1_stats.risk_levels.low }}
+                            </div>
+                            <div class="progress-bar bg-warning" style="width: {{ period1_stats.risk_levels.medium|div:total|multiply:100 }}%" 
+                                 data-bs-toggle="tooltip" title="Medium: {{ period1_stats.risk_levels.medium }} ({{ period1_stats.risk_levels.medium|div:total|multiply:100|floatformat:1 }}%)">
+                                {{ period1_stats.risk_levels.medium }}
+                            </div>
+                            <div class="progress-bar bg-danger" style="width: {{ period1_stats.risk_levels.high|div:total|multiply:100 }}%" 
+                                 data-bs-toggle="tooltip" title="High: {{ period1_stats.risk_levels.high }} ({{ period1_stats.risk_levels.high|div:total|multiply:100|floatformat:1 }}%)">
+                                {{ period1_stats.risk_levels.high }}
+                            </div>
+                            <div class="progress-bar bg-dark" style="width: {{ period1_stats.risk_levels.critical|div:total|multiply:100 }}%" 
+                                 data-bs-toggle="tooltip" title="Critical: {{ period1_stats.risk_levels.critical }} ({{ period1_stats.risk_levels.critical|div:total|multiply:100|floatformat:1 }}%)">
+                                {{ period1_stats.risk_levels.critical }}
+                            </div>
+                        {% else %}
+                            <div class="progress-bar bg-secondary" style="width: 100%">No data</div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+                <div class="small text-muted">
+                    Low: {{ period1_stats.risk_levels.low }}, 
+                    Medium: {{ period1_stats.risk_levels.medium }}, 
+                    High: {{ period1_stats.risk_levels.high }}, 
+                    Critical: {{ period1_stats.risk_levels.critical }}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h3 class="h6 mb-2">Period 2 ({{ period2_start }} to {{ period2_end }})</h3>
+                <div class="progress mb-2" style="height: 24px;">
+                    {% with total=period2_stats.total_responses %}
+                        {% if total > 0 %}
+                            <div class="progress-bar bg-success" style="width: {{ period2_stats.risk_levels.low|div:total|multiply:100 }}%" 
+                                 data-bs-toggle="tooltip" title="Low: {{ period2_stats.risk_levels.low }} ({{ period2_stats.risk_levels.low|div:total|multiply:100|floatformat:1 }}%)">
+                                {{ period2_stats.risk_levels.low }}
+                            </div>
+                            <div class="progress-bar bg-warning" style="width: {{ period2_stats.risk_levels.medium|div:total|multiply:100 }}%" 
+                                 data-bs-toggle="tooltip" title="Medium: {{ period2_stats.risk_levels.medium }} ({{ period2_stats.risk_levels.medium|div:total|multiply:100|floatformat:1 }}%)">
+                                {{ period2_stats.risk_levels.medium }}
+                            </div>
+                            <div class="progress-bar bg-danger" style="width: {{ period2_stats.risk_levels.high|div:total|multiply:100 }}%" 
+                                 data-bs-toggle="tooltip" title="High: {{ period2_stats.risk_levels.high }} ({{ period2_stats.risk_levels.high|div:total|multiply:100|floatformat:1 }}%)">
+                                {{ period2_stats.risk_levels.high }}
+                            </div>
+                            <div class="progress-bar bg-dark" style="width: {{ period2_stats.risk_levels.critical|div:total|multiply:100 }}%" 
+                                 data-bs-toggle="tooltip" title="Critical: {{ period2_stats.risk_levels.critical }} ({{ period2_stats.risk_levels.critical|div:total|multiply:100|floatformat:1 }}%)">
+                                {{ period2_stats.risk_levels.critical }}
+                            </div>
+                        {% else %}
+                            <div class="progress-bar bg-secondary" style="width: 100%">No data</div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+                <div class="small text-muted">
+                    Low: {{ period2_stats.risk_levels.low }}, 
+                    Medium: {{ period2_stats.risk_levels.medium }}, 
+                    High: {{ period2_stats.risk_levels.high }}, 
+                    Critical: {{ period2_stats.risk_levels.critical }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h3 class="chart-title">Score Distribution Comparison</h3>
+                    {% if score_comparison_chart %}
+                        <img src="data:image/png;base64,{{ score_comparison_chart }}" alt="Score Distribution Comparison" class="chart-img">
+                    {% else %}
+                        <div class="alert alert-info">No data available for this chart.</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h3 class="chart-title">Risk Level Distribution Comparison</h3>
+                    {% if risk_comparison_chart %}
+                        <img src="data:image/png;base64,{{ risk_comparison_chart }}" alt="Risk Level Distribution Comparison" class="chart-img">
+                    {% else %}
+                        <div class="alert alert-info">No data available for this chart.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="comparison-container">
+        <h2 class="comparison-section-title">Detailed Comparison</h2>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Period 1 ({{ period1_start }} to {{ period1_end }})</th>
+                    <th>Period 2 ({{ period2_start }} to {{ period2_end }})</th>
+                    <th>Change</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Total Responses</td>
+                    <td>{{ period1_stats.total_responses }}</td>
+                    <td>{{ period2_stats.total_responses }}</td>
+                    <td>
+                        {% if changes.total_responses > 0 %}
+                            <span class="change-indicator change-positive">+{{ changes.total_responses|floatformat:1 }}%</span>
+                        {% elif changes.total_responses < 0 %}
+                            <span class="change-indicator change-negative">{{ changes.total_responses|floatformat:1 }}%</span>
+                        {% else %}
+                            <span class="change-indicator change-neutral">0%</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Average Score</td>
+                    <td>{{ period1_stats.avg_score|floatformat:2 }}</td>
+                    <td>{{ period2_stats.avg_score|floatformat:2 }}</td>
+                    <td>
+                        {% if changes.avg_score > 0 %}
+                            <span class="change-indicator change-positive">+{{ changes.avg_score|floatformat:1 }}%</span>
+                        {% elif changes.avg_score < 0 %}
+                            <span class="change-indicator change-negative">{{ changes.avg_score|floatformat:1 }}%</span>
+                        {% else %}
+                            <span class="change-indicator change-neutral">0%</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Completion Rate</td>
+                    <td>{{ period1_stats.completion_rate|floatformat:2 }}%</td>
+                    <td>{{ period2_stats.completion_rate|floatformat:2 }}%</td>
+                    <td>
+                        {% if changes.completion_rate > 0 %}
+                            <span class="change-indicator change-positive">+{{ changes.completion_rate|floatformat:1 }}%</span>
+                        {% elif changes.completion_rate < 0 %}
+                            <span class="change-indicator change-negative">{{ changes.completion_rate|floatformat:1 }}%</span>
+                        {% else %}
+                            <span class="change-indicator change-neutral">0%</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Average Completion Time</td>
+                    <td>{{ period1_stats.avg_completion_time|floatformat:0 }} seconds</td>
+                    <td>{{ period2_stats.avg_completion_time|floatformat:0 }} seconds</td>
+                    <td>
+                        {% if changes.avg_completion_time > 0 %}
+                            <span class="change-indicator change-positive">+{{ changes.avg_completion_time|floatformat:1 }}%</span>
+                        {% elif changes.avg_completion_time < 0 %}
+                            <span class="change-indicator change-negative">{{ changes.avg_completion_time|floatformat:1 }}%</span>
+                        {% else %}
+                            <span class="change-indicator change-neutral">0%</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Low Risk Responses</td>
+                    <td>{{ period1_stats.risk_levels.low }}</td>
+                    <td>{{ period2_stats.risk_levels.low }}</td>
+                    <td>
+                        {% if changes.risk_levels.low > 0 %}
+                            <span class="change-indicator change-positive">+{{ changes.risk_levels.low|floatformat:1 }}%</span>
+                        {% elif changes.risk_levels.low < 0 %}
+                            <span class="change-indicator change-negative">{{ changes.risk_levels.low|floatformat:1 }}%</span>
+                        {% else %}
+                            <span class="change-indicator change-neutral">0%</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Medium Risk Responses</td>
+                    <td>{{ period1_stats.risk_levels.medium }}</td>
+                    <td>{{ period2_stats.risk_levels.medium }}</td>
+                    <td>
+                        {% if changes.risk_levels.medium > 0 %}
+                            <span class="change-indicator change-positive">+{{ changes.risk_levels.medium|floatformat:1 }}%</span>
+                        {% elif changes.risk_levels.medium < 0 %}
+                            <span class="change-indicator change-negative">{{ changes.risk_levels.medium|floatformat:1 }}%</span>
+                        {% else %}
+                            <span class="change-indicator change-neutral">0%</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>High Risk Responses</td>
+                    <td>{{ period1_stats.risk_levels.high }}</td>
+                    <td>{{ period2_stats.risk_levels.high }}</td>
+                    <td>
+                        {% if changes.risk_levels.high > 0 %}
+                            <span class="change-indicator change-negative">+{{ changes.risk_levels.high|floatformat:1 }}%</span>
+                        {% elif changes.risk_levels.high < 0 %}
+                            <span class="change-indicator change-positive">{{ changes.risk_levels.high|floatformat:1 }}%</span>
+                        {% else %}
+                            <span class="change-indicator change-neutral">0%</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Critical Risk Responses</td>
+                    <td>{{ period1_stats.risk_levels.critical }}</td>
+                    <td>{{ period2_stats.risk_levels.critical }}</td>
+                    <td>
+                        {% if changes.risk_levels.critical > 0 %}
+                            <span class="change-indicator change-negative">+{{ changes.risk_levels.critical|floatformat:1 }}%</span>
+                        {% elif changes.risk_levels.critical < 0 %}
+                            <span class="change-indicator change-positive">{{ changes.risk_levels.critical|floatformat:1 }}%</span>
+                        {% else %}
+                            <span class="change-indicator change-neutral">0%</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+</script>
+{% endblock %}

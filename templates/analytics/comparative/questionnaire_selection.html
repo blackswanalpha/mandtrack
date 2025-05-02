@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Questionnaire Comparison{% endblock %}
+
+{% block extra_css %}
+<style>
+    .comparison-header {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .comparison-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .comparison-subtitle {
+        font-size: 1.1rem;
+        color: #666;
+    }
+    
+    .selection-container {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .questionnaire-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+        cursor: pointer;
+    }
+    
+    .questionnaire-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .questionnaire-card.selected {
+        border: 2px solid #2196F3;
+    }
+    
+    .questionnaire-header {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .questionnaire-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    
+    .questionnaire-category {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .questionnaire-body {
+        padding: 15px;
+    }
+    
+    .questionnaire-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+    }
+    
+    .questionnaire-stat {
+        text-align: center;
+    }
+    
+    .questionnaire-stat-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2196F3;
+    }
+    
+    .questionnaire-stat-label {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .questionnaire-footer {
+        padding: 15px;
+        border-top: 1px solid #eee;
+        text-align: right;
+    }
+    
+    .selection-actions {
+        margin-top: 20px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="comparison-header">
+        <div class="row">
+            <div class="col-md-8">
+                <h1 class="comparison-title">Questionnaire Comparison</h1>
+                <p class="comparison-subtitle">Select questionnaires to compare</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{% url 'dashboard:index' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="selection-container">
+        <h2 class="h5 mb-3">Select Questionnaires to Compare</h2>
+        <p class="text-muted mb-4">Select 2-5 questionnaires to compare their metrics and performance.</p>
+        
+        <form id="comparisonForm" method="get" action="{% url 'analytics:questionnaire_comparison' %}">
+            <div class="row">
+                {% for questionnaire in questionnaires %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="questionnaire-card" data-questionnaire-id="{{ questionnaire.id }}">
+                            <div class="questionnaire-header">
+                                <div class="form-check">
+                                    <input class="form-check-input questionnaire-checkbox" type="checkbox" name="questionnaire_ids" value="{{ questionnaire.id }}" id="questionnaire_{{ questionnaire.id }}">
+                                    <label class="form-check-label questionnaire-title" for="questionnaire_{{ questionnaire.id }}">
+                                        {{ questionnaire.title }}
+                                    </label>
+                                </div>
+                                <div class="questionnaire-category">
+                                    <span class="badge bg-secondary">{{ questionnaire.category|title }}</span>
+                                </div>
+                            </div>
+                            <div class="questionnaire-body">
+                                <p class="small text-muted">{{ questionnaire.description|truncatechars:100 }}</p>
+                                <div class="questionnaire-stats">
+                                    <div class="questionnaire-stat">
+                                        <div class="questionnaire-stat-value">{{ questionnaire.responses.count }}</div>
+                                        <div class="questionnaire-stat-label">Responses</div>
+                                    </div>
+                                    <div class="questionnaire-stat">
+                                        <div class="questionnaire-stat-value">{{ questionnaire.questions.count }}</div>
+                                        <div class="questionnaire-stat-label">Questions</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="alert alert-info">No questionnaires available for comparison.</div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="selection-actions">
+                <div id="selectionError" class="alert alert-danger" style="display: none;">
+                    Please select 2-5 questionnaires to compare.
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg" id="compareButton">
+                    <i class="fas fa-chart-bar me-1"></i> Compare Selected Questionnaires
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Make the entire card clickable for checkbox
+        $('.questionnaire-card').click(function(e) {
+            // Don't toggle if clicking on the checkbox itself
+            if (!$(e.target).is('.questionnaire-checkbox')) {
+                var checkbox = $(this).find('.questionnaire-checkbox');
+                checkbox.prop('checked', !checkbox.prop('checked'));
+                updateCardSelection(this);
+            }
+        });
+        
+        // Update card selection when checkbox changes
+        $('.questionnaire-checkbox').change(function() {
+            updateCardSelection($(this).closest('.questionnaire-card'));
+        });
+        
+        // Update card selection based on checkbox state
+        function updateCardSelection(card) {
+            var checkbox = $(card).find('.questionnaire-checkbox');
+            if (checkbox.prop('checked')) {
+                $(card).addClass('selected');
+            } else {
+                $(card).removeClass('selected');
+            }
+            
+            // Update button state
+            updateCompareButton();
+        }
+        
+        // Update compare button state
+        function updateCompareButton() {
+            var selectedCount = $('.questionnaire-checkbox:checked').length;
+            
+            if (selectedCount >= 2 && selectedCount <= 5) {
+                $('#compareButton').prop('disabled', false);
+                $('#selectionError').hide();
+            } else {
+                $('#compareButton').prop('disabled', true);
+                if (selectedCount > 0) {
+                    $('#selectionError').show();
+                } else {
+                    $('#selectionError').hide();
+                }
+            }
+        }
+        
+        // Form submission validation
+        $('#comparisonForm').submit(function(e) {
+            var selectedCount = $('.questionnaire-checkbox:checked').length;
+            
+            if (selectedCount < 2 || selectedCount > 5) {
+                e.preventDefault();
+                $('#selectionError').show();
+                return false;
+            }
+            
+            return true;
+        });
+        
+        // Initialize button state
+        updateCompareButton();
+    });
+</script>
+{% endblock %}

@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
 from feedback import views_new
 
 urlpatterns = [
@@ -33,14 +34,16 @@ urlpatterns = [
     path('', include('core.urls')),
     path('dashboard/', include('dashboard.urls')),
     path('questionnaires/', include('surveys.urls')),
+    path('questionnaires/qr-codes/', include('surveys.urls_qr')),
     path('responses/', include('feedback.urls')),
     path('groups/', include('groups.urls')),
+    path('organizations/', include('organizations.urls')),
     path('analytics/', include('analytics.urls')),
-    path('qr-codes/', include('surveys.urls', namespace='qr_codes')),
 
     # QR code scanning and direct questionnaire access
     path('qr/', include([
         path('scan/', include('users.urls', namespace='qr_scan')),
+        path('codes/', include('surveys.urls_qr')),
     ])),
 
     # Direct questionnaire access (public URLs)

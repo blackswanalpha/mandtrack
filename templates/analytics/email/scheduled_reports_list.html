@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Scheduled Reports{% endblock %}
+
+{% block extra_css %}
+<style>
+    .scheduled-reports-container {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .scheduled-reports-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 20px;
+    }
+    
+    .scheduled-report-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    
+    .scheduled-report-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .scheduled-report-header {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .scheduled-report-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .scheduled-report-status {
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .status-active {
+        background-color: #e3f2fd;
+        color: #2196F3;
+    }
+    
+    .status-inactive {
+        background-color: #ffebee;
+        color: #F44336;
+    }
+    
+    .scheduled-report-body {
+        padding: 15px;
+    }
+    
+    .scheduled-report-info {
+        margin-bottom: 15px;
+    }
+    
+    .scheduled-report-info-item {
+        display: flex;
+        margin-bottom: 8px;
+    }
+    
+    .scheduled-report-info-label {
+        font-weight: 600;
+        width: 150px;
+        color: #666;
+    }
+    
+    .scheduled-report-info-value {
+        flex-grow: 1;
+    }
+    
+    .scheduled-report-footer {
+        padding: 15px;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .empty-state-icon {
+        font-size: 48px;
+        color: #ccc;
+        margin-bottom: 20px;
+    }
+    
+    .empty-state-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .empty-state-description {
+        color: #666;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">Scheduled Reports</h1>
+            <p class="text-muted">Manage your scheduled reports</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'dashboard:index' %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+    
+    <div class="scheduled-reports-container">
+        <h2 class="scheduled-reports-title">Your Scheduled Reports</h2>
+        
+        {% if scheduled_reports %}
+            <div class="row">
+                {% for report in scheduled_reports %}
+                    <div class="col-md-6">
+                        <div class="scheduled-report-card">
+                            <div class="scheduled-report-header">
+                                <div class="scheduled-report-title">{{ report.get_report_type_display }}</div>
+                                {% if report.is_active %}
+                                    <div class="scheduled-report-status status-active">Active</div>
+                                {% else %}
+                                    <div class="scheduled-report-status status-inactive">Inactive</div>
+                                {% endif %}
+                            </div>
+                            <div class="scheduled-report-body">
+                                <div class="scheduled-report-info">
+                                    <div class="scheduled-report-info-item">
+                                        <div class="scheduled-report-info-label">Recipient:</div>
+                                        <div class="scheduled-report-info-value">{{ report.recipient_email }}</div>
+                                    </div>
+                                    <div class="scheduled-report-info-item">
+                                        <div class="scheduled-report-info-label">Frequency:</div>
+                                        <div class="scheduled-report-info-value">
+                                            {{ report.schedule.frequency|title }}
+                                            {% if report.schedule.frequency == 'weekly' %}
+                                                ({{ report.schedule.day|get_day_name }})
+                                            {% elif report.schedule.frequency == 'monthly' %}
+                                                (Day {{ report.schedule.day }})
+                                            {% endif %}
+                                            at {{ report.schedule.time }}
+                                        </div>
+                                    </div>
+                                    <div class="scheduled-report-info-item">
+                                        <div class="scheduled-report-info-label">Next Run:</div>
+                                        <div class="scheduled-report-info-value">
+                                            {% if report.is_active %}
+                                                {{ report.get_next_run_time|date:"F j, Y, g:i a" }}
+                                            {% else %}
+                                                <span class="text-muted">Inactive</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="scheduled-report-info-item">
+                                        <div class="scheduled-report-info-label">Last Sent:</div>
+                                        <div class="scheduled-report-info-value">
+                                            {% if report.last_sent %}
+                                                {{ report.last_sent|date:"F j, Y, g:i a" }}
+                                            {% else %}
+                                                <span class="text-muted">Never</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="scheduled-report-info-item">
+                                        <div class="scheduled-report-info-label">Created:</div>
+                                        <div class="scheduled-report-info-value">{{ report.created_at|date:"F j, Y, g:i a" }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="scheduled-report-footer">
+                                {% if report.is_active %}
+                                    <a href="{% url 'analytics:toggle_scheduled_report' report_id=report.id %}" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-pause me-1"></i> Deactivate
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'analytics:toggle_scheduled_report' report_id=report.id %}" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-play me-1"></i> Activate
+                                    </a>
+                                {% endif %}
+                                <a href="{% url 'analytics:delete_scheduled_report' report_id=report.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this scheduled report?');">
+                                    <i class="fas fa-trash-alt me-1"></i> Delete
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-calendar-times"></i>
+                </div>
+                <h3 class="empty-state-title">No Scheduled Reports</h3>
+                <p class="empty-state-description">You don't have any scheduled reports yet. Create one from a report or questionnaire dashboard.</p>
+                <a href="{% url 'dashboard:index' %}" class="btn btn-primary">
+                    <i class="fas fa-tachometer-alt me-1"></i> Go to Dashboard
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add any JavaScript needed for the page here
+</script>
+{% endblock %}

@@ -1,0 +1,1253 @@
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
+{% load feedback_extras %}
+
+{% block title %}Response Details - MindTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Pill tab animations */
+    .tab-transition {
+        transition: all 0.3s ease;
+    }
+
+    .tab-content {
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .tab-content.hidden {
+        display: none;
+    }
+
+    /* Answer card hover effect */
+    .answer-card {
+        transition: all 0.2s ease-in-out;
+    }
+
+    .answer-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% url 'feedback:response_list' %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Response Details</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                Viewing response to "{{ response.survey.title }}"
+            </p>
+        </div>
+
+        <!-- Status Badges -->
+        <div class="flex flex-wrap gap-2 mb-6">
+            <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full
+                {% if response.status == 'completed' %}bg-green-100 text-green-800
+                {% elif response.status == 'in_progress' %}bg-yellow-100 text-yellow-800
+                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                <i class="fas fa-circle text-xs mr-1 self-center"></i>
+                {{ response.get_status_display }}
+            </span>
+            {% if response.risk_level != 'none' and response.risk_level != 'unknown' %}
+                <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full
+                    {% if response.risk_level == 'critical' %}bg-red-100 text-red-800
+                    {% elif response.risk_level == 'high' %}bg-orange-100 text-orange-800
+                    {% elif response.risk_level == 'medium' %}bg-yellow-100 text-yellow-800
+                    {% elif response.risk_level == 'low' %}bg-green-100 text-green-800
+                    {% endif %}">
+                    <i class="fas fa-exclamation-triangle text-xs mr-1 self-center"></i>
+                    {{ response.get_risk_level_display }} Risk
+                </span>
+            {% endif %}
+            {% if response.score is not None %}
+                <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                    <i class="fas fa-chart-line text-xs mr-1 self-center"></i>
+                    Score: {{ response.score }}
+                </span>
+            {% endif %}
+            {% if response.flagged_for_review %}
+                <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                    <i class="fas fa-flag text-xs mr-1 self-center"></i>
+                    Flagged for Review
+                </span>
+            {% endif %}
+        </div>
+
+        <!-- Tabs Navigation (Pill Style) -->
+        <div class="mb-6" x-data="{ activeTab: 'information' }">
+            <div class="bg-gray-100 p-1.5 rounded-lg inline-flex flex-wrap">
+                <nav class="flex space-x-2">
+                    <button @click="activeTab = 'information'"
+                            :class="activeTab === 'information'
+                                ? 'bg-white text-primary-700 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'"
+                            class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center tab-transition">
+                        <i class="fas fa-info-circle mr-2"></i> Response Information
+                    </button>
+                    <button @click="activeTab = 'answers'"
+                            :class="activeTab === 'answers'
+                                ? 'bg-white text-primary-700 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'"
+                            class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center tab-transition">
+                        <i class="fas fa-list-alt mr-2"></i> Answers
+                    </button>
+                    <button @click="activeTab = 'analysis'"
+                            :class="activeTab === 'analysis'
+                                ? 'bg-white text-primary-700 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'"
+                            class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center tab-transition">
+                        <i class="fas fa-brain mr-2"></i> Analysis
+                    </button>
+                    <button @click="activeTab = 'score'"
+                            :class="activeTab === 'score'
+                                ? 'bg-white text-primary-700 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'"
+                            class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center tab-transition">
+                        <i class="fas fa-chart-bar mr-2"></i> Score
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+                <!-- Response Information Tab -->
+                <div x-show="activeTab === 'information'"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform translate-y-4"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     class="tab-content">
+                    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                        <h2 class="text-lg font-medium text-gray-900">Response Information</h2>
+                        <p class="mt-1 max-w-2xl text-sm text-gray-500">Details about this response.</p>
+                    </div>
+                    <div class="px-4 py-5 sm:p-6">
+                        <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+                            <div class="sm:col-span-1">
+                                <dt class="text-sm font-medium text-gray-500">Questionnaire</dt>
+                                <dd class="mt-1 text-sm text-gray-900">
+                                    <a href="{% url 'surveys:survey_detail' pk=response.survey.pk %}" class="text-primary-600 hover:text-primary-900">
+                                        {{ response.survey.title }}
+                                    </a>
+                                </dd>
+                            </div>
+                            <div class="sm:col-span-1">
+                                <dt class="text-sm font-medium text-gray-500">Respondent</dt>
+                                <dd class="mt-1 text-sm text-gray-900">
+                                    {% if response.user %}
+                                        {{ response.user.get_full_name|default:response.user.email }}
+                                    {% elif response.patient_name %}
+                                        {{ response.patient_name }}
+                                    {% elif response.patient_email %}
+                                        {{ response.patient_email }}
+                                    {% else %}
+                                        Anonymous
+                                    {% endif %}
+                                </dd>
+                            </div>
+                            <div class="sm:col-span-1">
+                                <dt class="text-sm font-medium text-gray-500">Status</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ response.get_status_display }}</dd>
+                            </div>
+                            <div class="sm:col-span-1">
+                                <dt class="text-sm font-medium text-gray-500">Submitted</dt>
+                                <dd class="mt-1 text-sm text-gray-900">
+                                    {% if response.completed_at %}
+                                        {{ response.completed_at|date:"F j, Y, g:i a" }}
+                                    {% else %}
+                                        Not completed
+                                    {% endif %}
+                                </dd>
+                            </div>
+                            <div class="sm:col-span-1">
+                                <dt class="text-sm font-medium text-gray-500">Started</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ response.created_at|date:"F j, Y, g:i a" }}</dd>
+                            </div>
+                            <div class="sm:col-span-1">
+                                <dt class="text-sm font-medium text-gray-500">Completion Time</dt>
+                                <dd class="mt-1 text-sm text-gray-900">
+                                    {% if response.completion_time %}
+                                        {{ response.completion_time|floatformat:"0" }} seconds
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </dd>
+                            </div>
+                            {% if response.patient_age is not None %}
+                            <div class="sm:col-span-1">
+                                <dt class="text-sm font-medium text-gray-500">Age</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ response.patient_age }}</dd>
+                            </div>
+                            {% endif %}
+                            {% if response.patient_gender %}
+                            <div class="sm:col-span-1">
+                                <dt class="text-sm font-medium text-gray-500">Gender</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ response.get_patient_gender_display }}</dd>
+                            </div>
+                            {% endif %}
+                            <div class="sm:col-span-1">
+                                <dt class="text-sm font-medium text-gray-500">Score</dt>
+                                <dd class="mt-1 text-sm text-gray-900">
+                                    {% if response.score is not None %}
+                                        {{ response.score|floatformat:"-2" }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </dd>
+                            </div>
+                            <div class="sm:col-span-1">
+                                <dt class="text-sm font-medium text-gray-500">Risk Level</dt>
+                                <dd class="mt-1 text-sm text-gray-900">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                        {% if response.risk_level == 'critical' %}bg-red-100 text-red-800
+                                        {% elif response.risk_level == 'high' %}bg-orange-100 text-orange-800
+                                        {% elif response.risk_level == 'medium' %}bg-yellow-100 text-yellow-800
+                                        {% elif response.risk_level == 'low' %}bg-green-100 text-green-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ response.get_risk_level_display }}
+                                    </span>
+                                </dd>
+                            </div>
+                            {% if response.ip_address %}
+                            <div class="sm:col-span-1">
+                                <dt class="text-sm font-medium text-gray-500">IP Address</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ response.ip_address }}</dd>
+                            </div>
+                            {% endif %}
+                        </dl>
+
+                        <!-- Notes Section -->
+                        <div class="mt-8 border-t border-gray-200 pt-6">
+                            <h3 class="text-lg font-medium text-gray-900">Notes</h3>
+                            <form method="post" action="{% url 'feedback:update_notes' pk=response.pk %}" class="mt-4 space-y-4">
+                                {% csrf_token %}
+                                <div>
+                                    <textarea name="notes" rows="4" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-300">{{ response.notes }}</textarea>
+                                </div>
+                                <div class="flex justify-end">
+                                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300">
+                                        <i class="fas fa-save mr-2"></i> Save Notes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Answers Tab -->
+                <div x-show="activeTab === 'answers'"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform translate-y-4"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     class="tab-content">
+                    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                        <h2 class="text-lg font-medium text-gray-900">Answers</h2>
+                        <p class="mt-1 max-w-2xl text-sm text-gray-500">Responses to each question.</p>
+                    </div>
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="space-y-6">
+                            {% for answer in answers %}
+                                <div class="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-200 answer-card">
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0 h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
+                                            <span class="text-primary-800 font-medium">{{ forloop.counter }}</span>
+                                        </div>
+                                        <div class="ml-4 flex-1">
+                                            <h3 class="text-base font-medium text-gray-900">{{ answer.question.text }}</h3>
+
+                                            <div class="mt-2">
+                                                {% if answer.question.question_type == 'text' or answer.question.question_type == 'textarea' %}
+                                                    <p class="text-sm text-gray-700 bg-white p-3 rounded border border-gray-200">{{ answer.text_answer|default:"No response" }}</p>
+
+                                                {% elif answer.question.question_type == 'single_choice' %}
+                                                    {% if answer.selected_choice %}
+                                                        <div class="flex items-center">
+                                                            <div class="h-4 w-4 rounded-full bg-primary-500 flex-shrink-0"></div>
+                                                            <span class="ml-2 text-sm text-gray-700">{{ answer.selected_choice.text }}</span>
+                                                        </div>
+                                                    {% else %}
+                                                        <p class="text-sm text-gray-500 italic">No option selected</p>
+                                                    {% endif %}
+
+                                                {% elif answer.question.question_type == 'multiple_choice' %}
+                                                    {% if answer.multiple_choices.exists %}
+                                                        <div class="space-y-2">
+                                                            {% for choice in answer.multiple_choices.all %}
+                                                                <div class="flex items-center">
+                                                                    <div class="h-4 w-4 rounded bg-primary-500 flex-shrink-0"></div>
+                                                                    <span class="ml-2 text-sm text-gray-700">{{ choice.text }}</span>
+                                                                </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% else %}
+                                                        <p class="text-sm text-gray-500 italic">No options selected</p>
+                                                    {% endif %}
+
+                                                {% elif answer.question.question_type == 'number' or answer.question.question_type == 'scale' %}
+                                                    <p class="text-sm text-gray-700">{{ answer.numeric_value|floatformat:"-2" }}</p>
+
+                                                {% elif answer.question.question_type == 'date' %}
+                                                    <p class="text-sm text-gray-700">{{ answer.date_value|date:"F j, Y" }}</p>
+
+                                                {% elif answer.question.question_type == 'time' %}
+                                                    <p class="text-sm text-gray-700">{{ answer.time_value|time:"g:i A" }}</p>
+
+                                                {% elif answer.question.question_type == 'file' %}
+                                                    {% if answer.file_upload %}
+                                                        <a href="{{ answer.file_upload.url }}" class="text-sm text-primary-600 hover:text-primary-900">
+                                                            <i class="fas fa-file mr-1"></i> {{ answer.file_upload.name|cut:"answer_files/" }}
+                                                        </a>
+                                                    {% else %}
+                                                        <p class="text-sm text-gray-500 italic">No file uploaded</p>
+                                                    {% endif %}
+
+                                                {% else %}
+                                                    <p class="text-sm text-gray-500 italic">Unknown question type</p>
+                                                {% endif %}
+                                            </div>
+
+                                            {% if answer.score is not None and answer.question.is_scored %}
+                                                <div class="mt-2 flex items-center">
+                                                    <span class="text-xs font-medium text-gray-500">Score:</span>
+                                                    <span class="ml-1 text-xs font-medium text-primary-700">{{ answer.score|floatformat:"-2" }}</span>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="text-center py-8">
+                                    <div class="mx-auto h-12 w-12 text-gray-400">
+                                        <i class="fas fa-clipboard-list text-3xl"></i>
+                                    </div>
+                                    <h3 class="mt-2 text-sm font-medium text-gray-900">No answers</h3>
+                                    <p class="mt-1 text-sm text-gray-500">This response doesn't have any answers yet.</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis Tab -->
+                <div x-show="activeTab === 'analysis'"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform translate-y-4"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     class="tab-content">
+                    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                        <h2 class="text-lg font-medium text-gray-900">Analysis</h2>
+                        <p class="mt-1 max-w-2xl text-sm text-gray-500">AI-generated analysis of this response.</p>
+                    </div>
+                    <div class="px-4 py-5 sm:p-6">
+                        {% if response.analysis %}
+                            <div class="space-y-6">
+                                <div>
+                                    <h3 class="text-base font-medium text-gray-900">Summary</h3>
+                                    <p class="mt-2 text-sm text-gray-600">{{ response.analysis.summary }}</p>
+                                </div>
+
+                                {% if response.analysis.detailed_analysis %}
+                                    <div class="pt-4 border-t border-gray-200">
+                                        <h3 class="text-base font-medium text-gray-900">Detailed Analysis</h3>
+                                        <div class="mt-2 text-sm text-gray-600 prose max-w-none">
+                                            {{ response.analysis.detailed_analysis|linebreaks }}
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {% if response.analysis.recommendations %}
+                                    <div class="pt-4 border-t border-gray-200">
+                                        <h3 class="text-base font-medium text-gray-900">Recommendations</h3>
+                                        <div class="mt-2 text-sm text-gray-600 prose max-w-none">
+                                            {{ response.analysis.recommendations|linebreaks }}
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {% if response.analysis.insights %}
+                                    <div class="pt-4 border-t border-gray-200">
+                                        <h3 class="text-base font-medium text-gray-900">Key Insights</h3>
+                                        <ul class="mt-2 space-y-2">
+                                            {% for key, value in response.analysis.insights.items %}
+                                                <li class="text-sm text-gray-600">
+                                                    <span class="font-medium">{{ key }}:</span> {{ value }}
+                                                </li>
+                                            {% empty %}
+                                                <li class="text-sm text-gray-500 italic">No insights available</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% endif %}
+
+                                <div class="pt-4 border-t border-gray-200 text-sm text-gray-500">
+                                    <p>Analysis generated on {{ response.analysis.created_at|date:"F j, Y, g:i a" }}
+                                    {% if response.analysis.model_used %}
+                                        using {{ response.analysis.model_used }}
+                                    {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-8">
+                                <div class="mx-auto h-12 w-12 text-gray-400">
+                                    <i class="fas fa-brain text-3xl"></i>
+                                </div>
+                                <h3 class="mt-2 text-sm font-medium text-gray-900">No analysis available</h3>
+                                <p class="mt-1 text-sm text-gray-500">Generate an analysis to get insights from this response.</p>
+                                <div class="mt-6">
+                                    <a href="{% url 'feedback:generate_analysis' pk=response.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300">
+                                        <i class="fas fa-brain mr-2"></i> Generate Analysis
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Score Tab -->
+                <div x-show="activeTab === 'score'"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform translate-y-4"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     class="tab-content">
+                    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                        <h2 class="text-lg font-medium text-gray-900">Score Analysis</h2>
+                        <p class="mt-1 max-w-2xl text-sm text-gray-500">Detailed scoring breakdown and metrics.</p>
+                    </div>
+                    <div class="px-4 py-5 sm:p-6">
+                        <!-- Overall Score Card -->
+                        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+                            <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-primary-50 to-white">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900">Overall Score</h3>
+                                <p class="mt-1 max-w-2xl text-sm text-gray-500">Summary of the response score and risk assessment.</p>
+                            </div>
+                            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                                    <!-- Score Display -->
+                                    <div class="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200">
+                                        <div class="px-4 py-5 sm:p-6 text-center">
+                                            <dt class="text-sm font-medium text-gray-500 truncate">Total Score</dt>
+                                            <dd class="mt-1">
+                                                <div class="relative h-24 w-24 mx-auto">
+                                                    <svg class="h-24 w-24" viewBox="0 0 36 36">
+                                                        <path class="stroke-current text-gray-200" stroke-width="2" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                                        <path class="stroke-current {% if response.score is not None %}
+                                                            {% if response.risk_level == 'low' %}text-green-500
+                                                            {% elif response.risk_level == 'medium' %}text-yellow-500
+                                                            {% elif response.risk_level == 'high' %}text-orange-500
+                                                            {% elif response.risk_level == 'critical' %}text-red-500
+                                                            {% else %}text-blue-500{% endif %}
+                                                            {% else %}text-gray-400{% endif %}"
+                                                            stroke-width="2" fill="none" stroke-linecap="round"
+                                                            stroke-dasharray="{{ response.score|default:0|floatformat:0 }}, 100"
+                                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                                        <text x="18" y="20.35" class="text-3xl font-bold text-gray-700" text-anchor="middle">{{ response.score|default:"0"|floatformat:"-1" }}</text>
+                                                    </svg>
+                                                </div>
+                                                <div class="mt-2 text-sm text-gray-500">
+                                                    Out of {{ max_possible_score|default:"100"|floatformat:"-1" }} possible points
+                                                </div>
+                                            </dd>
+                                        </div>
+                                    </div>
+
+                                    <!-- Risk Level -->
+                                    <div class="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200">
+                                        <div class="px-4 py-5 sm:p-6 text-center">
+                                            <dt class="text-sm font-medium text-gray-500 truncate">Risk Level</dt>
+                                            <dd class="mt-1">
+                                                <span class="inline-flex items-center px-4 py-2 rounded-full text-xl font-medium
+                                                    {% if response.risk_level == 'critical' %}bg-red-100 text-red-800
+                                                    {% elif response.risk_level == 'high' %}bg-orange-100 text-orange-800
+                                                    {% elif response.risk_level == 'medium' %}bg-yellow-100 text-yellow-800
+                                                    {% elif response.risk_level == 'low' %}bg-green-100 text-green-800
+                                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                    {{ response.get_risk_level_display|default:"Unknown" }}
+                                                </span>
+                                                <div class="mt-4 text-sm text-gray-500">
+                                                    {% if response.risk_level == 'critical' %}
+                                                        Immediate attention required
+                                                    {% elif response.risk_level == 'high' %}
+                                                        Prompt follow-up recommended
+                                                    {% elif response.risk_level == 'medium' %}
+                                                        Monitor and reassess
+                                                    {% elif response.risk_level == 'low' %}
+                                                        No immediate concerns
+                                                    {% else %}
+                                                        Not enough data to assess
+                                                    {% endif %}
+                                                </div>
+                                            </dd>
+                                        </div>
+                                    </div>
+
+                                    <!-- Completion Time -->
+                                    <div class="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200">
+                                        <div class="px-4 py-5 sm:p-6 text-center">
+                                            <dt class="text-sm font-medium text-gray-500 truncate">Completion Time</dt>
+                                            <dd class="mt-1">
+                                                <div class="text-3xl font-semibold text-gray-700">
+                                                    {% if response.completion_time %}
+                                                        {% with minutes=response.completion_time|floatformat:0|divisibleby:60 seconds=response.completion_time|floatformat:0|modulo:60 %}
+                                                            {% if minutes > 0 %}
+                                                                {{ minutes }}m {{ seconds }}s
+                                                            {% else %}
+                                                                {{ seconds }}s
+                                                            {% endif %}
+                                                        {% endwith %}
+                                                    {% else %}
+                                                        N/A
+                                                    {% endif %}
+                                                </div>
+                                                <div class="mt-4 text-sm text-gray-500">
+                                                    {% if response.completion_time and avg_completion_time %}
+                                                        {% if response.completion_time < avg_completion_time %}
+                                                            {{ avg_completion_time|subtract:response.completion_time|floatformat:0 }}s faster than average
+                                                        {% elif response.completion_time > avg_completion_time %}
+                                                            {{ response.completion_time|subtract:avg_completion_time|floatformat:0 }}s slower than average
+                                                        {% else %}
+                                                            Same as average completion time
+                                                        {% endif %}
+                                                    {% else %}
+                                                        Completion time not available
+                                                    {% endif %}
+                                                </div>
+                                            </dd>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Score Breakdown -->
+                        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+                            <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-primary-50 to-white">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900">Score Breakdown</h3>
+                                <p class="mt-1 max-w-2xl text-sm text-gray-500">Detailed scoring by question category.</p>
+                            </div>
+                            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                                <!-- Score Chart -->
+                                <div class="h-80 mb-6">
+                                    <canvas id="scoreBreakdownChart"></canvas>
+                                </div>
+
+                                <!-- Score Table -->
+                                <div class="mt-6 overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                                    <table class="min-w-full divide-y divide-gray-300">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Question</th>
+                                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Answer</th>
+                                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Score</th>
+                                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Weight</th>
+                                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Weighted Score</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-200 bg-white">
+                                            {% for answer in answers %}
+                                                {% if answer.question.is_scored %}
+                                                    <tr>
+                                                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ answer.question.text }}</td>
+                                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                            {% if answer.question.question_type == 'text' or answer.question.question_type == 'textarea' %}
+                                                                <span class="text-gray-400 italic">Text response</span>
+                                                            {% elif answer.question.question_type == 'single_choice' %}
+                                                                {{ answer.selected_choice.text|default:"No selection" }}
+                                                            {% elif answer.question.question_type == 'multiple_choice' %}
+                                                                {% for choice in answer.multiple_choices.all %}
+                                                                    {{ choice.text }}{% if not forloop.last %}, {% endif %}
+                                                                {% empty %}
+                                                                    No selections
+                                                                {% endfor %}
+                                                            {% elif answer.question.question_type == 'number' or answer.question.question_type == 'scale' %}
+                                                                {{ answer.numeric_value|floatformat:"-1" }}
+                                                            {% else %}
+                                                                <span class="text-gray-400 italic">Other response type</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                            {{ answer.score|default:"0"|floatformat:"-1" }}
+                                                        </td>
+                                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                            {{ answer.question.scoring_weight|default:"1.0"|floatformat:"-1" }}
+                                                        </td>
+                                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                            {% if answer.score %}
+                                                                {{ answer.score|multiply:answer.question.scoring_weight|floatformat:"-1" }}
+                                                            {% else %}
+                                                                0
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                {% endif %}
+                                            {% empty %}
+                                                <tr>
+                                                    <td colspan="5" class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-400 italic sm:pl-6">No scored questions found</td>
+                                                </tr>
+                                            {% endfor %}
+                                            <tr class="bg-gray-50">
+                                                <td colspan="4" class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">Total Score</td>
+                                                <td class="whitespace-nowrap px-3 py-4 text-sm font-bold text-gray-900">{{ response.score|default:"0"|floatformat:"-1" }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Comparative Analysis -->
+                        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+                            <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-primary-50 to-white">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900">Comparative Analysis</h3>
+                                <p class="mt-1 max-w-2xl text-sm text-gray-500">How this response compares to others.</p>
+                            </div>
+                            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                                <div class="h-80">
+                                    <canvas id="comparativeChart"></canvas>
+                                </div>
+
+                                <div class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                                    <div class="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200">
+                                        <div class="px-4 py-5 sm:p-6">
+                                            <dt class="text-sm font-medium text-gray-500 truncate">Percentile Rank</dt>
+                                            <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                                                {{ percentile_rank|default:"N/A" }}
+                                            </dd>
+                                            <dd class="mt-2 text-sm text-gray-500">
+                                                {% if percentile_rank %}
+                                                    This score is higher than {{ percentile_rank }}% of all responses
+                                                {% else %}
+                                                    Not enough data to calculate percentile
+                                                {% endif %}
+                                            </dd>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200">
+                                        <div class="px-4 py-5 sm:p-6">
+                                            <dt class="text-sm font-medium text-gray-500 truncate">Average Score</dt>
+                                            <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                                                {{ avg_score|default:"N/A"|floatformat:"-1" }}
+                                            </dd>
+                                            <dd class="mt-2 text-sm text-gray-500">
+                                                {% if avg_score and response.score %}
+                                                    {% if response.score > avg_score %}
+                                                        {{ response.score|subtract:avg_score|floatformat:"-1" }} points above average
+                                                    {% elif response.score < avg_score %}
+                                                        {{ avg_score|subtract:response.score|floatformat:"-1" }} points below average
+                                                    {% else %}
+                                                        Same as average score
+                                                    {% endif %}
+                                                {% else %}
+                                                    Not enough data to compare
+                                                {% endif %}
+                                            </dd>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200">
+                                        <div class="px-4 py-5 sm:p-6">
+                                            <dt class="text-sm font-medium text-gray-500 truncate">Risk Distribution</dt>
+                                            <dd class="mt-1">
+                                                <div class="flex items-center justify-between">
+                                                    <div class="flex items-center">
+                                                        <span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-1"></span>
+                                                        <span class="text-xs text-gray-500">Low</span>
+                                                    </div>
+                                                    <div class="flex items-center">
+                                                        <span class="inline-block w-3 h-3 rounded-full bg-yellow-500 mr-1"></span>
+                                                        <span class="text-xs text-gray-500">Medium</span>
+                                                    </div>
+                                                    <div class="flex items-center">
+                                                        <span class="inline-block w-3 h-3 rounded-full bg-orange-500 mr-1"></span>
+                                                        <span class="text-xs text-gray-500">High</span>
+                                                    </div>
+                                                    <div class="flex items-center">
+                                                        <span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span>
+                                                        <span class="text-xs text-gray-500">Critical</span>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-2 h-24">
+                                                    <canvas id="riskDistributionChart"></canvas>
+                                                </div>
+                                            </dd>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Visualizations -->
+                        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+                            <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-primary-50 to-white">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900">Advanced Visualizations</h3>
+                                <p class="mt-1 max-w-2xl text-sm text-gray-500">Additional insights through advanced data visualization.</p>
+                            </div>
+                            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                                <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                                    <!-- Radar Chart -->
+                                    <div>
+                                        <h4 class="text-base font-medium text-gray-900 mb-4">Category Performance</h4>
+                                        <div class="h-80">
+                                            <canvas id="radarChart"></canvas>
+                                        </div>
+                                    </div>
+
+                                    <!-- Response Time Analysis -->
+                                    <div>
+                                        <h4 class="text-base font-medium text-gray-900 mb-4">Response Time Analysis</h4>
+                                        <div class="h-80">
+                                            <canvas id="responseTimeChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Correlation Analysis -->
+                        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                            <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-primary-50 to-white">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900">Correlation Analysis</h3>
+                                <p class="mt-1 max-w-2xl text-sm text-gray-500">Relationships between different aspects of the response.</p>
+                            </div>
+                            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                                <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                                    <!-- Correlation Heatmap -->
+                                    <div>
+                                        <h4 class="text-base font-medium text-gray-900 mb-4">Question Correlation Heatmap</h4>
+                                        <div class="h-80">
+                                            <canvas id="correlationHeatmap"></canvas>
+                                        </div>
+                                    </div>
+
+                                    <!-- Correlation Insights -->
+                                    <div>
+                                        <h4 class="text-base font-medium text-gray-900 mb-4">Key Correlations</h4>
+                                        <div class="bg-gray-50 rounded-lg p-4 h-80 overflow-auto">
+                                            <ul class="space-y-3">
+                                                {% if correlation_insights %}
+                                                    {% for insight in correlation_insights %}
+                                                        <li class="flex items-start">
+                                                            <div class="flex-shrink-0">
+                                                                <span class="inline-flex items-center justify-center h-6 w-6 rounded-full
+                                                                    {% if insight.strength == 'strong' %}bg-primary-100 text-primary-600
+                                                                    {% elif insight.strength == 'moderate' %}bg-yellow-100 text-yellow-600
+                                                                    {% else %}bg-gray-100 text-gray-600{% endif %}">
+                                                                    <i class="fas fa-link text-xs"></i>
+                                                                </span>
+                                                            </div>
+                                                            <div class="ml-3">
+                                                                <p class="text-sm font-medium text-gray-900">{{ insight.description }}</p>
+                                                                <p class="text-xs text-gray-500">
+                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                                                        {% if insight.strength == 'strong' %}bg-primary-100 text-primary-800
+                                                                        {% elif insight.strength == 'moderate' %}bg-yellow-100 text-yellow-800
+                                                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                                        {{ insight.strength|title }} correlation
+                                                                    </span>
+                                                                </p>
+                                                            </div>
+                                                        </li>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <li class="text-sm text-gray-500 italic">
+                                                        Not enough data to identify correlations.
+                                                    </li>
+                                                {% endif %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap justify-between items-center gap-4 mt-8">
+            <div class="flex flex-wrap gap-3">
+                <a href="{% url 'feedback:response_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300">
+                    <i class="fas fa-arrow-left mr-2"></i> Back to Responses
+                </a>
+                <a href="{% url 'surveys:survey_detail' pk=response.survey.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300">
+                    <i class="fas fa-clipboard-list mr-2"></i> View Questionnaire
+                </a>
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+                {% if not response.analysis %}
+                    <a href="{% url 'feedback:generate_analysis' pk=response.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300">
+                        <i class="fas fa-brain mr-2"></i> Generate Analysis
+                    </a>
+                {% endif %}
+                <a href="{% url 'feedback:export_response' pk=response.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300">
+                    <i class="fas fa-file-export mr-2"></i> Export
+                </a>
+                <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300">
+                    <i class="fas fa-print mr-2"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.2.0/dist/chartjs-chart-matrix.min.js"></script>
+<script>
+    // Fallback for Alpine.js
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof Alpine === 'undefined') {
+            console.log('Alpine.js not loaded, using fallback tab functionality');
+
+            // Get all tab buttons and content
+            const tabButtons = document.querySelectorAll('[class*="rounded-md text-sm font-medium"]');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            // Set default active tab
+            let activeTab = 'information';
+
+            // Function to update active tab
+            function setActiveTab(tabId) {
+                // Update tab buttons
+                tabButtons.forEach(button => {
+                    if (button.textContent.trim().toLowerCase().includes(tabId.toLowerCase())) {
+                        button.classList.add('bg-white', 'text-primary-700', 'shadow-sm');
+                        button.classList.remove('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-200');
+                    } else {
+                        button.classList.remove('bg-white', 'text-primary-700', 'shadow-sm');
+                        button.classList.add('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-200');
+                    }
+                });
+
+                // Update tab contents
+                tabContents.forEach(content => {
+                    if (content.classList.contains(tabId) ||
+                        (tabId === 'information' && content.querySelector('h2').textContent.includes('Response Information')) ||
+                        (tabId === 'answers' && content.querySelector('h2').textContent.includes('Answers')) ||
+                        (tabId === 'analysis' && content.querySelector('h2').textContent.includes('Analysis')) ||
+                        (tabId === 'score' && content.querySelector('h2').textContent.includes('Score'))) {
+                        content.classList.remove('hidden');
+
+                        // Initialize charts if this is the score tab
+                        if (tabId === 'score') {
+                            initScoreCharts();
+                        }
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+            }
+
+            // Set initial active tab
+            setActiveTab(activeTab);
+
+            // Add click event listeners to tab buttons
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const tabText = this.textContent.trim().toLowerCase();
+                    if (tabText.includes('information')) {
+                        setActiveTab('information');
+                    } else if (tabText.includes('answers')) {
+                        setActiveTab('answers');
+                    } else if (tabText.includes('analysis')) {
+                        setActiveTab('analysis');
+                    } else if (tabText.includes('score')) {
+                        setActiveTab('score');
+                    }
+                });
+            });
+        }
+    });
+
+    // Print functionality
+    document.querySelector('button i.fa-print').parentElement.addEventListener('click', function() {
+        window.print();
+    });
+
+    // Initialize charts for the Score tab
+    function initScoreCharts() {
+        // Check if charts are already initialized
+        if (window.scoreChartsInitialized) return;
+
+        // Score Breakdown Chart
+        const scoreBreakdownCtx = document.getElementById('scoreBreakdownChart');
+        if (scoreBreakdownCtx) {
+            new Chart(scoreBreakdownCtx, {
+                type: 'bar',
+                data: {
+                    labels: {{ score_breakdown_labels|default:"[]"|safe }},
+                    datasets: [{
+                        label: 'Score by Category',
+                        data: {{ score_breakdown_data|default:"[]"|safe }},
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(245, 158, 11, 0.7)',
+                            'rgba(239, 68, 68, 0.7)',
+                            'rgba(139, 92, 246, 0.7)',
+                            'rgba(236, 72, 153, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(245, 158, 11, 1)',
+                            'rgba(239, 68, 68, 1)',
+                            'rgba(139, 92, 246, 1)',
+                            'rgba(236, 72, 153, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Score'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Question Category'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Score: ${context.raw}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Comparative Chart
+        const comparativeCtx = document.getElementById('comparativeChart');
+        if (comparativeCtx) {
+            new Chart(comparativeCtx, {
+                type: 'line',
+                data: {
+                    labels: {{ comparative_labels|default:"[]"|safe }},
+                    datasets: [{
+                        label: 'Your Score',
+                        data: [{{ response.score|default:0 }}],
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }, {
+                        label: 'Average Score',
+                        data: {{ comparative_data|default:"[]"|safe }},
+                        backgroundColor: 'rgba(156, 163, 175, 0.2)',
+                        borderColor: 'rgba(156, 163, 175, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(156, 163, 175, 1)',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Score'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time Period'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Risk Distribution Chart
+        const riskDistributionCtx = document.getElementById('riskDistributionChart');
+        if (riskDistributionCtx) {
+            new Chart(riskDistributionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Low', 'Medium', 'High', 'Critical'],
+                    datasets: [{
+                        data: {{ risk_distribution|default:"[25, 40, 25, 10]"|safe }},
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(245, 158, 11, 0.7)',
+                            'rgba(249, 115, 22, 0.7)',
+                            'rgba(239, 68, 68, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(245, 158, 11, 1)',
+                            'rgba(249, 115, 22, 1)',
+                            'rgba(239, 68, 68, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Radar Chart for Category Performance
+        const radarCtx = document.getElementById('radarChart');
+        if (radarCtx) {
+            new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: {{ score_breakdown_labels|default:"[]"|safe }},
+                    datasets: [{
+                        label: 'Your Performance',
+                        data: {{ score_breakdown_data|default:"[]"|safe }},
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(59, 130, 246, 1)'
+                    }, {
+                        label: 'Average Performance',
+                        data: {{ category_averages|default:"[]"|safe }},
+                        backgroundColor: 'rgba(156, 163, 175, 0.2)',
+                        borderColor: 'rgba(156, 163, 175, 1)',
+                        pointBackgroundColor: 'rgba(156, 163, 175, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(156, 163, 175, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    elements: {
+                        line: {
+                            borderWidth: 3
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0
+                        }
+                    }
+                }
+            });
+        }
+
+        // Response Time Analysis Chart
+        const responseTimeCtx = document.getElementById('responseTimeChart');
+        if (responseTimeCtx) {
+            // This is a placeholder - in a real implementation, you would get actual response time data
+            new Chart(responseTimeCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8', 'Q9', 'Q10'],
+                    datasets: [{
+                        label: 'Time Spent (seconds)',
+                        data: {{ question_times|default:"[15, 22, 8, 30, 12, 18, 25, 10, 20, 15]"|safe }},
+                        backgroundColor: 'rgba(139, 92, 246, 0.7)',
+                        borderColor: 'rgba(139, 92, 246, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Average Time (seconds)',
+                        data: {{ avg_question_times|default:"[12, 18, 10, 25, 15, 20, 22, 12, 18, 14]"|safe }},
+                        type: 'line',
+                        backgroundColor: 'rgba(156, 163, 175, 0.2)',
+                        borderColor: 'rgba(156, 163, 175, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(156, 163, 175, 1)',
+                        pointRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Time (seconds)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Question'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Correlation Heatmap
+        const correlationCtx = document.getElementById('correlationHeatmap');
+        if (correlationCtx) {
+            // This is a placeholder - in a real implementation, you would calculate actual correlation data
+            const labels = ['Q1', 'Q2', 'Q3', 'Q4', 'Q5'];
+            const correlationData = [
+                [1.0, 0.7, 0.2, -0.3, 0.1],
+                [0.7, 1.0, 0.5, -0.1, 0.3],
+                [0.2, 0.5, 1.0, 0.4, 0.6],
+                [-0.3, -0.1, 0.4, 1.0, 0.2],
+                [0.1, 0.3, 0.6, 0.2, 1.0]
+            ];
+
+            new Chart(correlationCtx, {
+                type: 'matrix',
+                data: {
+                    datasets: [{
+                        label: 'Correlation Matrix',
+                        data: generateHeatmapData(labels, correlationData),
+                        backgroundColor: function(context) {
+                            const value = context.dataset.data[context.dataIndex].v;
+                            const alpha = 0.8;
+
+                            if (value > 0) {
+                                return `rgba(59, 130, 246, ${Math.abs(value) * alpha})`;
+                            } else if (value < 0) {
+                                return `rgba(239, 68, 68, ${Math.abs(value) * alpha})`;
+                            } else {
+                                return 'rgba(156, 163, 175, 0.2)';
+                            }
+                        },
+                        borderColor: function(context) {
+                            const value = context.dataset.data[context.dataIndex].v;
+
+                            if (value > 0) {
+                                return 'rgba(59, 130, 246, 1)';
+                            } else if (value < 0) {
+                                return 'rgba(239, 68, 68, 1)';
+                            } else {
+                                return 'rgba(156, 163, 175, 1)';
+                            }
+                        },
+                        borderWidth: 1,
+                        width: ({ chart }) => (chart.chartArea || {}).width / labels.length - 1,
+                        height: ({ chart }) => (chart.chartArea || {}).height / labels.length - 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                title: function() {
+                                    return '';
+                                },
+                                label: function(context) {
+                                    const data = context.dataset.data[context.dataIndex];
+                                    return `${data.x} vs ${data.y}: ${data.v.toFixed(2)}`;
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'category',
+                            labels: labels,
+                            offset: true,
+                            ticks: {
+                                display: true
+                            },
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            type: 'category',
+                            labels: labels,
+                            offset: true,
+                            ticks: {
+                                display: true
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Mark charts as initialized
+        window.scoreChartsInitialized = true;
+    }
+
+    // Helper function to generate heatmap data
+    function generateHeatmapData(labels, correlationData) {
+        const result = [];
+
+        for (let i = 0; i < labels.length; i++) {
+            for (let j = 0; j < labels.length; j++) {
+                result.push({
+                    x: labels[i],
+                    y: labels[j],
+                    v: correlationData[i][j]
+                });
+            }
+        }
+
+        return result;
+    }
+
+    // Initialize charts if score tab is active by default
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.querySelector('[x-show="activeTab === \'score\'"]') &&
+            !document.querySelector('[x-show="activeTab === \'score\'"]').classList.contains('hidden')) {
+            initScoreCharts();
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

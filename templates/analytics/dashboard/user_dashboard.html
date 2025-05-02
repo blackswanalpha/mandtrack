@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}User Dashboard - {{ user_profile.get_full_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .dashboard-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .dashboard-subtitle {
+        font-size: 1.1rem;
+        color: #666;
+    }
+    
+    .dashboard-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .stat-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 15px;
+        flex: 1;
+        min-width: 200px;
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2196F3;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .questionnaire-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    
+    .questionnaire-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .questionnaire-header {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .questionnaire-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    
+    .questionnaire-category {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .questionnaire-body {
+        padding: 15px;
+    }
+    
+    .questionnaire-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+    }
+    
+    .questionnaire-stat {
+        text-align: center;
+    }
+    
+    .questionnaire-stat-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2196F3;
+    }
+    
+    .questionnaire-stat-label {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .score-chart {
+        height: 100px;
+        margin-bottom: 15px;
+    }
+    
+    .questionnaire-footer {
+        padding: 15px;
+        border-top: 1px solid #eee;
+        text-align: right;
+    }
+    
+    .risk-low {
+        color: #4CAF50;
+    }
+    
+    .risk-medium {
+        color: #FFC107;
+    }
+    
+    .risk-high {
+        color: #F44336;
+    }
+    
+    .risk-critical {
+        color: #9C27B0;
+    }
+    
+    .progress {
+        height: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .progress-bar-low {
+        background-color: #4CAF50;
+    }
+    
+    .progress-bar-medium {
+        background-color: #FFC107;
+    }
+    
+    .progress-bar-high {
+        background-color: #F44336;
+    }
+    
+    .progress-bar-critical {
+        background-color: #9C27B0;
+    }
+    
+    .user-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .user-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background-color: #e0e0e0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 20px;
+        font-size: 2rem;
+        color: #757575;
+    }
+    
+    .user-details {
+        flex-grow: 1;
+    }
+    
+    .user-name {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    
+    .user-email {
+        font-size: 1rem;
+        color: #666;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="dashboard-header">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        {{ user_profile.get_initials }}
+                    </div>
+                    <div class="user-details">
+                        <h1 class="user-name">{{ user_profile.get_full_name }}</h1>
+                        <p class="user-email">{{ user_profile.email }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{% url 'dashboard:index' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+        
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-value">{{ total_responses }}</div>
+                <div class="stat-label">Total Responses</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ completion_rate|floatformat:0 }}%</div>
+                <div class="stat-label">Completion Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ questionnaire_stats|length }}</div>
+                <div class="stat-label">Questionnaires Taken</div>
+            </div>
+        </div>
+    </div>
+    
+    <h2 class="h4 mb-4">Questionnaire History</h2>
+    
+    <div class="row">
+        {% for stat in questionnaire_stats %}
+            <div class="col-md-6 col-lg-4">
+                <div class="questionnaire-card">
+                    <div class="questionnaire-header">
+                        <h3 class="questionnaire-title">{{ stat.questionnaire.title }}</h3>
+                        <div class="questionnaire-category">
+                            <span class="badge bg-secondary">{{ stat.questionnaire.category|title }}</span>
+                        </div>
+                    </div>
+                    <div class="questionnaire-body">
+                        <div class="questionnaire-stats">
+                            <div class="questionnaire-stat">
+                                <div class="questionnaire-stat-value">{{ stat.responses }}</div>
+                                <div class="questionnaire-stat-label">Responses</div>
+                            </div>
+                            <div class="questionnaire-stat">
+                                <div class="questionnaire-stat-value">{{ stat.avg_score|floatformat:1 }}</div>
+                                <div class="questionnaire-stat-label">Avg Score</div>
+                            </div>
+                            <div class="questionnaire-stat">
+                                <div class="questionnaire-stat-value risk-{% if stat.risk_level == 'Minimal' or stat.risk_level == 'Low' or stat.risk_level == 'No Insomnia' %}low{% elif stat.risk_level == 'Mild' or stat.risk_level == 'Moderate' or stat.risk_level == 'Subthreshold' %}medium{% else %}high{% endif %}">
+                                    {{ stat.latest_score|floatformat:0 }}
+                                </div>
+                                <div class="questionnaire-stat-label">Latest Score</div>
+                            </div>
+                        </div>
+                        
+                        <div class="score-info mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Risk Level:</span>
+                                <span class="risk-{% if stat.risk_level == 'Minimal' or stat.risk_level == 'Low' or stat.risk_level == 'No Insomnia' %}low{% elif stat.risk_level == 'Mild' or stat.risk_level == 'Moderate' or stat.risk_level == 'Subthreshold' %}medium{% else %}high{% endif %}">
+                                    {{ stat.risk_level }}
+                                </span>
+                            </div>
+                            
+                            {% if stat.questionnaire.scoringconfig_set.first %}
+                                {% with scoring=stat.questionnaire.scoringconfig_set.first %}
+                                    <div class="progress">
+                                        {% with max_score=scoring.max_score %}
+                                            <div class="progress-bar progress-bar-{% if stat.risk_level == 'Minimal' or stat.risk_level == 'Low' or stat.risk_level == 'No Insomnia' %}low{% elif stat.risk_level == 'Mild' or stat.risk_level == 'Moderate' or stat.risk_level == 'Subthreshold' %}medium{% else %}high{% endif %}" 
+                                                role="progressbar" 
+                                                style="width: {{ stat.latest_score|div:max_score|multiply:100 }}%" 
+                                                aria-valuenow="{{ stat.latest_score }}" 
+                                                aria-valuemin="0" 
+                                                aria-valuemax="{{ max_score }}">
+                                            </div>
+                                        {% endwith %}
+                                    </div>
+                                {% endwith %}
+                            {% endif %}
+                            
+                            <div class="small text-muted">
+                                Last completed: {{ stat.questionnaire.responses.filter.first.created_at|date:"F j, Y" }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="questionnaire-footer">
+                        <a href="{% url 'analytics:questionnaire_dashboard' questionnaire_id=stat.questionnaire.id %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-chart-bar me-1"></i> View Analytics
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    No questionnaire responses found for this user.
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+</script>
+{% endblock %}

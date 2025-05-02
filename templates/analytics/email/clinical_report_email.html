@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Clinical Report: {{ questionnaire.title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .logo {
+            max-height: 60px;
+            margin-bottom: 10px;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196F3;
+            margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        .content {
+            margin-bottom: 20px;
+        }
+        
+        .section {
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .patient-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .patient-info-row {
+            display: flex;
+            margin-bottom: 5px;
+        }
+        
+        .patient-info-label {
+            font-weight: bold;
+            width: 150px;
+        }
+        
+        .patient-info-value {
+            flex-grow: 1;
+        }
+        
+        .risk-low {
+            color: #4CAF50;
+        }
+        
+        .risk-medium {
+            color: #FFC107;
+        }
+        
+        .risk-high {
+            color: #F44336;
+        }
+        
+        .risk-critical {
+            color: #9C27B0;
+        }
+        
+        .message {
+            background-color: #f0f7ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .button {
+            display: inline-block;
+            background-color: #2196F3;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        
+        .button:hover {
+            background-color: #0d8bf2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://mindtrack.barberianspa.com/static/img/logo.png" alt="MindTrack Logo" class="logo">
+            <div class="title">Clinical Report</div>
+            <div class="subtitle">{{ questionnaire.title }}</div>
+        </div>
+        
+        {% if additional_message %}
+            <div class="message">
+                <p>{{ additional_message }}</p>
+                <p>- {{ sender_name }}</p>
+            </div>
+        {% endif %}
+        
+        <div class="content">
+            <p>Dear Recipient,</p>
+            
+            <p>Attached is a clinical report for the following assessment:</p>
+            
+            <div class="patient-info">
+                <div class="patient-info-row">
+                    <div class="patient-info-label">Patient Name:</div>
+                    <div class="patient-info-value">{{ response.patient_name }}</div>
+                </div>
+                <div class="patient-info-row">
+                    <div class="patient-info-label">Patient Email:</div>
+                    <div class="patient-info-value">{{ response.patient_email }}</div>
+                </div>
+                <div class="patient-info-row">
+                    <div class="patient-info-label">Assessment:</div>
+                    <div class="patient-info-value">{{ questionnaire.title }}</div>
+                </div>
+                <div class="patient-info-row">
+                    <div class="patient-info-label">Score:</div>
+                    <div class="patient-info-value">{{ response.score }}</div>
+                </div>
+                <div class="patient-info-row">
+                    <div class="patient-info-label">Risk Level:</div>
+                    <div class="patient-info-value risk-{{ response.risk_level }}">{{ response.get_risk_level_display }}</div>
+                </div>
+                <div class="patient-info-row">
+                    <div class="patient-info-label">Completed:</div>
+                    <div class="patient-info-value">{{ response.created_at|date:"F j, Y, g:i a" }}</div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Executive Summary</div>
+                <p>{{ content.executive_summary }}</p>
+            </div>
+            
+            <p>Please find the complete clinical report attached to this email as a PDF document.</p>
+            
+            <p>The report includes:</p>
+            <ul>
+                <li>Assessment details</li>
+                <li>Detailed results</li>
+                <li>Clinical interpretation</li>
+                <li>Recommendations</li>
+                <li>Follow-up plan</li>
+            </ul>
+            
+            <p>If you have any questions about this report, please contact us.</p>
+            
+            <p>Best regards,<br>
+            {{ sender_name }}<br>
+            MindTrack Clinical Report System</p>
+        </div>
+        
+        <div class="footer">
+            <p>This report was generated by MindTrack AI Clinical Report System.</p>
+            <p>&copy; {% now "Y" %} MindTrack. All rights reserved.</p>
+            <p>This report is confidential and intended for professional use only.</p>
+        </div>
+    </div>
+</body>
+</html>

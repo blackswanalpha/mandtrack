@@ -273,6 +273,9 @@ LOGGING = {
     },
 }
 
+# AI API Keys
+GEMINI_API_KEY = env('GEMINI_API_KEY', default='AIzaSyAp5usIOWlm16BgN1tfGje4aD0YKVa1Mjc')
+
 # Security settings for production
 if not DEBUG:
     # HTTPS settings

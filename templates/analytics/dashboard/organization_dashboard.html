@@ -1,0 +1,457 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Organization Dashboard - {{ organization.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .dashboard-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .dashboard-subtitle {
+        font-size: 1.1rem;
+        color: #666;
+    }
+    
+    .dashboard-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .stat-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 15px;
+        flex: 1;
+        min-width: 200px;
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2196F3;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .questionnaire-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    
+    .questionnaire-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .questionnaire-header {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .questionnaire-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    
+    .questionnaire-category {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .questionnaire-body {
+        padding: 15px;
+    }
+    
+    .questionnaire-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+    }
+    
+    .questionnaire-stat {
+        text-align: center;
+    }
+    
+    .questionnaire-stat-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2196F3;
+    }
+    
+    .questionnaire-stat-label {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .questionnaire-footer {
+        padding: 15px;
+        border-top: 1px solid #eee;
+        text-align: right;
+    }
+    
+    .risk-distribution {
+        display: flex;
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+    
+    .risk-low {
+        background-color: #4CAF50;
+    }
+    
+    .risk-medium {
+        background-color: #FFC107;
+    }
+    
+    .risk-high {
+        background-color: #F44336;
+    }
+    
+    .risk-critical {
+        background-color: #9C27B0;
+    }
+    
+    .risk-none {
+        background-color: #9E9E9E;
+    }
+    
+    .risk-legend {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin-right: 10px;
+    }
+    
+    .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+        margin-right: 5px;
+    }
+    
+    .organization-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .organization-logo {
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        background-color: #e0e0e0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 20px;
+        font-size: 2rem;
+        color: #757575;
+    }
+    
+    .organization-details {
+        flex-grow: 1;
+    }
+    
+    .organization-name {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    
+    .organization-description {
+        font-size: 1rem;
+        color: #666;
+    }
+    
+    .tab-content {
+        padding-top: 20px;
+    }
+    
+    .nav-tabs .nav-link {
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link.active {
+        font-weight: 700;
+        color: #2196F3;
+    }
+    
+    .member-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        padding: 15px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .member-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #e0e0e0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-size: 1.2rem;
+        color: #757575;
+    }
+    
+    .member-info {
+        flex-grow: 1;
+    }
+    
+    .member-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 3px;
+    }
+    
+    .member-email {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .member-role {
+        font-size: 0.8rem;
+        color: #2196F3;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="dashboard-header">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="organization-info">
+                    <div class="organization-logo">
+                        {{ organization.name|slice:":1" }}
+                    </div>
+                    <div class="organization-details">
+                        <h1 class="organization-name">{{ organization.name }}</h1>
+                        <p class="organization-description">{{ organization.description }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{% url 'dashboard:index' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+        
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-value">{{ total_questionnaires }}</div>
+                <div class="stat-label">Questionnaires</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ total_responses }}</div>
+                <div class="stat-label">Total Responses</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ organization.members.count }}</div>
+                <div class="stat-label">Members</div>
+            </div>
+        </div>
+    </div>
+    
+    <ul class="nav nav-tabs" id="organizationTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="questionnaires-tab" data-bs-toggle="tab" data-bs-target="#questionnaires" type="button" role="tab" aria-controls="questionnaires" aria-selected="true">
+                <i class="fas fa-clipboard-list me-1"></i> Questionnaires
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="members-tab" data-bs-toggle="tab" data-bs-target="#members" type="button" role="tab" aria-controls="members" aria-selected="false">
+                <i class="fas fa-users me-1"></i> Members
+            </button>
+        </li>
+    </ul>
+    
+    <div class="tab-content" id="organizationTabsContent">
+        <!-- Questionnaires Tab -->
+        <div class="tab-pane fade show active" id="questionnaires" role="tabpanel" aria-labelledby="questionnaires-tab">
+            <div class="row">
+                {% for stat in questionnaire_stats %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="questionnaire-card">
+                            <div class="questionnaire-header">
+                                <h3 class="questionnaire-title">{{ stat.questionnaire.title }}</h3>
+                                <div class="questionnaire-category">
+                                    <span class="badge bg-secondary">{{ stat.questionnaire.category|title }}</span>
+                                </div>
+                            </div>
+                            <div class="questionnaire-body">
+                                <div class="questionnaire-stats">
+                                    <div class="questionnaire-stat">
+                                        <div class="questionnaire-stat-value">{{ stat.responses }}</div>
+                                        <div class="questionnaire-stat-label">Responses</div>
+                                    </div>
+                                    <div class="questionnaire-stat">
+                                        <div class="questionnaire-stat-value">{{ stat.avg_score|floatformat:1 }}</div>
+                                        <div class="questionnaire-stat-label">Avg Score</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="risk-distribution-container">
+                                    <div class="small mb-2">Risk Level Distribution:</div>
+                                    <div class="risk-distribution">
+                                        {% with total=stat.responses %}
+                                            {% with low=stat.risk_levels.low|default:0 medium=stat.risk_levels.medium|default:0 high=stat.risk_levels.high|default:0 critical=stat.risk_levels.critical|default:0 none=stat.risk_levels.none|default:0 %}
+                                                {% if low %}
+                                                    <div class="risk-low" style="width: {{ low|div:total|multiply:100 }}%"></div>
+                                                {% endif %}
+                                                {% if medium %}
+                                                    <div class="risk-medium" style="width: {{ medium|div:total|multiply:100 }}%"></div>
+                                                {% endif %}
+                                                {% if high %}
+                                                    <div class="risk-high" style="width: {{ high|div:total|multiply:100 }}%"></div>
+                                                {% endif %}
+                                                {% if critical %}
+                                                    <div class="risk-critical" style="width: {{ critical|div:total|multiply:100 }}%"></div>
+                                                {% endif %}
+                                                {% if none %}
+                                                    <div class="risk-none" style="width: {{ none|div:total|multiply:100 }}%"></div>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endwith %}
+                                    </div>
+                                    <div class="risk-legend">
+                                        {% if stat.risk_levels.low|default:0 > 0 %}
+                                            <div class="legend-item">
+                                                <div class="legend-color risk-low"></div>
+                                                <span>Low ({{ stat.risk_levels.low }})</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if stat.risk_levels.medium|default:0 > 0 %}
+                                            <div class="legend-item">
+                                                <div class="legend-color risk-medium"></div>
+                                                <span>Medium ({{ stat.risk_levels.medium }})</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if stat.risk_levels.high|default:0 > 0 %}
+                                            <div class="legend-item">
+                                                <div class="legend-color risk-high"></div>
+                                                <span>High ({{ stat.risk_levels.high }})</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if stat.risk_levels.critical|default:0 > 0 %}
+                                            <div class="legend-item">
+                                                <div class="legend-color risk-critical"></div>
+                                                <span>Critical ({{ stat.risk_levels.critical }})</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="questionnaire-footer">
+                                <a href="{% url 'analytics:questionnaire_dashboard' questionnaire_id=stat.questionnaire.id %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-chart-bar me-1"></i> View Analytics
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            No questionnaires found for this organization.
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Members Tab -->
+        <div class="tab-pane fade" id="members" role="tabpanel" aria-labelledby="members-tab">
+            <div class="row">
+                {% for member in organization.members.all %}
+                    <div class="col-md-6">
+                        <div class="member-card">
+                            <div class="member-avatar">
+                                {{ member.user.get_initials }}
+                            </div>
+                            <div class="member-info">
+                                <div class="member-name">{{ member.user.get_full_name }}</div>
+                                <div class="member-email">{{ member.user.email }}</div>
+                            </div>
+                            <div class="member-role">
+                                {{ member.role|title }}
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            No members found for this organization.
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+    
+    // Keep the active tab after page refresh
+    $(document).ready(function() {
+        // Check for the active tab in the URL hash
+        var hash = window.location.hash;
+        if (hash) {
+            $('#organizationTabs a[href="' + hash + '"]').tab('show');
+        }
+        
+        // Update the URL hash when a tab is clicked
+        $('#organizationTabs a').on('click', function(e) {
+            window.location.hash = $(this).attr('href');
+        });
+    });
+</script>
+{% endblock %}

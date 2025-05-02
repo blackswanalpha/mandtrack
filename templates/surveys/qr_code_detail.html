@@ -5,7 +5,7 @@
 {% block page_title %}QR Code: {{ qr_code.name }}{% endblock %}
 
 {% block page_actions %}
-<a href="{% url 'surveys:qr_code_list' %}" class="btn btn-sm btn-secondary transition-all">
+<a href="{% url 'surveys:qr_code_list_alt' %}" class="btn btn-sm btn-secondary transition-all">
     <i class="fas fa-arrow-left me-1"></i> Back to QR Codes
 </a>
 <a href="{{ qr_code.image.url }}" download="qr_code_{{ qr_code.pk }}.png" class="btn btn-sm btn-success transition-all">
@@ -38,7 +38,7 @@
                         </p>
                     </div>
                 </div>
-                
+
                 <div class="row mb-4">
                     <div class="col-md-6">
                         <h5 class="font-weight-bold text-gray-800">Survey</h5>
@@ -53,7 +53,7 @@
                         <p>{{ qr_code.access_count }}</p>
                     </div>
                 </div>
-                
+
                 <div class="row mb-4">
                     <div class="col-md-6">
                         <h5 class="font-weight-bold text-gray-800">Created By</h5>
@@ -64,7 +64,7 @@
                         <p>{{ qr_code.created_at|date:"F d, Y H:i" }}</p>
                     </div>
                 </div>
-                
+
                 {% if qr_code.expires_at %}
                 <div class="row mb-4">
                     <div class="col-md-6">
@@ -73,14 +73,14 @@
                     </div>
                 </div>
                 {% endif %}
-                
+
                 {% if qr_code.description %}
                 <div class="mb-4">
                     <h5 class="font-weight-bold text-gray-800">Description</h5>
                     <p>{{ qr_code.description }}</p>
                 </div>
                 {% endif %}
-                
+
                 <div class="mb-4">
                     <h5 class="font-weight-bold text-gray-800">URL</h5>
                     <p>
@@ -92,7 +92,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-lg-4">
         <div class="card shadow mb-4 transition-all hover:shadow-lg stagger-item">
             <div class="card-header py-3">
@@ -103,7 +103,7 @@
                     <div class="bg-white p-4 inline-block border border-gray-200 rounded-lg mb-4">
                         <img src="{{ qr_code.image.url }}" alt="QR Code for {{ qr_code.name }}" class="w-64 h-64 mx-auto">
                     </div>
-                    
+
                     <div>
                         <a href="{{ qr_code.image.url }}" download="qr_code_{{ qr_code.pk }}.png" class="btn btn-success">
                             <i class="fas fa-download me-1"></i> Download QR Code
@@ -116,7 +116,7 @@
                 {% endif %}
             </div>
         </div>
-        
+
         <div class="card shadow mb-4 transition-all hover:shadow-lg stagger-item">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">Actions</h6>

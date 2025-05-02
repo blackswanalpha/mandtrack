@@ -1,0 +1,273 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Batch Analysis Results - MindTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analysis-card {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .analysis-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .tab-transition {
+        transition: all 0.3s ease;
+    }
+    
+    .tab-content {
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    
+    .tab-content.hidden {
+        display: none;
+    }
+    
+    .progress-bar {
+        transition: width 0.5s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-display font-bold text-gray-900">Batch Analysis Results</h1>
+                    <p class="mt-2 text-gray-600">
+                        Results for batch analysis job: {{ job.name }}
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'analytics:batch_analysis_select' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <i class="fas fa-arrow-left mr-2"></i> Back to Batch Analysis
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Job Status Card -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+            <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-primary-50 to-white">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Job Status</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Details about this batch analysis job.</p>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                    <div class="sm:col-span-3">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <span class="inline-flex items-center justify-center h-12 w-12 rounded-md bg-primary-100 text-primary-600">
+                                    <i class="fas fa-tasks text-xl"></i>
+                                </span>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium leading-6 text-gray-900">{{ job.name }}</h3>
+                                <p class="text-sm text-gray-500">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                        {% if job.status == 'completed' %}bg-green-100 text-green-800
+                                        {% elif job.status == 'processing' %}bg-yellow-100 text-yellow-800
+                                        {% elif job.status == 'failed' %}bg-red-100 text-red-800
+                                        {% elif job.status == 'cancelled' %}bg-gray-100 text-gray-800
+                                        {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                        {{ job.status|title }}
+                                    </span>
+                                    <span class="ml-2">{{ job.analysis_type|title }} Analysis</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="sm:col-span-3">
+                        <div class="flex flex-col">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-medium text-gray-700">Progress</span>
+                                <span class="text-sm font-medium text-gray-700">{{ job.progress_percentage }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-primary-600 h-2.5 rounded-full progress-bar" style="width: {{ job.progress_percentage }}%"></div>
+                            </div>
+                            <div class="mt-2 text-xs text-gray-500">
+                                {{ job.processed_responses }} of {{ job.total_responses }} responses processed
+                                {% if job.skipped_responses > 0 %}
+                                    ({{ job.skipped_responses }} skipped)
+                                {% endif %}
+                                {% if job.error_responses > 0 %}
+                                    ({{ job.error_responses }} errors)
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="sm:col-span-2">
+                        <dt class="text-sm font-medium text-gray-500">Created By</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ job.created_by.get_full_name|default:job.created_by.email }}</dd>
+                    </div>
+                    
+                    <div class="sm:col-span-2">
+                        <dt class="text-sm font-medium text-gray-500">Created At</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ job.created_at|date:"M d, Y H:i" }}</dd>
+                    </div>
+                    
+                    <div class="sm:col-span-2">
+                        <dt class="text-sm font-medium text-gray-500">Duration</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ job.duration|default:"N/A" }}</dd>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-4 sm:px-6">
+                <div class="flex justify-between">
+                    <div>
+                        {% if job.status == 'processing' %}
+                            <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                <i class="fas fa-stop mr-2"></i> Cancel Job
+                            </button>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <a href="{% url 'analytics:batch_analysis_aggregate' job_id=job.id %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <i class="fas fa-chart-bar mr-2"></i> View Aggregate Insights
+                        </a>
+                        <div class="relative inline-block text-left ml-2" x-data="{ open: false }">
+                            <div>
+                                <button type="button" @click="open = !open" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" id="export-menu-button" aria-expanded="false" aria-haspopup="true">
+                                    <i class="fas fa-download mr-2"></i> Export
+                                    <i class="fas fa-chevron-down ml-2 -mr-1"></i>
+                                </button>
+                            </div>
+                            <div x-show="open" @click.away="open = false" class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="export-menu-button" tabindex="-1">
+                                <div class="py-1" role="none">
+                                    <a href="{% url 'analytics:batch_analysis_export' job_id=job.id %}?format=json" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem" tabindex="-1">Export as JSON</a>
+                                    <a href="{% url 'analytics:batch_analysis_export' job_id=job.id %}?format=csv" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem" tabindex="-1">Export as CSV</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Analysis Results -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+            <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-primary-50 to-white">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Analysis Results</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Individual analysis results for each response.</p>
+            </div>
+            <div class="border-t border-gray-200">
+                <ul class="divide-y divide-gray-200">
+                    {% for analysis in analyses %}
+                        <li class="analysis-card">
+                            <div class="px-4 py-4 sm:px-6">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="text-lg font-medium text-gray-900">
+                                            {{ analysis.response.survey.title }}
+                                        </h4>
+                                        <p class="text-sm text-gray-500">
+                                            {% if analysis.response.respondent %}
+                                                {{ analysis.response.respondent.get_full_name|default:analysis.response.respondent.email }}
+                                            {% elif analysis.response.patient_name %}
+                                                {{ analysis.response.patient_name }}
+                                            {% elif analysis.response.patient_email %}
+                                                {{ analysis.response.patient_email }}
+                                            {% else %}
+                                                Anonymous
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            {% if analysis.response.status == 'completed' %}bg-green-100 text-green-800
+                                            {% elif analysis.response.status == 'in_progress' %}bg-yellow-100 text-yellow-800
+                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {{ analysis.response.get_status_display }}
+                                        </span>
+                                        
+                                        {% if analysis.response.risk_level != 'none' and analysis.response.risk_level != 'unknown' %}
+                                            <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                {% if analysis.response.risk_level == 'critical' %}bg-red-100 text-red-800
+                                                {% elif analysis.response.risk_level == 'high' %}bg-orange-100 text-orange-800
+                                                {% elif analysis.response.risk_level == 'medium' %}bg-yellow-100 text-yellow-800
+                                                {% elif analysis.response.risk_level == 'low' %}bg-green-100 text-green-800
+                                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                {{ analysis.response.get_risk_level_display }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <h5 class="text-sm font-medium text-gray-900">Summary</h5>
+                                    <p class="mt-1 text-sm text-gray-600">{{ analysis.summary }}</p>
+                                </div>
+                                <div class="mt-4 flex justify-end">
+                                    <a href="{% url 'feedback:response_detail' pk=analysis.response.pk %}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                        <i class="fas fa-eye mr-1"></i> View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </li>
+                    {% empty %}
+                        <li class="px-4 py-5 sm:px-6">
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">No analysis results available yet.</p>
+                                {% if job.status == 'processing' %}
+                                    <p class="text-sm text-gray-500 mt-2">The analysis is still in progress. Please check back later.</p>
+                                {% elif job.status == 'failed' %}
+                                    <p class="text-sm text-gray-500 mt-2">The analysis job failed. Please check the error details.</p>
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Error Details -->
+        {% if job.error_responses > 0 %}
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+                <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-red-50 to-white">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Error Details</h3>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">Information about errors encountered during analysis.</p>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                    <div class="bg-red-50 border-l-4 border-red-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-red-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-red-700">
+                                    {{ job.error_responses }} errors occurred during batch analysis.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h4 class="text-sm font-medium text-gray-900">Error Details</h4>
+                        <div class="mt-2 bg-gray-50 rounded-md p-4 overflow-auto max-h-64">
+                            <pre class="text-xs text-gray-600">{{ job.error_details|pprint }}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh the page if the job is still processing
+    {% if job.status == 'processing' %}
+        setTimeout(function() {
+            window.location.reload();
+        }, 10000); // Refresh every 10 seconds
+    {% endif %}
+</script>
+{% endblock %}

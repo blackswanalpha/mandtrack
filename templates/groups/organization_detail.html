@@ -1,4 +1,4 @@
-{% extends 'base/base.html' %}
+{% extends 'admin_portal/modern_base.html' %}
 
 {% block title %}{{ organization.name }} - MindTrack{% endblock %}
 
@@ -93,23 +93,36 @@
                 </dl>
             </div>
         </div>
-        
+
         <!-- Stats Section -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div class="bg-white rounded-lg shadow p-4">
+            <a href="{% url 'groups:member_list' pk=organization.id %}" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow duration-300 transform hover:-translate-y-1">
                 <h3 class="text-sm font-medium text-gray-500">Members</h3>
                 <p class="mt-1 text-3xl font-semibold text-gray-900">{{ organization.get_member_count }}</p>
-            </div>
-            <div class="bg-white rounded-lg shadow p-4">
-                <h3 class="text-sm font-medium text-gray-500">Surveys</h3>
+                <div class="mt-2 text-sm text-primary-600 flex items-center">
+                    <span>View all members</span>
+                    <i class="fas fa-arrow-right ml-1"></i>
+                </div>
+            </a>
+            <a href="{% url 'groups:organization_questionnaires' pk=organization.id %}" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow duration-300 transform hover:-translate-y-1">
+                <h3 class="text-sm font-medium text-gray-500">Questionnaires</h3>
                 <p class="mt-1 text-3xl font-semibold text-primary-600">{{ organization.get_survey_count }}</p>
-            </div>
+                <div class="mt-2 text-sm text-primary-600 flex items-center">
+                    <span>View all questionnaires</span>
+                    <i class="fas fa-arrow-right ml-1"></i>
+                </div>
+            </a>
             <div class="bg-white rounded-lg shadow p-4">
                 <h3 class="text-sm font-medium text-gray-500">Your Role</h3>
                 <p class="mt-1 text-3xl font-semibold text-gray-900">{{ user_role }}</p>
+                <div class="mt-2 text-sm text-gray-500">
+                    {% if is_admin %}
+                        <span>You have full admin access</span>
+                    {% endif %}
+                </div>
             </div>
         </div>
-        
+
         <!-- Members Section -->
         <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
             <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
@@ -117,11 +130,16 @@
                     <h2 class="text-lg font-medium text-gray-900">Members</h2>
                     <p class="mt-1 text-sm text-gray-500">People in this organization.</p>
                 </div>
-                {% if is_admin %}
-                    <a href="{% url 'groups:invite_member' pk=organization.pk %}" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                        <i class="fas fa-user-plus mr-1.5"></i> Invite Member
+                <div class="flex space-x-2">
+                    <a href="{% url 'groups:member_list' pk=organization.id %}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                        <i class="fas fa-users mr-1.5"></i> View All
                     </a>
-                {% endif %}
+                    {% if is_admin %}
+                        <a href="{% url 'groups:member_add' org_pk=organization.id %}" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                            <i class="fas fa-user-plus mr-1.5"></i> Add Member
+                        </a>
+                    {% endif %}
+                </div>
             </div>
             <div class="border-t border-gray-200">
                 <ul class="divide-y divide-gray-200">
@@ -148,14 +166,14 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center">
-                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
                                         {% if member.role == 'admin' %}bg-red-100 text-red-800
                                         {% elif member.role == 'manager' %}bg-blue-100 text-blue-800
                                         {% elif member.role == 'provider' %}bg-green-100 text-green-800
                                         {% else %}bg-gray-100 text-gray-800{% endif %}">
                                         {{ member.get_role_display }}
                                     </span>
-                                    
+
                                     {% if is_admin and member.user != request.user %}
                                         <div class="ml-4 relative" x-data="{ open: false }">
                                             <button @click="open = !open" type="button" class="text-gray-500 hover:text-gray-700">
@@ -163,10 +181,10 @@
                                             </button>
                                             <div x-show="open" @click.away="open = false" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
                                                 <div class="py-1" role="none">
-                                                    <a href="{% url 'groups:edit_member' org_pk=organization.pk member_pk=member.pk %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">
+                                                    <a href="{% url 'groups:member_edit' org_pk=organization.pk pk=member.pk %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">
                                                         <i class="fas fa-edit mr-2 text-gray-400"></i> Edit Role
                                                     </a>
-                                                    <form method="post" action="{% url 'groups:remove_member' org_pk=organization.pk member_pk=member.pk %}">
+                                                    <form method="post" action="{% url 'groups:member_remove' org_pk=organization.pk pk=member.pk %}">
                                                         {% csrf_token %}
                                                         <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 hover:text-red-900" role="menuitem">
                                                             <i class="fas fa-user-minus mr-2"></i> Remove
@@ -187,67 +205,77 @@
                 </ul>
             </div>
         </div>
-        
-        <!-- Surveys Section -->
+
+        <!-- Questionnaires Section -->
         <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
             <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
                 <div>
-                    <h2 class="text-lg font-medium text-gray-900">Surveys</h2>
-                    <p class="mt-1 text-sm text-gray-500">Surveys created for this organization.</p>
+                    <h2 class="text-lg font-medium text-gray-900">Questionnaires</h2>
+                    <p class="mt-1 text-sm text-gray-500">Surveys and assessments for this organization.</p>
                 </div>
-                {% if can_create_surveys %}
-                    <a href="{% url 'surveys:survey_create' %}?organization={{ organization.pk }}" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                        <i class="fas fa-plus mr-1.5"></i> Create Survey
+                <div class="flex space-x-2">
+                    <a href="{% url 'groups:organization_questionnaires' pk=organization.id %}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                        <i class="fas fa-clipboard-list mr-1.5"></i> View All
                     </a>
-                {% endif %}
+                    {% if is_admin or user_role == 'Manager' or user_role == 'Healthcare Provider' %}
+                        <a href="{% url 'surveys:survey_create' %}?organization={{ organization.pk }}" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                            <i class="fas fa-plus mr-1.5"></i> Create Questionnaire
+                        </a>
+                    {% endif %}
+                </div>
             </div>
             <div class="border-t border-gray-200">
                 <ul class="divide-y divide-gray-200">
                     {% for survey in surveys %}
                         <li>
-                            <a href="{% url 'surveys:survey_detail' pk=survey.pk %}" class="block hover:bg-gray-50">
-                                <div class="px-4 py-4 sm:px-6">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                                                <i class="fas fa-clipboard-list text-primary-600"></i>
-                                            </div>
-                                            <div class="ml-4">
-                                                <p class="text-sm font-medium text-primary-600 truncate">{{ survey.title }}</p>
-                                                <p class="text-sm text-gray-500 truncate">{{ survey.description|truncatechars:100 }}</p>
-                                            </div>
+                            <div class="px-4 py-4 sm:px-6">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                                            <i class="fas fa-clipboard-list text-primary-600"></i>
                                         </div>
-                                        <div class="flex flex-col items-end">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                {% if survey.status == 'active' %}bg-green-100 text-green-800
-                                                {% elif survey.status == 'draft' %}bg-yellow-100 text-yellow-800
-                                                {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                                {{ survey.get_status_display }}
-                                            </span>
-                                            <div class="mt-2 flex items-center text-sm text-gray-500">
-                                                <i class="fas fa-question-circle mr-1.5 text-gray-400"></i>
-                                                <p>{{ survey.get_question_count }} questions</p>
-                                            </div>
+                                        <div class="ml-4">
+                                            <a href="{% url 'surveys:survey_detail' pk=survey.pk %}" class="text-sm font-medium text-primary-600 hover:text-primary-800 truncate">{{ survey.title }}</a>
+                                            <p class="text-sm text-gray-500 truncate">{{ survey.description|truncatechars:100 }}</p>
                                         </div>
                                     </div>
-                                    <div class="mt-2 sm:flex sm:justify-between">
-                                        <div class="sm:flex">
-                                            <p class="flex items-center text-sm text-gray-500">
-                                                <i class="fas fa-tag mr-1.5 text-gray-400"></i>
-                                                {{ survey.get_category_display }}
-                                            </p>
-                                            <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
-                                                <i class="fas fa-user mr-1.5 text-gray-400"></i>
-                                                {{ survey.created_by.get_full_name|default:survey.created_by.email }}
-                                            </p>
-                                        </div>
-                                        <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                                            <i class="fas fa-calendar mr-1.5 text-gray-400"></i>
-                                            <p>Created {{ survey.created_at|date:"M d, Y" }}</p>
+                                    <div class="flex flex-col items-end">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                            {% if survey.status == 'active' %}bg-green-100 text-green-800
+                                            {% elif survey.status == 'draft' %}bg-yellow-100 text-yellow-800
+                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {{ survey.get_status_display }}
+                                        </span>
+                                        <div class="mt-2 flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-question-circle mr-1.5 text-gray-400"></i>
+                                            <p>{{ survey.get_question_count }} questions</p>
                                         </div>
                                     </div>
                                 </div>
-                            </a>
+                                <div class="mt-2 sm:flex sm:justify-between">
+                                    <div class="sm:flex">
+                                        <p class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-tag mr-1.5 text-gray-400"></i>
+                                            {{ survey.get_category_display }}
+                                        </p>
+                                        <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                                            <i class="fas fa-user mr-1.5 text-gray-400"></i>
+                                            {{ survey.created_by.get_full_name|default:survey.created_by.email }}
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <div class="flex items-center text-sm text-gray-500">
+                                            <i class="fas fa-calendar mr-1.5 text-gray-400"></i>
+                                            <p>{{ survey.created_at|date:"M d, Y" }}</p>
+                                        </div>
+                                        {% if survey.status == 'active' %}
+                                            <a href="{% url 'surveys:generate_qr_code' pk=survey.pk %}" class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 transition-colors duration-200">
+                                                <i class="fas fa-qrcode mr-1"></i> QR Code
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
                         </li>
                     {% empty %}
                         <li class="px-4 py-5 sm:px-6 text-center">
@@ -262,13 +290,108 @@
                 </ul>
             </div>
         </div>
-        
+
+        <!-- QR Codes Section -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900">QR Codes</h2>
+                    <p class="mt-1 text-sm text-gray-500">Scan to access questionnaires</p>
+                </div>
+                <div class="flex space-x-2">
+                    <a href="{% url 'groups:organization_questionnaires' pk=organization.id %}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                        <i class="fas fa-qrcode mr-1.5"></i> Manage QR Codes
+                    </a>
+                </div>
+            </div>
+            <div class="border-t border-gray-200">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {% for survey in surveys %}
+                            {% if survey.status == 'active' %}
+                                <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
+                                    <div class="p-4 border-b border-gray-200 bg-gray-50">
+                                        <h3 class="text-sm font-medium text-gray-900 truncate">{{ survey.title }}</h3>
+                                    </div>
+                                    <div class="p-4 flex flex-col items-center">
+                                        <div class="bg-white p-2 border border-gray-200 rounded-lg mb-3">
+                                            {% if survey.qr_code %}
+                                                <img src="{{ survey.qr_code.url }}" alt="QR Code for {{ survey.title }}" class="w-32 h-32">
+                                            {% else %}
+                                                <img src="{% url 'surveys:generate_qr_code' pk=survey.pk %}?raw=true" alt="QR Code for {{ survey.title }}" class="w-32 h-32">
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex space-x-2 mt-2">
+                                            <a href="{% url 'surveys:generate_qr_code' pk=survey.pk %}?download=true" class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 transition-colors duration-200">
+                                                <i class="fas fa-download mr-1"></i> Download
+                                            </a>
+                                            <a href="{% url 'surveys:survey_detail' pk=survey.pk %}" class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors duration-200">
+                                                <i class="fas fa-eye mr-1"></i> View
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% empty %}
+                            <div class="col-span-3 text-center py-8">
+                                <p class="text-gray-500">No active questionnaires found. Create an active questionnaire to generate QR codes.</p>
+                                {% if can_create_surveys %}
+                                    <a href="{% url 'surveys:survey_create' %}?organization={{ organization.pk }}" class="mt-2 inline-flex items-center text-sm text-primary-600 hover:text-primary-900">
+                                        <i class="fas fa-plus mr-1.5"></i> Create a questionnaire
+                                    </a>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mt-8 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h3 class="text-sm font-medium text-gray-900 mb-2">How to use QR codes</h3>
+                        <div class="space-y-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <div class="flex items-center justify-center h-8 w-8 rounded-full bg-primary-100 text-primary-600">
+                                        <span class="text-sm font-medium">1</span>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <h4 class="text-sm font-medium text-gray-900">Download or share</h4>
+                                    <p class="mt-1 text-sm text-gray-500">Download the QR code image or share it directly with your respondents.</p>
+                                </div>
+                            </div>
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <div class="flex items-center justify-center h-8 w-8 rounded-full bg-primary-100 text-primary-600">
+                                        <span class="text-sm font-medium">2</span>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <h4 class="text-sm font-medium text-gray-900">Scan with camera</h4>
+                                    <p class="mt-1 text-sm text-gray-500">Respondents can scan the QR code using their smartphone camera app.</p>
+                                </div>
+                            </div>
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <div class="flex items-center justify-center h-8 w-8 rounded-full bg-primary-100 text-primary-600">
+                                        <span class="text-sm font-medium">3</span>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <h4 class="text-sm font-medium text-gray-900">Complete questionnaire</h4>
+                                    <p class="mt-1 text-sm text-gray-500">The QR code will take them directly to your questionnaire where they can complete it on their device.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Action Buttons -->
         <div class="flex justify-between">
             <a href="{% url 'groups:organization_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                 <i class="fas fa-arrow-left mr-2"></i> Back to Organizations
             </a>
-            
+
             {% if is_member and not is_admin %}
                 <form method="post" action="{% url 'groups:leave_organization' pk=organization.pk %}">
                     {% csrf_token %}

@@ -1,6 +1,8 @@
-from django.urls import path
+from django.urls import path, include
+from django.views.generic import RedirectView
 from . import views_new as views
 from . import qr_views
+from . import qr_download
 
 app_name = 'surveys'
 
@@ -25,11 +27,13 @@ urlpatterns = [
     path('<uuid:survey_pk>/questions/<int:pk>/edit/', views.question_edit, name='question_edit'),
     path('<uuid:survey_pk>/questions/<int:pk>/delete/', views.question_delete, name='question_delete'),
 
-    # QR Code URLs
-    path('<uuid:pk>/qr-code/', views.generate_qr_code, name='generate_qr_code'),
-    path('qr-codes/', qr_views.qr_code_list, name='qr_code_list'),
+    # QR Code URLs - Order matters! Put more specific patterns first
+    path('qr-codes/', RedirectView.as_view(url='/questionnaires/qr-codes/list/', permanent=False), name='qr_code_list'),
+    path('qr-codes/list/', qr_views.qr_code_list, name='qr_code_list_alt'),  # Alternative URL
     path('qr-codes/create/', qr_views.qr_code_create, name='qr_code_create'),
-    path('qr-codes/<uuid:pk>/', qr_views.qr_code_detail, name='qr_code_detail'),
+    path('qr-codes/<int:pk>/', qr_views.qr_code_detail, name='qr_code_detail'),
+    path('<uuid:pk>/qr-code/', views.generate_qr_code, name='generate_qr_code'),
+    path('<uuid:pk>/qr-code/download/', qr_download.download_qr_code, name='download_qr_code'),
     path('<uuid:pk>/generate-qr-code/', qr_views.generate_survey_qr_code, name='generate_survey_qr_code'),
 
     # Scoring Config URLs
@@ -45,4 +49,10 @@ urlpatterns = [
     path('email-templates/<uuid:pk>/', views.email_template_detail, name='email_template_detail'),
     path('email-templates/<uuid:pk>/edit/', views.email_template_edit, name='email_template_edit'),
     path('email-templates/<uuid:pk>/delete/', views.email_template_delete, name='email_template_delete'),
+
+    # Template Questionnaires
+    path('templates/', views.survey_templates, name='survey_templates'),
+
+    # Include Scoring URLs
+    path('', include('surveys.urls_scoring')),
 ]

@@ -1,0 +1,169 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Generate Response Summary Report - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% url 'analytics:report_dashboard' %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Generate Response Summary Report</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                Create a summary report of questionnaire responses
+            </p>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <!-- Title -->
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-gray-700">
+                            Report Title <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <input type="text" name="title" id="title" 
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                   required>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">A descriptive title for this report</p>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">
+                            Description
+                        </label>
+                        <div class="mt-1">
+                            <textarea name="description" id="description" rows="3"
+                                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"></textarea>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Optional description of this report</p>
+                    </div>
+                    
+                    <!-- Questionnaire -->
+                    <div>
+                        <label for="questionnaire" class="block text-sm font-medium text-gray-700">
+                            Questionnaire <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <select name="questionnaire" id="questionnaire" 
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                   required>
+                                <option value="">Select a questionnaire</option>
+                                {% for questionnaire in questionnaires %}
+                                    <option value="{{ questionnaire.id }}">{{ questionnaire.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Select the questionnaire to generate a report for</p>
+                    </div>
+                    
+                    <!-- Report Format -->
+                    <div>
+                        <label for="report_format" class="block text-sm font-medium text-gray-700">
+                            Report Format <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <select name="report_format" id="report_format" 
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                   required>
+                                {% for value, label in report_formats %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Select the format for the generated report</p>
+                    </div>
+                    
+                    <!-- Date Range -->
+                    <div x-data="{ dateRange: 'all' }">
+                        <label class="block text-sm font-medium text-gray-700">
+                            Date Range
+                        </label>
+                        <div class="mt-2 space-y-4">
+                            <div class="flex items-center">
+                                <input id="date_range_all" name="date_range" type="radio" value="all" 
+                                       class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                                       x-model="dateRange" checked>
+                                <label for="date_range_all" class="ml-3 block text-sm font-medium text-gray-700">
+                                    All Time
+                                </label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="date_range_last_7_days" name="date_range" type="radio" value="last_7_days" 
+                                       class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                                       x-model="dateRange">
+                                <label for="date_range_last_7_days" class="ml-3 block text-sm font-medium text-gray-700">
+                                    Last 7 Days
+                                </label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="date_range_last_30_days" name="date_range" type="radio" value="last_30_days" 
+                                       class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                                       x-model="dateRange">
+                                <label for="date_range_last_30_days" class="ml-3 block text-sm font-medium text-gray-700">
+                                    Last 30 Days
+                                </label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="date_range_last_90_days" name="date_range" type="radio" value="last_90_days" 
+                                       class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                                       x-model="dateRange">
+                                <label for="date_range_last_90_days" class="ml-3 block text-sm font-medium text-gray-700">
+                                    Last 90 Days
+                                </label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="date_range_custom" name="date_range" type="radio" value="custom" 
+                                       class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                                       x-model="dateRange">
+                                <label for="date_range_custom" class="ml-3 block text-sm font-medium text-gray-700">
+                                    Custom Range
+                                </label>
+                            </div>
+                            
+                            <div x-show="dateRange === 'custom'" class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="start_date" class="block text-sm font-medium text-gray-700">
+                                        Start Date
+                                    </label>
+                                    <div class="mt-1">
+                                        <input type="date" name="start_date" id="start_date" 
+                                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="end_date" class="block text-sm font-medium text-gray-700">
+                                        End Date
+                                    </label>
+                                    <div class="mt-1">
+                                        <input type="date" name="end_date" id="end_date" 
+                                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Buttons -->
+                    <div class="flex justify-end space-x-3 pt-5 border-t border-gray-200">
+                        <a href="{% url 'analytics:report_dashboard' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                            Cancel
+                        </a>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                            Generate Report
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

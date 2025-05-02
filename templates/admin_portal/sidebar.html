@@ -1,9 +1,22 @@
 {% load static %}
 
-<div x-data="{ collapsed: false, mobileOpen: false }">
+<div x-data="{
+    collapsed: false,
+    mobileOpen: false,
+    dashboardOpen: false,
+    surveyOpen: false,
+    scoringOpen: false,
+    organizationOpen: false,
+    analysisOpen: false,
+    userManagementOpen: false,
+    userMetricsOpen: false,
+    emailOpen: false,
+    googleFormsOpen: false,
+    accountOpen: false
+}">
     <!-- Mobile Sidebar Toggle -->
     <button
-        class="lg:hidden fixed z-20 bottom-4 right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg"
+        class="lg:hidden fixed z-20 bottom-4 right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg transform transition-transform hover:scale-110"
         @click="mobileOpen = !mobileOpen"
     >
         <i x-show="!mobileOpen" class="fas fa-bars"></i>
@@ -14,7 +27,7 @@
     <div
         x-show="mobileOpen"
         @click="mobileOpen = false"
-        class="lg:hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-10"
+        class="lg:hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-10 backdrop-blur-sm transition-all duration-300"
     ></div>
 
     <!-- Sidebar -->
@@ -23,23 +36,23 @@
             'translate-x-0': mobileOpen,
             '-translate-x-full': !mobileOpen,
             'w-20': collapsed,
-            'w-64': !collapsed
+            'w-72': !collapsed
         }"
-        class="lg:translate-x-0 fixed lg:relative z-10 h-full bg-white border-r border-gray-200 transition-all duration-300 ease-in-out"
+        class="lg:translate-x-0 fixed lg:relative z-10 h-full bg-white border-r border-gray-200 transition-all duration-300 ease-in-out shadow-lg overflow-y-auto scrollbar-thin"
     >
         <div class="flex flex-col h-full justify-between">
             <div>
                 <!-- Logo -->
                 <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-                    <div x-show="!collapsed || mobileOpen" class="flex items-center">
+                    <div x-show="!collapsed || mobileOpen" class="flex items-center animate-pulse-once">
                         <i class="fas fa-brain text-blue-600 text-2xl"></i>
                         <span class="ml-2 text-lg font-semibold text-gray-800">MindTrack</span>
                     </div>
-                    <i x-show="collapsed && !mobileOpen" class="fas fa-brain text-blue-600 text-2xl mx-auto"></i>
+                    <i x-show="collapsed && !mobileOpen" class="fas fa-brain text-blue-600 text-2xl mx-auto animate-pulse-once"></i>
 
                     <button
                         @click="collapsed = !collapsed"
-                        class="hidden lg:block text-gray-500 hover:text-gray-700"
+                        class="hidden lg:block text-gray-500 hover:text-gray-700 transition-colors"
                     >
                         <i x-show="collapsed" class="fas fa-bars text-sm"></i>
                         <i x-show="!collapsed" class="fas fa-times text-sm"></i>
@@ -48,9 +61,9 @@
 
                 <!-- Navigation Items -->
                 <nav class="px-2 py-2">
-                    <ul class="space-y-2 py-4">
+                    <ul class="space-y-1 py-2">
                         <!-- Dashboard -->
-                        <li>
+                        <li class="transition-all duration-300 ease-in-out hover:translate-x-1">
                             <a
                                 href="{% url 'dashboard:admin_dashboard' %}"
                                 class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors {% if request.resolver_match.url_name == 'admin_dashboard' %}bg-blue-100 text-blue-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
@@ -60,59 +73,228 @@
                             </a>
                         </li>
 
-                        <!-- Questionnaires -->
-                        <li>
-                            <a
-                                href="{% url 'surveys:survey_list' %}"
-                                class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors {% if 'surveys' in request.path %}bg-blue-100 text-blue-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
+                        <!-- Survey/Questionnaire Section -->
+                        <li class="transition-all duration-300 ease-in-out">
+                            <div
+                                @click="surveyOpen = !surveyOpen"
+                                class="flex items-center justify-between px-4 py-3 text-sm rounded-lg cursor-pointer transition-colors {% if 'surveys' in request.path %}bg-blue-100 text-blue-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
                             >
-                                <span class="mr-3"><i class="fas fa-clipboard-list"></i></span>
-                                <span x-show="!collapsed || mobileOpen">Questionnaires</span>
-                            </a>
+                                <div class="flex items-center">
+                                    <span class="mr-3"><i class="fas fa-clipboard-list"></i></span>
+                                    <span x-show="!collapsed || mobileOpen">Survey/Questionnaire</span>
+                                </div>
+                                <i x-show="!collapsed || mobileOpen" :class="surveyOpen ? 'transform rotate-180' : ''" class="fas fa-chevron-down transition-transform duration-300"></i>
+                            </div>
+                            <div x-show="surveyOpen && (!collapsed || mobileOpen)" x-collapse class="pl-10 pr-4 py-1 space-y-1">
+                                <a href="{% url 'surveys:survey_list' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-list mr-2"></i> All Questionnaires
+                                </a>
+                                <a href="{% url 'surveys:survey_create' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-plus-circle mr-2"></i> Create New
+                                </a>
+                                <a href="{% url 'surveys:qr_code_list' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-qrcode mr-2"></i> QR Codes
+                                </a>
+                                <a href="{% url 'surveys:survey_templates' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-copy mr-2"></i> Templates
+                                </a>
+                            </div>
                         </li>
 
-                        <!-- Patients/Users -->
-                        <li>
-                            <a
-                                href="{% url 'dashboard:user_management' %}"
-                                class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors {% if 'users' in request.path %}bg-blue-100 text-blue-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
+                        <!-- Scoring Section -->
+                        <li class="transition-all duration-300 ease-in-out">
+                            <div
+                                @click="scoringOpen = !scoringOpen"
+                                class="flex items-center justify-between px-4 py-3 text-sm rounded-lg cursor-pointer transition-colors {% if 'scoring' in request.path %}bg-blue-100 text-blue-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
                             >
-                                <span class="mr-3"><i class="fas fa-users"></i></span>
-                                <span x-show="!collapsed || mobileOpen">Users</span>
-                            </a>
+                                <div class="flex items-center">
+                                    <span class="mr-3"><i class="fas fa-calculator"></i></span>
+                                    <span x-show="!collapsed || mobileOpen">Scoring</span>
+                                </div>
+                                <i x-show="!collapsed || mobileOpen" :class="scoringOpen ? 'transform rotate-180' : ''" class="fas fa-chevron-down transition-transform duration-300"></i>
+                            </div>
+                            <div x-show="scoringOpen && (!collapsed || mobileOpen)" x-collapse class="pl-10 pr-4 py-1 space-y-1">
+                                <a href="{% url 'dashboard:scoring_management' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-cog mr-2"></i> Scoring Management
+                                </a>
+                                <a href="{% url 'dashboard:scoring_management' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-list-ol mr-2"></i> Scoring Systems
+                                </a>
+                                <a href="{% url 'dashboard:scoring_management' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-chart-bar mr-2"></i> Response Scores
+                                </a>
+                                <a href="{% url 'surveys:survey_list' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-plus-circle mr-2"></i> Create New Questionnaire
+                                </a>
+                            </div>
                         </li>
 
-                        <!-- Analytics -->
-                        <li>
-                            <a
-                                href="{% url 'analytics:dashboard' %}"
-                                class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors {% if 'analytics' in request.path %}bg-blue-100 text-blue-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
+                        <!-- Organization Section -->
+                        <li class="transition-all duration-300 ease-in-out">
+                            <div
+                                @click="organizationOpen = !organizationOpen"
+                                class="flex items-center justify-between px-4 py-3 text-sm rounded-lg cursor-pointer transition-colors {% if 'groups' in request.path %}bg-blue-100 text-blue-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
                             >
-                                <span class="mr-3"><i class="fas fa-chart-bar"></i></span>
-                                <span x-show="!collapsed || mobileOpen">Analytics</span>
-                            </a>
+                                <div class="flex items-center">
+                                    <span class="mr-3"><i class="fas fa-building"></i></span>
+                                    <span x-show="!collapsed || mobileOpen">Organization</span>
+                                </div>
+                                <i x-show="!collapsed || mobileOpen" :class="organizationOpen ? 'transform rotate-180' : ''" class="fas fa-chevron-down transition-transform duration-300"></i>
+                            </div>
+                            <div x-show="organizationOpen && (!collapsed || mobileOpen)" x-collapse class="pl-10 pr-4 py-1 space-y-1">
+                                <a href="{% url 'groups:organization_list' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-list mr-2"></i> All Organizations
+                                </a>
+                                <a href="{% url 'groups:organization_create' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-plus-circle mr-2"></i> Create New
+                                </a>
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-users mr-2"></i> Members
+                                </a>
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-clipboard-list mr-2"></i> Questionnaires
+                                </a>
+                            </div>
                         </li>
 
-                        <!-- Schedule -->
-                        <li>
-                            <a
-                                href="#"
-                                class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
+                        <!-- Analysis Section -->
+                        <li class="transition-all duration-300 ease-in-out">
+                            <div
+                                @click="analysisOpen = !analysisOpen"
+                                class="flex items-center justify-between px-4 py-3 text-sm rounded-lg cursor-pointer transition-colors {% if 'analytics' in request.path %}bg-blue-100 text-blue-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
                             >
-                                <span class="mr-3"><i class="fas fa-calendar"></i></span>
-                                <span x-show="!collapsed || mobileOpen">Schedule</span>
-                            </a>
+                                <div class="flex items-center">
+                                    <span class="mr-3"><i class="fas fa-chart-bar"></i></span>
+                                    <span x-show="!collapsed || mobileOpen">Analysis</span>
+                                </div>
+                                <i x-show="!collapsed || mobileOpen" :class="analysisOpen ? 'transform rotate-180' : ''" class="fas fa-chevron-down transition-transform duration-300"></i>
+                            </div>
+                            <div x-show="analysisOpen && (!collapsed || mobileOpen)" x-collapse class="pl-10 pr-4 py-1 space-y-1">
+                                <a href="{% url 'analytics:dashboard' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                                </a>
+                                <a href="{% url 'analytics:report_dashboard' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-chart-line mr-2"></i> Reports
+                                </a>
+                                <a href="{% url 'analytics:gemini_analysis_dashboard' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-brain mr-2"></i> AI Analysis
+                                </a>
+                                <a href="{% url 'analytics:ai_model_list' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-robot mr-2"></i> AI Models
+                                </a>
+                                <a href="{% url 'analytics:response_analytics' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-history mr-2"></i> Response History
+                                </a>
+                            </div>
                         </li>
 
-                        <!-- Assessments -->
-                        <li>
-                            <a
-                                href="#"
-                                class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
+                        <!-- User Management Section -->
+                        <li class="transition-all duration-300 ease-in-out">
+                            <div
+                                @click="userManagementOpen = !userManagementOpen"
+                                class="flex items-center justify-between px-4 py-3 text-sm rounded-lg cursor-pointer transition-colors {% if 'users' in request.path %}bg-blue-100 text-blue-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
                             >
-                                <span class="mr-3"><i class="fas fa-brain"></i></span>
-                                <span x-show="!collapsed || mobileOpen">Assessments</span>
-                            </a>
+                                <div class="flex items-center">
+                                    <span class="mr-3"><i class="fas fa-users"></i></span>
+                                    <span x-show="!collapsed || mobileOpen">User Management</span>
+                                </div>
+                                <i x-show="!collapsed || mobileOpen" :class="userManagementOpen ? 'transform rotate-180' : ''" class="fas fa-chevron-down transition-transform duration-300"></i>
+                            </div>
+                            <div x-show="userManagementOpen && (!collapsed || mobileOpen)" x-collapse class="pl-10 pr-4 py-1 space-y-1">
+                                <a href="{% url 'dashboard:user_management' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-user-friends mr-2"></i> All Users
+                                </a>
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-user-plus mr-2"></i> Add User
+                                </a>
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-user-shield mr-2"></i> Roles & Permissions
+                                </a>
+                            </div>
+                        </li>
+
+                        <!-- User Metrics Section -->
+                        <li class="transition-all duration-300 ease-in-out">
+                            <div
+                                @click="userMetricsOpen = !userMetricsOpen"
+                                class="flex items-center justify-between px-4 py-3 text-sm rounded-lg cursor-pointer transition-colors {% if 'analytics/users' in request.path %}bg-blue-100 text-blue-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
+                            >
+                                <div class="flex items-center">
+                                    <span class="mr-3"><i class="fas fa-chart-pie"></i></span>
+                                    <span x-show="!collapsed || mobileOpen">User Metrics</span>
+                                </div>
+                                <i x-show="!collapsed || mobileOpen" :class="userMetricsOpen ? 'transform rotate-180' : ''" class="fas fa-chevron-down transition-transform duration-300"></i>
+                            </div>
+                            <div x-show="userMetricsOpen && (!collapsed || mobileOpen)" x-collapse class="pl-10 pr-4 py-1 space-y-1">
+                                <a href="{% url 'analytics:user_analytics' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-chart-line mr-2"></i> Activity Dashboard
+                                </a>
+                                <a href="{% url 'analytics:user_analytics' %}?view=engagement" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-user-clock mr-2"></i> Engagement
+                                </a>
+                                <a href="{% url 'analytics:user_analytics' %}?view=demographics" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-users mr-2"></i> Demographics
+                                </a>
+                                <a href="{% url 'analytics:report_demographic_analysis' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-file-alt mr-2"></i> Demographic Reports
+                                </a>
+                            </div>
+                        </li>
+
+                        <!-- Email Section -->
+                        <li class="transition-all duration-300 ease-in-out">
+                            <div
+                                @click="emailOpen = !emailOpen"
+                                class="flex items-center justify-between px-4 py-3 text-sm rounded-lg cursor-pointer transition-colors {% if 'email-templates' in request.path %}bg-blue-100 text-blue-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
+                            >
+                                <div class="flex items-center">
+                                    <span class="mr-3"><i class="fas fa-envelope"></i></span>
+                                    <span x-show="!collapsed || mobileOpen">Email</span>
+                                </div>
+                                <i x-show="!collapsed || mobileOpen" :class="emailOpen ? 'transform rotate-180' : ''" class="fas fa-chevron-down transition-transform duration-300"></i>
+                            </div>
+                            <div x-show="emailOpen && (!collapsed || mobileOpen)" x-collapse class="pl-10 pr-4 py-1 space-y-1">
+                                <a href="{% url 'surveys:email_template_list' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-file-alt mr-2"></i> Templates
+                                </a>
+                                <a href="{% url 'surveys:email_template_create' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-paper-plane mr-2"></i> Create Template
+                                </a>
+                                <a href="{% url 'surveys:email_template_list' %}?view=history" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-history mr-2"></i> Email History
+                                </a>
+                                <a href="{% url 'surveys:email_template_list' %}?view=scheduled" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-clock mr-2"></i> Scheduled Emails
+                                </a>
+                            </div>
+                        </li>
+
+                        <!-- Google Forms Section -->
+                        <li class="transition-all duration-300 ease-in-out">
+                            <div
+                                @click="googleFormsOpen = !googleFormsOpen"
+                                class="flex items-center justify-between px-4 py-3 text-sm rounded-lg cursor-pointer transition-colors {% if 'google-forms' in request.path %}bg-blue-100 text-blue-700{% else %}text-gray-600 hover:bg-gray-100{% endif %}"
+                            >
+                                <div class="flex items-center">
+                                    <span class="mr-3"><i class="fab fa-google"></i></span>
+                                    <span x-show="!collapsed || mobileOpen">Google Forms</span>
+                                </div>
+                                <i x-show="!collapsed || mobileOpen" :class="googleFormsOpen ? 'transform rotate-180' : ''" class="fas fa-chevron-down transition-transform duration-300"></i>
+                            </div>
+                            <div x-show="googleFormsOpen && (!collapsed || mobileOpen)" x-collapse class="pl-10 pr-4 py-1 space-y-1">
+                                <a href="{% url 'dashboard:admin_dashboard' %}?view=google-forms" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                                </a>
+                                <a href="{% url 'dashboard:admin_dashboard' %}?view=google-forms-connect" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-link mr-2"></i> Connect Account
+                                </a>
+                                <a href="{% url 'dashboard:admin_dashboard' %}?view=google-forms-import" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-file-import mr-2"></i> Import Forms
+                                </a>
+                                <a href="{% url 'dashboard:admin_dashboard' %}?view=google-forms-sync" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-sync mr-2"></i> Sync Responses
+                                </a>
+                            </div>
                         </li>
                     </ul>
                 </nav>
@@ -120,9 +302,34 @@
 
             <!-- Bottom Navigation -->
             <div class="px-2 mb-6">
-                <ul class="space-y-2 py-4">
+                <ul class="space-y-1 py-2">
+                    <!-- Account Details Section -->
+                    <li class="transition-all duration-300 ease-in-out">
+                        <div
+                            @click="accountOpen = !accountOpen"
+                            class="flex items-center justify-between px-4 py-3 text-sm rounded-lg cursor-pointer transition-colors text-gray-600 hover:bg-gray-100"
+                        >
+                            <div class="flex items-center">
+                                <span class="mr-3"><i class="fas fa-user-cog"></i></span>
+                                <span x-show="!collapsed || mobileOpen">Account Details</span>
+                            </div>
+                            <i x-show="!collapsed || mobileOpen" :class="accountOpen ? 'transform rotate-180' : ''" class="fas fa-chevron-down transition-transform duration-300"></i>
+                        </div>
+                        <div x-show="accountOpen && (!collapsed || mobileOpen)" x-collapse class="pl-10 pr-4 py-1 space-y-1">
+                            <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                <i class="fas fa-id-card mr-2"></i> Profile
+                            </a>
+                            <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                <i class="fas fa-key mr-2"></i> Security
+                            </a>
+                            <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                <i class="fas fa-cog mr-2"></i> Preferences
+                            </a>
+                        </div>
+                    </li>
+
                     <!-- Settings -->
-                    <li>
+                    <li class="transition-all duration-300 ease-in-out hover:translate-x-1">
                         <a
                             href="#"
                             class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
@@ -133,7 +340,7 @@
                     </li>
 
                     <!-- Help -->
-                    <li>
+                    <li class="transition-all duration-300 ease-in-out hover:translate-x-1">
                         <a
                             href="#"
                             class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
@@ -144,7 +351,7 @@
                     </li>
 
                     <!-- Logout -->
-                    <li>
+                    <li class="transition-all duration-300 ease-in-out hover:translate-x-1">
                         <a
                             href="{% url 'account_logout' %}"
                             class="flex items-center px-4 py-3 text-sm rounded-lg transition-colors text-gray-600 hover:bg-gray-100"

@@ -1,0 +1,451 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Generate Clinical Report - {{ response.survey.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-container {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        padding: 20px;
+    }
+
+    .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .report-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .report-section {
+        margin-bottom: 20px;
+    }
+
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .section-content {
+        font-size: 1rem;
+        color: #555;
+        line-height: 1.5;
+    }
+
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+    }
+
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #2196F3;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        font-size: 1.2rem;
+        color: #666;
+    }
+
+    .loading-subtext {
+        font-size: 0.9rem;
+        color: #999;
+        margin-top: 10px;
+    }
+
+    .risk-low {
+        color: #4CAF50;
+    }
+
+    .risk-medium {
+        color: #FFC107;
+    }
+
+    .risk-high {
+        color: #F44336;
+    }
+
+    .risk-critical {
+        color: #9C27B0;
+    }
+
+    .response-info {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .response-info-item {
+        display: flex;
+        margin-bottom: 8px;
+    }
+
+    .response-info-label {
+        font-weight: 600;
+        width: 150px;
+        color: #666;
+    }
+
+    .response-info-value {
+        flex-grow: 1;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .report-meta {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 20px;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+    }
+
+    .report-meta-item {
+        display: flex;
+        margin-bottom: 5px;
+    }
+
+    .report-meta-label {
+        font-weight: 600;
+        width: 120px;
+    }
+
+    .report-meta-value {
+        flex-grow: 1;
+    }
+
+    .print-header, .print-footer {
+        display: none;
+    }
+
+    @media print {
+        .container {
+            width: 100%;
+            max-width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+
+        .no-print {
+            display: none !important;
+        }
+
+        .report-container {
+            box-shadow: none;
+            border: none;
+            padding: 0;
+        }
+
+        .print-header {
+            display: block;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .print-footer {
+            display: block;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        .print-logo {
+            max-height: 50px;
+            margin-bottom: 10px;
+        }
+
+        .print-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .print-subtitle {
+            font-size: 1rem;
+            color: #666;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4 no-print">
+        <div class="col-md-8">
+            <h1 class="h2">Clinical Report</h1>
+            <p class="text-muted">{{ questionnaire.title }}</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'analytics:enhanced_ai_analysis' response_id=response.id %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Analysis
+            </a>
+        </div>
+    </div>
+
+    <div class="response-info no-print">
+        <h3 class="h5 mb-3">Response Information</h3>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="response-info-item">
+                    <div class="response-info-label">Patient Name:</div>
+                    <div class="response-info-value">{{ response.patient_name }}</div>
+                </div>
+                <div class="response-info-item">
+                    <div class="response-info-label">Patient Email:</div>
+                    <div class="response-info-value">{{ response.patient_email }}</div>
+                </div>
+                <div class="response-info-item">
+                    <div class="response-info-label">Patient Age:</div>
+                    <div class="response-info-value">{{ response.patient_age }}</div>
+                </div>
+                <div class="response-info-item">
+                    <div class="response-info-label">Patient Gender:</div>
+                    <div class="response-info-value">{{ response.patient_gender }}</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="response-info-item">
+                    <div class="response-info-label">Score:</div>
+                    <div class="response-info-value">{{ response.score }}</div>
+                </div>
+                <div class="response-info-item">
+                    <div class="response-info-label">Risk Level:</div>
+                    <div class="response-info-value risk-{{ response.risk_level }}">
+                        {{ response.get_risk_level_display }}
+                    </div>
+                </div>
+                <div class="response-info-item">
+                    <div class="response-info-label">Completion Time:</div>
+                    <div class="response-info-value">
+                        {% if response.completion_time %}
+                            {{ response.completion_time|floatformat:0 }} seconds
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="response-info-item">
+                    <div class="response-info-label">Submitted:</div>
+                    <div class="response-info-value">{{ response.created_at|date:"F j, Y, g:i a" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-buttons no-print">
+        <button id="generateReportBtn" class="btn btn-primary">
+            <i class="fas fa-file-medical me-1"></i> Generate Clinical Report
+        </button>
+        <button id="printReportBtn" class="btn btn-outline-secondary" style="display: none;">
+            <i class="fas fa-print me-1"></i> Print Report
+        </button>
+        <a id="downloadReportBtn" href="#" class="btn btn-outline-success" style="display: none;">
+            <i class="fas fa-download me-1"></i> Download PDF
+        </a>
+    </div>
+
+    <div id="loadingContainer" class="loading-container" style="display: none;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Generating Clinical Report...</div>
+        <div class="loading-subtext">This may take a few moments as our AI creates a comprehensive clinical report.</div>
+    </div>
+
+    <div id="reportContainer" class="report-container" style="display: none;">
+        <div class="print-header">
+            <img src="{% static 'img/logo.png' %}" alt="MindTrack Logo" class="print-logo">
+            <div class="print-title">Clinical Report</div>
+            <div class="print-subtitle">{{ questionnaire.title }}</div>
+        </div>
+
+        <div class="report-header">
+            <div class="report-title">Clinical Report</div>
+            <div class="badge bg-primary">Gemini Pro Enhanced</div>
+        </div>
+
+        <div class="report-section">
+            <div class="section-title">Executive Summary</div>
+            <div class="section-content" id="reportExecutiveSummary"></div>
+        </div>
+
+        <div class="report-section">
+            <div class="section-title">Assessment Details</div>
+            <div class="section-content" id="reportAssessmentDetails"></div>
+        </div>
+
+        <div class="report-section">
+            <div class="section-title">Results</div>
+            <div class="section-content" id="reportResults"></div>
+        </div>
+
+        <div class="report-section">
+            <div class="section-title">Clinical Interpretation</div>
+            <div class="section-content" id="reportClinicalInterpretation"></div>
+        </div>
+
+        <div class="report-section">
+            <div class="section-title">Recommendations</div>
+            <div class="section-content" id="reportRecommendations"></div>
+        </div>
+
+        <div class="report-section">
+            <div class="section-title">Follow-Up Plan</div>
+            <div class="section-content" id="reportFollowUpPlan"></div>
+        </div>
+
+        <div class="report-meta">
+            <div class="report-meta-item">
+                <div class="report-meta-label">Generated On:</div>
+                <div class="report-meta-value" id="reportGeneratedAt"></div>
+            </div>
+            <div class="report-meta-item">
+                <div class="report-meta-label">Generated By:</div>
+                <div class="report-meta-value">MindTrack AI Clinical Report System</div>
+            </div>
+            <div class="report-meta-item">
+                <div class="report-meta-label">Report ID:</div>
+                <div class="report-meta-value" id="reportId"></div>
+            </div>
+        </div>
+
+        <div class="print-footer">
+            <p>This report was generated by MindTrack AI Clinical Report System.</p>
+            <p>© {{ now|date:"Y" }} MindTrack. All rights reserved.</p>
+        </div>
+    </div>
+
+    <div id="errorContainer" class="alert alert-danger" style="display: none;">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        <span id="errorMessage"></span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Function to generate report
+        function generateReport() {
+            // Show loading container
+            $('#loadingContainer').show();
+            $('#reportContainer').hide();
+            $('#errorContainer').hide();
+            $('#printReportBtn').hide();
+            $('#downloadReportBtn').hide();
+
+            // Send AJAX request to generate report
+            $.ajax({
+                url: "{% url 'analytics:create_report' response_id=response.id %}",
+                type: "POST",
+                data: {
+                    csrfmiddlewaretoken: "{{ csrf_token }}"
+                },
+                success: function(response) {
+                    // Hide loading container
+                    $('#loadingContainer').hide();
+
+                    if (response.success) {
+                        // Update report container with results
+                        $('#reportExecutiveSummary').html(response.report.content.executive_summary.replace(/\n/g, '<br>'));
+                        $('#reportAssessmentDetails').html(response.report.content.assessment_details.replace(/\n/g, '<br>'));
+                        $('#reportResults').html(response.report.content.results.replace(/\n/g, '<br>'));
+                        $('#reportClinicalInterpretation').html(response.report.content.clinical_interpretation.replace(/\n/g, '<br>'));
+                        $('#reportRecommendations').html(response.report.content.recommendations.replace(/\n/g, '<br>'));
+                        $('#reportFollowUpPlan').html(response.report.content.follow_up_plan.replace(/\n/g, '<br>'));
+
+                        // Update metadata
+                        $('#reportGeneratedAt').text(new Date(response.report.created_at).toLocaleString());
+                        $('#reportId').text(response.report.id);
+
+                        // Show report container and print/download buttons
+                        $('#reportContainer').show();
+                        $('#printReportBtn').show();
+
+                        // Show download button if PDF is available
+                        if (response.report.has_pdf) {
+                            $('#downloadReportBtn').attr('href', '/analytics/reports/' + response.report.id + '/download-pdf/').show();
+                        } else {
+                            $('#downloadReportBtn').hide();
+                        }
+                    } else {
+                        // Show error message
+                        $('#errorMessage').text(response.error || 'An error occurred while generating the report.');
+                        $('#errorContainer').show();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    // Hide loading container
+                    $('#loadingContainer').hide();
+
+                    // Show error message
+                    var errorMessage = '';
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        errorMessage = response.error || error;
+                    } catch (e) {
+                        errorMessage = error;
+                    }
+
+                    $('#errorMessage').text(errorMessage || 'An error occurred while generating the report.');
+                    $('#errorContainer').show();
+                }
+            });
+        }
+
+        // Function to print report
+        function printReport() {
+            window.print();
+        }
+
+        // Function to download report as PDF
+        function downloadReport() {
+            // Get the report ID from the page
+            var reportId = $('#reportId').text();
+            if (reportId) {
+                // Redirect to the PDF download URL
+                window.location.href = '/analytics/reports/' + reportId + '/download-pdf/';
+            } else {
+                alert('Report ID not found. Please try again.');
+            }
+        }
+
+        // Attach event handlers
+        $('#generateReportBtn').click(generateReport);
+        $('#printReportBtn').click(printReport);
+        $('#downloadReportBtn').click(downloadReport);
+    });
+</script>
+{% endblock %}

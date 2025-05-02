@@ -1,0 +1,162 @@
+{% extends 'admin_portal/modern_base.html' %}
+
+{% block title %}{{ member.user.get_full_name|default:member.user.email }} - {{ organization.name }} - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% url 'groups:member_list' pk=organization.id %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Member Details</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                View member information for {{ organization.name }}
+            </p>
+        </div>
+
+        <!-- Member Header -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6 flex justify-between items-start">
+                <div class="flex items-center">
+                    <div class="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center">
+                        <span class="font-medium text-gray-600 text-2xl">
+                            {% if member.user.first_name and member.user.last_name %}
+                                {{ member.user.first_name|first }}{{ member.user.last_name|first }}
+                            {% else %}
+                                {{ member.user.email|first|upper }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="ml-4">
+                        <h2 class="text-xl font-medium text-gray-900">{{ member.user.get_full_name|default:member.user.email }}</h2>
+                        <p class="text-sm text-gray-500">Member since {{ member.joined_at|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    {% if is_admin and member.user != request.user %}
+                        <a href="{% url 'groups:member_edit' org_pk=organization.id pk=member.id %}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                            <i class="fas fa-edit mr-1.5"></i> Edit
+                        </a>
+                        <a href="{% url 'groups:member_remove' org_pk=organization.id pk=member.id %}" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+                            <i class="fas fa-trash mr-1.5"></i> Remove
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Member Information -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Member Information</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Personal details and role.</p>
+            </div>
+            <div class="border-t border-gray-200">
+                <dl>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Full name</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ member.user.get_full_name|default:"—" }}</dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Email address</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ member.user.email }}</dd>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Role</dt>
+                        <dd class="mt-1 text-sm sm:mt-0 sm:col-span-2">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if member.role == 'admin' %}bg-purple-100 text-purple-800
+                                {% elif member.role == 'manager' %}bg-blue-100 text-blue-800
+                                {% elif member.role == 'provider' %}bg-green-100 text-green-800
+                                {% elif member.role == 'staff' %}bg-yellow-100 text-yellow-800
+                                {% elif member.role == 'researcher' %}bg-indigo-100 text-indigo-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ member.get_role_display }}
+                            </span>
+                        </dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Title</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ member.title|default:"—" }}</dd>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Department</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ member.department|default:"—" }}</dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Status</dt>
+                        <dd class="mt-1 text-sm sm:mt-0 sm:col-span-2">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {% if member.is_active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                {% if member.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </dd>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Joined</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ member.joined_at|date:"F j, Y, g:i a" }}</dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Last updated</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ member.updated_at|date:"F j, Y, g:i a" }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Member Activity -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Activity</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Latest actions and contributions.</p>
+            </div>
+            <div class="border-t border-gray-200">
+                <div class="px-4 py-5 sm:px-6">
+                    <!-- Activity Timeline -->
+                    <div class="flow-root">
+                        <ul class="-mb-8">
+                            <!-- This would be populated with actual activity data -->
+                            <li class="relative pb-8">
+                                <div class="relative flex space-x-3">
+                                    <div>
+                                        <span class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
+                                            <i class="fas fa-clipboard-list text-white"></i>
+                                        </span>
+                                    </div>
+                                    <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                                        <div>
+                                            <p class="text-sm text-gray-500">Completed <span class="font-medium text-gray-900">Depression Assessment</span></p>
+                                        </div>
+                                        <div class="text-right text-sm whitespace-nowrap text-gray-500">
+                                            <time datetime="2023-01-23">Jan 23</time>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="relative pb-8">
+                                <div class="relative flex space-x-3">
+                                    <div>
+                                        <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white">
+                                            <i class="fas fa-user-plus text-white"></i>
+                                        </span>
+                                    </div>
+                                    <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                                        <div>
+                                            <p class="text-sm text-gray-500">Joined the organization</p>
+                                        </div>
+                                        <div class="text-right text-sm whitespace-nowrap text-gray-500">
+                                            <time datetime="2023-01-23">{{ member.joined_at|date:"M d" }}</time>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -197,6 +197,9 @@ class QRCodeForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
+        # Rename the field label to "Questionnaire" for better UX
+        self.fields['survey'].label = "Questionnaire"
+
         if user:
             # Filter questionnaires to those the user has access to
             user_questionnaires = Questionnaire.objects.filter(created_by=user)
@@ -204,6 +207,13 @@ class QRCodeForm(forms.ModelForm):
             questionnaires = (user_questionnaires | org_questionnaires).distinct()
 
             self.fields['survey'].queryset = questionnaires
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        # No need to sync fields anymore as we're using a property
+        if commit:
+            instance.save()
+        return instance
 
 
 class ScoringConfigForm(forms.ModelForm):

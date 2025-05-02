@@ -1,0 +1,323 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Analyze Text - MindTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .hover-scale {
+        transition: transform 0.3s ease-in-out;
+    }
+    
+    .hover-scale:hover {
+        transform: scale(1.03);
+    }
+    
+    .analysis-option {
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .analysis-option.selected {
+        border-color: #4f46e5;
+        background-color: #f5f3ff;
+    }
+    
+    .loading-spinner {
+        display: none;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .textarea-container {
+        position: relative;
+    }
+    
+    .word-count {
+        position: absolute;
+        bottom: 0.5rem;
+        right: 0.5rem;
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+    
+    .textarea-container textarea:focus + .word-count {
+        color: #4f46e5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8 fade-in">
+            <div class="flex items-center">
+                <a href="{% url 'analytics:gemini_analysis_dashboard' %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Analyze Text</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                Analyze any text using Gemini AI
+            </p>
+        </div>
+
+        <!-- Text Analysis Form -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8 fade-in" style="animation-delay: 0.1s;">
+            <div class="px-4 py-5 sm:px-6">
+                <h2 class="text-lg font-medium text-gray-900">Text Analysis</h2>
+                <p class="mt-1 text-sm text-gray-500">Enter text to analyze and select the type of analysis to perform.</p>
+            </div>
+            <div class="border-t border-gray-200">
+                <form id="analysis-form" method="post" class="p-6">
+                    {% csrf_token %}
+                    
+                    <!-- Text Input -->
+                    <div class="mb-6">
+                        <label for="text" class="block text-sm font-medium text-gray-700 mb-1">
+                            Text to Analyze <span class="text-red-500">*</span>
+                        </label>
+                        <div class="textarea-container">
+                            <textarea name="text" id="text" rows="8" 
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                   required></textarea>
+                            <div class="word-count">0 words</div>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Enter the text you want to analyze</p>
+                    </div>
+                    
+                    <!-- Analysis Type -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Analysis Type <span class="text-red-500">*</span>
+                        </label>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {% for value, label in analysis_types %}
+                                <div class="analysis-option bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow hover-scale p-4" data-value="{{ value }}">
+                                    <div class="flex items-center">
+                                        <div class="h-5 w-5 flex items-center justify-center">
+                                            <input type="radio" name="analysis_type" id="analysis_type_{{ value }}" value="{{ value }}" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                        </div>
+                                        <div class="ml-3">
+                                            <label for="analysis_type_{{ value }}" class="text-sm font-medium text-gray-900">{{ label }}</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="ml-8 mt-2">
+                                        {% if value == 'general' %}
+                                            <p class="text-xs text-gray-600">General analysis of the text, including main points, tone, and style.</p>
+                                        {% elif value == 'sentiment' %}
+                                            <p class="text-xs text-gray-600">Analyze the sentiment (positive, negative, or neutral) of the text.</p>
+                                        {% elif value == 'themes' %}
+                                            <p class="text-xs text-gray-600">Identify main themes and topics in the text.</p>
+                                        {% elif value == 'summary' %}
+                                            <p class="text-xs text-gray-600">Generate a concise summary of the text.</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Example Texts -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Example Texts
+                        </label>
+                        
+                        <div class="grid grid-cols-1 gap-4">
+                            <button type="button" class="example-text text-left bg-gray-50 hover:bg-gray-100 rounded-lg p-3 text-sm text-gray-700 transition-colors duration-150">
+                                <strong>Customer Feedback Example:</strong> "I've been using your product for about 3 months now and I'm really impressed with how intuitive it is. The interface is clean and easy to navigate, and I love the new features you've added in the latest update. However, I've noticed that the app sometimes crashes when I try to export large files. It would also be great if you could add dark mode support in the future. Overall, I'm satisfied with my purchase and would recommend it to others."
+                            </button>
+                            
+                            <button type="button" class="example-text text-left bg-gray-50 hover:bg-gray-100 rounded-lg p-3 text-sm text-gray-700 transition-colors duration-150">
+                                <strong>Article Excerpt Example:</strong> "Artificial intelligence has made significant strides in recent years, transforming industries and changing how we interact with technology. From healthcare to finance, AI applications are becoming increasingly sophisticated and widespread. However, this rapid advancement raises important ethical questions about privacy, bias, and the future of work. As we continue to develop these technologies, it's crucial that we establish robust frameworks to ensure they benefit humanity as a whole."
+                            </button>
+                            
+                            <button type="button" class="example-text text-left bg-gray-50 hover:bg-gray-100 rounded-lg p-3 text-sm text-gray-700 transition-colors duration-150">
+                                <strong>Survey Response Example:</strong> "The workshop was well-organized and the facilitator was knowledgeable about the subject matter. I particularly enjoyed the hands-on activities and group discussions. The materials provided were helpful, though I would have appreciated more real-world examples. The venue was comfortable and the refreshments were good. I would definitely attend another workshop by this organization in the future."
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="flex justify-end">
+                        <button type="submit" id="analyze-button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                            <span id="button-text">Analyze Text</span>
+                            <svg id="loading-spinner" class="loading-spinner ml-2 -mr-0.5 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Analysis Tips -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg fade-in" style="animation-delay: 0.2s;">
+            <div class="px-4 py-5 sm:px-6">
+                <h2 class="text-lg font-medium text-gray-900">Analysis Tips</h2>
+                <p class="mt-1 text-sm text-gray-500">Tips for getting the best results from text analysis.</p>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                <div class="space-y-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-lightbulb text-yellow-500 mt-1"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-gray-900">Provide Sufficient Context</h3>
+                            <p class="text-sm text-gray-600">For better analysis, provide enough context in your text. Short phrases may not yield detailed insights.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-language text-blue-500 mt-1"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-gray-900">Clear Language</h3>
+                            <p class="text-sm text-gray-600">Use clear, straightforward language for more accurate analysis. Avoid excessive jargon or slang.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-balance-scale text-purple-500 mt-1"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-gray-900">Choose the Right Analysis Type</h3>
+                            <p class="text-sm text-gray-600">Select the analysis type that best matches your needs. For example, use sentiment analysis for feedback or summary for long texts.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-shield-alt text-green-500 mt-1"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-gray-900">Privacy Considerations</h3>
+                            <p class="text-sm text-gray-600">Avoid including sensitive personal information in the text you submit for analysis.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle analysis option selection
+        const analysisOptions = document.querySelectorAll('.analysis-option');
+        
+        analysisOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                // Clear previous selections
+                analysisOptions.forEach(opt => opt.classList.remove('selected'));
+                
+                // Select this option
+                this.classList.add('selected');
+                
+                // Check the radio button
+                const radio = this.querySelector('input[type="radio"]');
+                radio.checked = true;
+            });
+        });
+        
+        // Handle example text clicks
+        const exampleTexts = document.querySelectorAll('.example-text');
+        const textArea = document.getElementById('text');
+        
+        exampleTexts.forEach(example => {
+            example.addEventListener('click', function() {
+                // Extract the text content (excluding the "Example:" part)
+                const content = this.textContent.split(':')[1].trim();
+                
+                // Set the text area content
+                textArea.value = content;
+                
+                // Update word count
+                updateWordCount();
+                
+                // Scroll to the text area
+                textArea.scrollIntoView({ behavior: 'smooth' });
+                
+                // Focus the text area
+                textArea.focus();
+            });
+        });
+        
+        // Word count functionality
+        const textInput = document.getElementById('text');
+        const wordCount = document.querySelector('.word-count');
+        
+        function updateWordCount() {
+            const text = textInput.value.trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            wordCount.textContent = words + ' words';
+        }
+        
+        textInput.addEventListener('input', updateWordCount);
+        
+        // Show loading spinner on form submission
+        const form = document.getElementById('analysis-form');
+        const button = document.getElementById('analyze-button');
+        const buttonText = document.getElementById('button-text');
+        const spinner = document.getElementById('loading-spinner');
+        
+        form.addEventListener('submit', function() {
+            // Validate that an option is selected
+            const selectedOption = document.querySelector('input[name="analysis_type"]:checked');
+            if (!selectedOption) {
+                alert('Please select an analysis type.');
+                return false;
+            }
+            
+            // Validate that text is entered
+            if (!textInput.value.trim()) {
+                alert('Please enter text to analyze.');
+                textInput.focus();
+                return false;
+            }
+            
+            // Show loading state
+            button.disabled = true;
+            buttonText.textContent = 'Analyzing...';
+            spinner.style.display = 'block';
+            
+            return true;
+        });
+        
+        // Add fade-in effect to elements as they scroll into view
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

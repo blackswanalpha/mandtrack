@@ -13,8 +13,9 @@ def home(request):
     """
     Home page view
     Always shows the landing page regardless of authentication status
+    Uses a custom landing page template with a simplified navbar
     """
-    return render(request, 'core/home.html')
+    return render(request, 'core/landing_page.html')
 
 def about(request):
     """

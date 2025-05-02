@@ -1,0 +1,290 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{{ scoring_system.name }} - {{ questionnaire.title }} - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% url 'surveys:scoring_list' questionnaire_id=questionnaire.id %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">{{ scoring_system.name }}</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                Scoring system for {{ questionnaire.title }}
+            </p>
+        </div>
+
+        <!-- Scoring System Header -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6 flex justify-between items-start">
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900">Scoring System Details</h2>
+                    <p class="mt-1 text-sm text-gray-500">{{ scoring_system.get_scoring_type_display }} scoring system</p>
+                </div>
+                <div class="flex space-x-2">
+                    <a href="{% url 'surveys:scoring_edit' questionnaire_id=questionnaire.id scoring_id=scoring_system.id %}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                        <i class="fas fa-edit mr-1.5"></i> Edit
+                    </a>
+                    <a href="{% url 'surveys:scoring_delete' questionnaire_id=questionnaire.id scoring_id=scoring_system.id %}" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+                        <i class="fas fa-trash mr-1.5"></i> Delete
+                    </a>
+                </div>
+            </div>
+            <div class="border-t border-gray-200">
+                <dl>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Name</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ scoring_system.name }}</dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Description</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ scoring_system.description|default:"No description provided." }}</dd>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Scoring Type</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                {{ scoring_system.get_scoring_type_display }}
+                            </span>
+                        </dd>
+                    </div>
+                    {% if scoring_system.scoring_type == 'custom' %}
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">Custom Formula</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ scoring_system.formula|default:"No formula provided." }}</dd>
+                        </div>
+                    {% endif %}
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Created By</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ scoring_system.created_by.get_full_name|default:scoring_system.created_by.email }}</dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Created At</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ scoring_system.created_at|date:"F j, Y, g:i a" }}</dd>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Last Updated</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ scoring_system.updated_at|date:"F j, Y, g:i a" }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Score Rules Section -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900">Score Rules</h2>
+                    <p class="mt-1 text-sm text-gray-500">Rules for scoring individual questions.</p>
+                </div>
+                <a href="{% url 'surveys:score_rule_create' questionnaire_id=questionnaire.id scoring_id=scoring_system.id %}" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                    <i class="fas fa-plus-circle mr-1.5"></i> Add Rule
+                </a>
+            </div>
+            <div class="border-t border-gray-200">
+                {% if score_rules %}
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Question
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Weight
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Text Score
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Notes
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for rule in score_rules %}
+                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900">{{ rule.question.text|truncatechars:50 }}</div>
+                                            <div class="text-xs text-gray-500">{{ rule.question.get_question_type_display }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ rule.weight }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {% if rule.text_score_enabled %}
+                                                {{ rule.text_score }}
+                                            {% else %}
+                                                <span class="text-gray-400">Disabled</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ rule.notes|truncatechars:30|default:"—" }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <div class="flex justify-end space-x-2">
+                                                <a href="{% url 'surveys:score_rule_edit' questionnaire_id=questionnaire.id scoring_id=scoring_system.id rule_id=rule.id %}" class="text-blue-600 hover:text-blue-900 transition-colors duration-150">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{% url 'surveys:score_rule_delete' questionnaire_id=questionnaire.id scoring_id=scoring_system.id rule_id=rule.id %}" class="text-red-600 hover:text-red-900 transition-colors duration-150">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="px-6 py-4 text-center text-sm text-gray-500">
+                        <p>No score rules defined yet.</p>
+                        <p class="mt-2">
+                            <a href="{% url 'surveys:score_rule_create' questionnaire_id=questionnaire.id scoring_id=scoring_system.id %}" class="text-primary-600 hover:text-primary-900 transition-colors duration-150">
+                                <i class="fas fa-plus-circle mr-1"></i> Add your first rule
+                            </a>
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Questions Without Rules -->
+        {% if questions_without_rules %}
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+                <div class="px-4 py-5 sm:px-6">
+                    <h2 class="text-lg font-medium text-gray-900">Questions Without Rules</h2>
+                    <p class="mt-1 text-sm text-gray-500">These questions don't have scoring rules yet.</p>
+                </div>
+                <div class="border-t border-gray-200">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Question
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Type
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Action
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for question in questions_without_rules %}
+                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900">{{ question.text|truncatechars:50 }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ question.get_question_type_display }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <a href="{% url 'surveys:score_rule_create' questionnaire_id=questionnaire.id scoring_id=scoring_system.id %}?question={{ question.id }}" class="text-primary-600 hover:text-primary-900 transition-colors duration-150">
+                                                <i class="fas fa-plus-circle mr-1"></i> Add Rule
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Score Ranges Section -->
+        {% if scoring_system.scoring_type == 'range_based' %}
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+                <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-medium text-gray-900">Score Ranges</h2>
+                        <p class="mt-1 text-sm text-gray-500">Ranges for interpreting scores.</p>
+                    </div>
+                    <a href="{% url 'surveys:score_range_create' questionnaire_id=questionnaire.id scoring_id=scoring_system.id %}" class="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                        <i class="fas fa-plus-circle mr-1.5"></i> Add Range
+                    </a>
+                </div>
+                <div class="border-t border-gray-200">
+                    {% if score_ranges %}
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Name
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Min Score
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Max Score
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Color
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Description
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for range in score_ranges %}
+                                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium text-gray-900">{{ range.name }}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {{ range.min_score }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {{ range.max_score }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="inline-block w-6 h-6 rounded-full" style="background-color: {{ range.color }};"></span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {{ range.description|truncatechars:30|default:"—" }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <div class="flex justify-end space-x-2">
+                                                    <a href="{% url 'surveys:score_range_edit' questionnaire_id=questionnaire.id scoring_id=scoring_system.id range_id=range.id %}" class="text-blue-600 hover:text-blue-900 transition-colors duration-150">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="{% url 'surveys:score_range_delete' questionnaire_id=questionnaire.id scoring_id=scoring_system.id range_id=range.id %}" class="text-red-600 hover:text-red-900 transition-colors duration-150">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="px-6 py-4 text-center text-sm text-gray-500">
+                            <p>No score ranges defined yet.</p>
+                            <p class="mt-2">
+                                <a href="{% url 'surveys:score_range_create' questionnaire_id=questionnaire.id scoring_id=scoring_system.id %}" class="text-primary-600 hover:text-primary-900 transition-colors duration-150">
+                                    <i class="fas fa-plus-circle mr-1"></i> Add your first range
+                                </a>
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

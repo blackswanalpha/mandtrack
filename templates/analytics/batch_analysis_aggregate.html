@@ -1,0 +1,366 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Aggregate Insights - MindTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .insight-card {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .insight-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .chart-container {
+        height: 300px;
+        position: relative;
+    }
+    
+    .pattern-card {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .pattern-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-display font-bold text-gray-900">Aggregate Insights</h1>
+                    <p class="mt-2 text-gray-600">
+                        Aggregate analysis for batch job: {{ job.name }}
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'analytics:batch_analysis_results' job_id=job.id %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <i class="fas fa-arrow-left mr-2"></i> Back to Results
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summary Card -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+            <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-primary-50 to-white">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Summary</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Overall summary of the batch analysis.</p>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                <p class="text-gray-700">{{ job.aggregate_insights.summary|default:"No summary available." }}</p>
+            </div>
+        </div>
+        
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-6">
+            <!-- Risk Distribution Chart -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-primary-50 to-white">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Risk Distribution</h3>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">Distribution of risk levels across responses.</p>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                    <div class="chart-container">
+                        <canvas id="riskDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Score Distribution Chart -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-primary-50 to-white">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Score Analysis</h3>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">Analysis of scores across responses.</p>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                    <div class="chart-container">
+                        <canvas id="scoreDistributionChart"></canvas>
+                    </div>
+                    <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <div class="bg-gray-50 rounded-lg p-4 text-center">
+                            <p class="text-sm font-medium text-gray-500">Average Score</p>
+                            <p class="mt-1 text-3xl font-semibold text-gray-900">{{ job.aggregate_insights.score_analysis.average|default:"N/A" }}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4 text-center">
+                            <p class="text-sm font-medium text-gray-500">Median Score</p>
+                            <p class="mt-1 text-3xl font-semibold text-gray-900">{{ job.aggregate_insights.score_analysis.median|default:"N/A" }}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4 text-center">
+                            <p class="text-sm font-medium text-gray-500">Score Range</p>
+                            <p class="mt-1 text-3xl font-semibold text-gray-900">{{ job.aggregate_insights.score_analysis.range|default:"N/A" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Key Patterns -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+            <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-primary-50 to-white">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Key Patterns</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Common patterns identified across responses.</p>
+            </div>
+            <div class="border-t border-gray-200">
+                <ul class="divide-y divide-gray-200">
+                    {% if job.aggregate_insights.key_patterns %}
+                        {% for pattern in job.aggregate_insights.key_patterns %}
+                            <li class="pattern-card">
+                                <div class="px-4 py-4 sm:px-6">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="text-lg font-medium text-gray-900">{{ pattern.pattern }}</h4>
+                                            <p class="text-sm text-gray-500">Frequency: {{ pattern.frequency }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <p class="text-sm text-gray-600">{{ pattern.significance }}</p>
+                                    </div>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="px-4 py-5 sm:px-6">
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">No patterns identified.</p>
+                            </div>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Common Recommendations -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+            <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-primary-50 to-white">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Common Recommendations</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Recommendations that appeared frequently across analyses.</p>
+            </div>
+            <div class="border-t border-gray-200">
+                <ul class="divide-y divide-gray-200">
+                    {% if job.aggregate_insights.common_recommendations %}
+                        {% for recommendation in job.aggregate_insights.common_recommendations %}
+                            <li class="pattern-card">
+                                <div class="px-4 py-4 sm:px-6">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="text-lg font-medium text-gray-900">{{ recommendation.recommendation }}</h4>
+                                            <p class="text-sm text-gray-500">Frequency: {{ recommendation.frequency }}</p>
+                                        </div>
+                                        <div>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                {% if recommendation.priority == 'high' %}bg-red-100 text-red-800
+                                                {% elif recommendation.priority == 'medium' %}bg-yellow-100 text-yellow-800
+                                                {% else %}bg-green-100 text-green-800{% endif %}">
+                                                {{ recommendation.priority|title }} Priority
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="px-4 py-5 sm:px-6">
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">No common recommendations identified.</p>
+                            </div>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Insights -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+            <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-primary-50 to-white">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Key Insights</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Important insights derived from the batch analysis.</p>
+            </div>
+            <div class="border-t border-gray-200">
+                <ul class="divide-y divide-gray-200">
+                    {% if job.aggregate_insights.insights %}
+                        {% for insight in job.aggregate_insights.insights %}
+                            <li class="insight-card">
+                                <div class="px-4 py-4 sm:px-6">
+                                    <div>
+                                        <h4 class="text-lg font-medium text-gray-900">{{ insight.title }}</h4>
+                                    </div>
+                                    <div class="mt-2">
+                                        <p class="text-sm text-gray-600">{{ insight.description }}</p>
+                                    </div>
+                                    {% if insight.supporting_data %}
+                                        <div class="mt-2">
+                                            <p class="text-xs text-gray-500">Supporting Data: {{ insight.supporting_data }}</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="px-4 py-5 sm:px-6">
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">No insights available.</p>
+                            </div>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Database Insights -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+            <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-primary-50 to-white">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Stored Insights</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Insights stored in the database for this batch analysis.</p>
+            </div>
+            <div class="border-t border-gray-200">
+                <ul class="divide-y divide-gray-200">
+                    {% for insight in insights %}
+                        <li class="insight-card">
+                            <div class="px-4 py-4 sm:px-6">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="text-lg font-medium text-gray-900">{{ insight.title }}</h4>
+                                        <p class="text-sm text-gray-500">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                                                {{ insight.get_insight_type_display }}
+                                            </span>
+                                            {% if insight.severity %}
+                                                <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                    {% if insight.severity == 'critical' %}bg-red-100 text-red-800
+                                                    {% elif insight.severity == 'high' %}bg-orange-100 text-orange-800
+                                                    {% elif insight.severity == 'medium' %}bg-yellow-100 text-yellow-800
+                                                    {% elif insight.severity == 'low' %}bg-green-100 text-green-800
+                                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                    {{ insight.get_severity_display }} Severity
+                                                </span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm text-gray-500">{{ insight.created_at|date:"M d, Y" }}</span>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <p class="text-sm text-gray-600">{{ insight.description }}</p>
+                                </div>
+                            </div>
+                        </li>
+                    {% empty %}
+                        <li class="px-4 py-5 sm:px-6">
+                            <div class="text-center">
+                                <p class="text-sm text-gray-500">No stored insights available.</p>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Risk Distribution Chart
+        const riskDistributionCtx = document.getElementById('riskDistributionChart');
+        if (riskDistributionCtx) {
+            const riskDistribution = {{ job.aggregate_insights.risk_distribution|default:"{}" }};
+            
+            new Chart(riskDistributionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Low Risk', 'Medium Risk', 'High Risk', 'Critical Risk'],
+                    datasets: [{
+                        data: [
+                            riskDistribution.low || 0,
+                            riskDistribution.medium || 0,
+                            riskDistribution.high || 0,
+                            riskDistribution.critical || 0
+                        ],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.7)',  // Green for low
+                            'rgba(245, 158, 11, 0.7)',  // Yellow for medium
+                            'rgba(249, 115, 22, 0.7)',  // Orange for high
+                            'rgba(239, 68, 68, 0.7)'    // Red for critical
+                        ],
+                        borderColor: [
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(245, 158, 11, 1)',
+                            'rgba(249, 115, 22, 1)',
+                            'rgba(239, 68, 68, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    return `${label}: ${value}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Score Distribution Chart
+        const scoreDistributionCtx = document.getElementById('scoreDistributionChart');
+        if (scoreDistributionCtx) {
+            // This is a placeholder - in a real implementation, you would get actual score distribution data
+            new Chart(scoreDistributionCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['0-10', '11-20', '21-30', '31-40', '41-50', '51-60', '61-70', '71-80', '81-90', '91-100'],
+                    datasets: [{
+                        label: 'Number of Responses',
+                        data: [5, 8, 12, 15, 20, 18, 15, 10, 5, 2],
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Responses'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Score Range'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

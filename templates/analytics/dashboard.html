@@ -15,6 +15,9 @@
                 <p class="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">Insights and statistics from your surveys and responses</p>
             </div>
             <div class="mt-4 md:mt-0 flex flex-wrap gap-2 sm:gap-0 sm:space-x-3">
+                <a href="{% url 'analytics:batch_analysis_select' %}" class="inline-flex items-center px-3 sm:px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-layer-group mr-1 sm:mr-2"></i> <span class="hidden sm:inline">Batch</span> Analysis
+                </a>
                 <a href="#" class="inline-flex items-center px-3 sm:px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                     <i class="fas fa-plus mr-1 sm:mr-2"></i> <span class="hidden sm:inline">Custom</span> Dashboard
                 </a>
@@ -216,7 +219,7 @@
                                     </a>
                                 </div>
                                 <div class="flex justify-between text-xs text-gray-500">
-                                    <span>{{ response.completed_at|default:response.started_at|date:"M d, Y" }}</span>
+                                    <span>{{ response.completed_at|default:response.created_at|date:"M d, Y" }}</span>
                                     {% if response.total_score is not None %}
                                         <span class="font-medium">Score: {{ response.total_score }}</span>
                                     {% endif %}
@@ -266,7 +269,7 @@
                                             </span>
                                         </td>
                                         <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ response.completed_at|default:response.started_at|date:"M d, Y" }}
+                                            {{ response.completed_at|default:response.created_at|date:"M d, Y" }}
                                         </td>
                                         <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full

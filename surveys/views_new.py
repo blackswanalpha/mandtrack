@@ -1034,3 +1034,31 @@ def email_template_delete(request, pk):
     return render(request, 'surveys/email_template_confirm_delete.html', {
         'template': template
     })
+
+@login_required
+def survey_templates(request):
+    """
+    Display a list of template questionnaires
+    """
+    # Get template questionnaires
+    templates = Questionnaire.objects.filter(is_template=True).order_by('-created_at')
+
+    # Filter by category if provided
+    category = request.GET.get('category')
+    if category:
+        templates = templates.filter(category=category)
+
+    # Filter by search term if provided
+    search = request.GET.get('search')
+    if search:
+        templates = templates.filter(
+            models.Q(title__icontains=search) |
+            models.Q(description__icontains=search)
+        )
+
+    context = {
+        'templates': templates,
+        'categories': Questionnaire.CATEGORY_CHOICES,
+    }
+
+    return render(request, 'surveys/survey_templates.html', context)

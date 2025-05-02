@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Batch Report: {{ response_count }} Responses</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .logo {
+            max-height: 60px;
+            margin-bottom: 10px;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196F3;
+            margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        .content {
+            margin-bottom: 20px;
+        }
+        
+        .section {
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .questionnaire-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .questionnaire-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .questionnaire-stats {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        
+        .questionnaire-stat {
+            width: 48%;
+            margin-right: 2%;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .questionnaire-stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2196F3;
+            margin-bottom: 3px;
+        }
+        
+        .questionnaire-stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .message {
+            background-color: #f0f7ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .button {
+            display: inline-block;
+            background-color: #2196F3;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        
+        .button:hover {
+            background-color: #0d8bf2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://mindtrack.barberianspa.com/static/img/logo.png" alt="MindTrack Logo" class="logo">
+            <div class="title">Batch Report</div>
+            <div class="subtitle">{{ response_count }} Responses from {{ questionnaire_count }} Questionnaires</div>
+        </div>
+        
+        {% if additional_message %}
+            <div class="message">
+                <p>{{ additional_message }}</p>
+                <p>- {{ sender_name }}</p>
+            </div>
+        {% endif %}
+        
+        <div class="content">
+            <p>Dear Recipient,</p>
+            
+            <p>Attached is a batch report containing {{ response_count }} responses from {{ questionnaire_count }} questionnaires:</p>
+            
+            <div class="section">
+                <div class="section-title">Questionnaires Summary</div>
+                
+                {% for questionnaire, responses in grouped_responses.items %}
+                    <div class="questionnaire-card">
+                        <div class="questionnaire-title">{{ questionnaire.title }}</div>
+                        <div class="small text-muted">{{ questionnaire.category|title }}</div>
+                        
+                        <div class="questionnaire-stats">
+                            <div class="questionnaire-stat">
+                                <div class="questionnaire-stat-value">{{ responses|length }}</div>
+                                <div class="questionnaire-stat-label">Responses</div>
+                            </div>
+                            
+                            {% with completed=responses|filter_by_status:'completed'|length %}
+                                <div class="questionnaire-stat">
+                                    <div class="questionnaire-stat-value">
+                                        {% if responses|length > 0 %}
+                                            {{ completed|div:responses|length|multiply:100|floatformat:0 }}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </div>
+                                    <div class="questionnaire-stat-label">Completion Rate</div>
+                                </div>
+                            {% endwith %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <p>Please find the complete batch report attached to this email as a PDF document.</p>
+            
+            <p>The report includes:</p>
+            <ul>
+                <li>Summary of all responses</li>
+                <li>Breakdown by questionnaire</li>
+                <li>Response statistics</li>
+                <li>Risk level distribution</li>
+            </ul>
+            
+            <p>If you have any questions about this report, please contact us.</p>
+            
+            <p>Best regards,<br>
+            {{ sender_name }}<br>
+            MindTrack Batch Reporting System</p>
+        </div>
+        
+        <div class="footer">
+            <p>This report was generated by MindTrack Batch Reporting System.</p>
+            <p>&copy; {% now "Y" %} MindTrack. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

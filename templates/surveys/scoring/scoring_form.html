@@ -1,0 +1,124 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{% if scoring_system %}Edit{% else %}Create{% endif %} Scoring System - {{ questionnaire.title }} - MindTrack{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% if scoring_system %}{% url 'surveys:scoring_detail' questionnaire_id=questionnaire.id scoring_id=scoring_system.id %}{% else %}{% url 'surveys:scoring_list' questionnaire_id=questionnaire.id %}{% endif %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">
+                    {% if scoring_system %}Edit{% else %}Create{% endif %} Scoring System
+                </h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                {% if scoring_system %}
+                    Update scoring system for {{ questionnaire.title }}
+                {% else %}
+                    Create a new scoring system for {{ questionnaire.title }}
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <!-- Name -->
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">
+                            Name <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <input type="text" name="name" id="name" 
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                   value="{{ scoring_system.name|default:'' }}" required>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">A descriptive name for this scoring system</p>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">
+                            Description
+                        </label>
+                        <div class="mt-1">
+                            <textarea name="description" id="description" rows="3"
+                                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">{{ scoring_system.description|default:'' }}</textarea>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Optional description of how this scoring system works</p>
+                    </div>
+                    
+                    <!-- Scoring Type -->
+                    <div>
+                        <label for="scoring_type" class="block text-sm font-medium text-gray-700">
+                            Scoring Type <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <select name="scoring_type" id="scoring_type" 
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                   required>
+                                {% for value, label in scoring_types %}
+                                    <option value="{{ value }}" {% if scoring_system.scoring_type == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mt-2 text-xs text-gray-500">
+                            <p class="font-medium">Scoring types explained:</p>
+                            <ul class="list-disc pl-5 space-y-1 mt-1">
+                                <li><span class="font-medium">Simple Sum:</span> Add up the scores for each answer</li>
+                                <li><span class="font-medium">Weighted Scoring:</span> Apply weights to different questions</li>
+                                <li><span class="font-medium">Range-Based Scoring:</span> Categorize scores into ranges with interpretations</li>
+                                <li><span class="font-medium">Custom Formula:</span> Use a custom formula for complex scoring</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Formula (for custom scoring) -->
+                    <div x-data="{ showFormula: {% if scoring_system.scoring_type == 'custom' %}true{% else %}false{% endif %} }" x-show="showFormula">
+                        <label for="formula" class="block text-sm font-medium text-gray-700">
+                            Custom Formula
+                        </label>
+                        <div class="mt-1">
+                            <textarea name="formula" id="formula" rows="3"
+                                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">{{ scoring_system.formula|default:'' }}</textarea>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">For custom scoring, describe the formula or logic used</p>
+                    </div>
+                    
+                    <!-- Submit Buttons -->
+                    <div class="flex justify-end space-x-3 pt-5 border-t border-gray-200">
+                        <a href="{% if scoring_system %}{% url 'surveys:scoring_detail' questionnaire_id=questionnaire.id scoring_id=scoring_system.id %}{% else %}{% url 'surveys:scoring_list' questionnaire_id=questionnaire.id %}{% endif %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                            Cancel
+                        </a>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200">
+                            {% if scoring_system %}Update{% else %}Create{% endif %} Scoring System
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const scoringTypeSelect = document.getElementById('scoring_type');
+        const formulaContainer = document.querySelector('[x-data]');
+        
+        scoringTypeSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                formulaContainer.__x.$data.showFormula = true;
+            } else {
+                formulaContainer.__x.$data.showFormula = false;
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

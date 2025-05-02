@@ -1,16 +1,34 @@
-{% extends 'dashboard/base.html' %}
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
 
-{% block title %}Admin Dashboard - MindTrack{% endblock %}
+{% block title %}Admin Dashboard{% endblock %}
 
-{% block page_title %}Admin Dashboard{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
 
 {% block page_actions %}
-<a href="{% url 'surveys:survey_create' %}" class="btn btn-sm btn-primary transition-all">
-    <i class="fas fa-plus-circle me-1"></i> New Questionnaire
-</a>
-<a href="#" class="btn btn-sm btn-info transition-all">
-    <i class="fas fa-download me-1"></i> Export Data
-</a>
+<div class="dropdown d-inline-block me-2">
+    <button class="btn btn-sm btn-primary dropdown-toggle transition-all" type="button" id="createDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-plus-circle me-1"></i> Create New
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 animated--fade-in" aria-labelledby="createDropdown">
+        <li><a class="dropdown-item" href="{% url 'surveys:survey_create' %}"><i class="fas fa-clipboard-list me-2 text-primary"></i> Questionnaire</a></li>
+        <li><a class="dropdown-item" href="#"><i class="fas fa-users me-2 text-info"></i> User</a></li>
+        <li><a class="dropdown-item" href="#"><i class="fas fa-building me-2 text-warning"></i> Organization</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="#"><i class="fas fa-chart-line me-2 text-success"></i> Report</a></li>
+    </ul>
+</div>
+
+<div class="dropdown d-inline-block">
+    <button class="btn btn-sm btn-info dropdown-toggle transition-all" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-download me-1"></i> Export Data
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 animated--fade-in" aria-labelledby="exportDropdown">
+        <li><a class="dropdown-item" href="#"><i class="fas fa-file-csv me-2 text-primary"></i> Export as CSV</a></li>
+        <li><a class="dropdown-item" href="#"><i class="fas fa-file-excel me-2 text-success"></i> Export as Excel</a></li>
+        <li><a class="dropdown-item" href="#"><i class="fas fa-file-pdf me-2 text-danger"></i> Export as PDF</a></li>
+    </ul>
+</div>
 {% endblock %}
 
 {% block dashboard_content %}
@@ -21,123 +39,569 @@
 </div>
 {% endif %}
 
-<div class="row">
+<!-- Dashboard Overview Section -->
+<div class="row mb-4">
     <div class="col-12">
-        <div class="progress mb-4" data-aos="fade-right">
-            <div class="progress-bar progress-animate" style="width: 100%"></div>
+        <div class="card shadow-sm border-0 overflow-hidden">
+            <div class="card-body p-0">
+                <div class="row g-0">
+                    <div class="col-md-6 d-flex flex-column p-4">
+                        <h4 class="text-primary fw-bold mb-2">Welcome back, {{ user.first_name|default:"Admin" }}!</h4>
+                        <p class="text-muted mb-3">Here's what's happening with your questionnaires today.</p>
+
+                        <div class="row mt-auto">
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <div class="rounded-circle bg-primary bg-opacity-10 p-2">
+                                            <i class="fas fa-chart-line text-primary"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-0">Completion Rate</h6>
+                                        <h4 class="mb-0 fw-bold">{{ completion_rate }}%</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <div class="rounded-circle bg-success bg-opacity-10 p-2">
+                                            <i class="fas fa-star-half-alt text-success"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-0">Average Score</h6>
+                                        <h4 class="mb-0 fw-bold">{{ avg_score }}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 bg-primary bg-gradient p-4 text-white">
+                        <h5 class="fw-bold mb-3">Response Trend (Last 30 Days)</h5>
+                        <div class="chart-container" style="position: relative; height:150px;">
+                            <canvas id="responseOverviewChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="row">
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
     <!-- Total Questionnaires Card -->
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-start border-primary border-4 shadow h-100 py-2 transition-all hover:shadow-lg stagger-item">
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col me-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            Total Questionnaires</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_questionnaires }}</div>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <div class="rounded p-2 bg-primary bg-opacity-10">
+                            <i class="fas fa-clipboard-list fa-fw text-primary"></i>
+                        </div>
                     </div>
-                    <div class="col-auto">
-                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0 text-uppercase small">Questionnaires</h6>
                     </div>
                 </div>
-            </div>
-            <div class="card-footer bg-transparent border-0">
-                <a href="{% url 'surveys:survey_list' %}" class="btn btn-sm btn-primary" hx-boost="true">View All</a>
-                <a href="{% url 'surveys:survey_create' %}" class="btn btn-sm btn-outline-primary" hx-boost="true">Create New</a>
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h3 class="fw-bold mb-0">{{ total_questionnaires }}</h3>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-link text-muted" type="button" id="questionnairesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="questionnairesDropdown">
+                                <li><a class="dropdown-item" href="{% url 'surveys:survey_list' %}"><i class="fas fa-list me-2 text-primary"></i> View All</a></li>
+                                <li><a class="dropdown-item" href="{% url 'surveys:survey_create' %}"><i class="fas fa-plus me-2 text-success"></i> Create New</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-chart-pie me-2 text-info"></i> View Analytics</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center mt-3">
+                    <div class="flex-grow-1">
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 70%;" aria-valuenow="{{ active_questionnaires|default:0 }}" aria-valuemin="0" aria-valuemax="{{ total_questionnaires|default:1 }}"></div>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0 ms-2">
+                        <span class="badge bg-primary">{{ active_questionnaires|default:0 }} Active</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Total Responses Card -->
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-start border-success border-4 shadow h-100 py-2 transition-all hover:shadow-lg stagger-item">
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col me-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            Total Responses</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_responses }}</div>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <div class="rounded p-2 bg-success bg-opacity-10">
+                            <i class="fas fa-comments fa-fw text-success"></i>
+                        </div>
                     </div>
-                    <div class="col-auto">
-                        <i class="fas fa-comments fa-2x text-gray-300"></i>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0 text-uppercase small">Responses</h6>
                     </div>
                 </div>
-            </div>
-            <div class="card-footer bg-transparent border-0">
-                <a href="{% url 'feedback:response_list' %}" class="btn btn-sm btn-success" hx-boost="true">View All</a>
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h3 class="fw-bold mb-0">{{ total_responses }}</h3>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-link text-muted" type="button" id="responsesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="responsesDropdown">
+                                <li><a class="dropdown-item" href="{% url 'feedback:response_list' %}"><i class="fas fa-list me-2 text-success"></i> View All</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-chart-line me-2 text-info"></i> View Analytics</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2 text-primary"></i> Export Data</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center mt-3">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center">
+                            <div class="text-success me-2">
+                                <i class="fas fa-arrow-up"></i>
+                            </div>
+                            <div>
+                                <span class="fw-medium">{{ completion_rate }}% completion rate</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Total Users Card -->
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-start border-info border-4 shadow h-100 py-2 transition-all hover:shadow-lg stagger-item">
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col me-2">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                            Total Users</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_users|default:"0" }}</div>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <div class="rounded p-2 bg-info bg-opacity-10">
+                            <i class="fas fa-users fa-fw text-info"></i>
+                        </div>
                     </div>
-                    <div class="col-auto">
-                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0 text-uppercase small">Users</h6>
                     </div>
                 </div>
-            </div>
-            <div class="card-footer bg-transparent border-0">
-                <a href="#" class="btn btn-sm btn-info" hx-boost="true">View All</a>
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h3 class="fw-bold mb-0">{{ total_users|default:"0" }}</h3>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-link text-muted" type="button" id="usersDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="usersDropdown">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-list me-2 text-info"></i> View All</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-user-plus me-2 text-success"></i> Add User</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-user-shield me-2 text-warning"></i> Manage Roles</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center mt-3">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center">
+                            <div class="text-info me-2">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                            <div>
+                                <span class="fw-medium">Active users</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Total Organizations Card -->
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-start border-warning border-4 shadow h-100 py-2 transition-all hover:shadow-lg stagger-item">
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col me-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                            Total Organizations</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_organizations|default:"0" }}</div>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <div class="rounded p-2 bg-warning bg-opacity-10">
+                            <i class="fas fa-building fa-fw text-warning"></i>
+                        </div>
                     </div>
-                    <div class="col-auto">
-                        <i class="fas fa-building fa-2x text-gray-300"></i>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0 text-uppercase small">Organizations</h6>
                     </div>
                 </div>
-            </div>
-            <div class="card-footer bg-transparent border-0">
-                <a href="{% url 'groups:organization_list' %}" class="btn btn-sm btn-warning" hx-boost="true">View All</a>
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h3 class="fw-bold mb-0">{{ total_organizations|default:"0" }}</h3>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-link text-muted" type="button" id="orgsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="orgsDropdown">
+                                <li><a class="dropdown-item" href="{% url 'groups:organization_list' %}"><i class="fas fa-list me-2 text-warning"></i> View All</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-plus me-2 text-success"></i> Add Organization</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-chart-pie me-2 text-info"></i> View Analytics</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center mt-3">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center">
+                            <div class="text-warning me-2">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div>
+                                <span class="fw-medium">Active organizations</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- System Stats -->
-<div class="row">
-    <div class="col-lg-6">
-        <div class="card shadow mb-4 transition-all hover:shadow-lg stagger-item">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Questionnaire Statistics</h6>
+<!-- Data Visualization Section -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <h5 class="text-dark mb-3 fw-bold">Data Visualization</h5>
+    </div>
+
+    <!-- Response Trends Chart -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-primary">Response Trends</h6>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-link text-muted" type="button" id="trendDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="trendDropdown">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-calendar me-2 text-primary"></i> Last 7 Days</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-alt me-2 text-primary"></i> Last 30 Days</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-week me-2 text-primary"></i> Last 90 Days</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2 text-success"></i> Export Chart</a></li>
+                    </ul>
+                </div>
             </div>
             <div class="card-body">
-                <div class="chart-area">
-                    <canvas id="questionnairesChart"></canvas>
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="responseTrendChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-lg-6">
-        <div class="card shadow mb-4 transition-all hover:shadow-lg stagger-item">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Response Statistics</h6>
+
+    <!-- Risk Distribution Chart -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-primary">Risk Distribution</h6>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-link text-muted" type="button" id="riskDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="riskDropdown">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-chart-pie me-2 text-primary"></i> View Details</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2 text-success"></i> Export Chart</a></li>
+                    </ul>
+                </div>
             </div>
             <div class="card-body">
-                <div class="chart-area">
-                    <canvas id="responsesChart"></canvas>
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="riskDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Charts Section -->
+<div class="row g-3 mb-4">
+    <!-- Questionnaire Categories Chart -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-primary">Questionnaire Categories</h6>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-link text-muted" type="button" id="categoriesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="categoriesDropdown">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-chart-pie me-2 text-primary"></i> View Details</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2 text-success"></i> Export Chart</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 250px;">
+                    <canvas id="categoriesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Device Distribution Chart -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-primary">Device Distribution</h6>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-link text-muted" type="button" id="deviceDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="deviceDropdown">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-chart-pie me-2 text-primary"></i> View Details</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2 text-success"></i> Export Chart</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 250px;">
+                    <canvas id="deviceDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demographics Chart -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-primary">Demographics</h6>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-outline-primary active" id="genderTabBtn">Gender</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="ageTabBtn">Age</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 250px;">
+                    <canvas id="genderChart" class="demographics-chart active"></canvas>
+                    <canvas id="ageChart" class="demographics-chart" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Completion Time Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm transition-all hover:shadow stagger-item">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0 fw-bold text-primary">Completion Time Statistics</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center p-3">
+                            <div class="display-6 text-primary mb-2">{{ completion_time_data.average_display }}</div>
+                            <p class="text-muted mb-0">Average Completion Time</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3">
+                            <div class="display-6 text-success mb-2">{{ completion_time_data.min_display }}</div>
+                            <p class="text-muted mb-0">Minimum Completion Time</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3">
+                            <div class="display-6 text-warning mb-2">{{ completion_time_data.max_display }}</div>
+                            <p class="text-muted mb-0">Maximum Completion Time</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity and Insights Section -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <h5 class="text-dark mb-3 fw-bold">Activity & Insights</h5>
+    </div>
+
+    <!-- Recent Responses -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-primary">Recent Responses</h6>
+                <a href="{% url 'feedback:response_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Questionnaire</th>
+                                <th>Respondent</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Score</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for response in recent_responses %}
+                            <tr>
+                                <td class="text-nowrap">{{ response.survey.title|truncatechars:25 }}</td>
+                                <td>
+                                    {% if response.patient_name %}
+                                        {{ response.patient_name|truncatechars:20 }}
+                                    {% elif response.user %}
+                                        {{ response.user.get_full_name|default:response.user.email|truncatechars:20 }}
+                                    {% elif response.patient_email %}
+                                        {{ response.patient_email|truncatechars:20 }}
+                                    {% else %}
+                                        Anonymous
+                                    {% endif %}
+                                </td>
+                                <td class="text-nowrap">{{ response.completed_at|default:response.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="badge {% if response.status == 'completed' %}bg-success{% elif response.status == 'in_progress' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                        {{ response.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ response.score|default:"-" }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'feedback:response_detail' pk=response.pk %}" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'feedback:response_analyze' pk=response.pk %}" class="btn btn-outline-info" data-bs-toggle="tooltip" title="Analyze">
+                                            <i class="fas fa-chart-bar"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-inbox fa-2x mb-3"></i>
+                                        <p>No responses found</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Insights -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-primary">AI Insights</h6>
+                <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for insight in recent_insights %}
+                    <div class="list-group-item border-0 py-3">
+                        <div class="d-flex w-100 justify-content-between mb-1">
+                            <h6 class="mb-1 text-primary">{{ insight.title|truncatechars:40 }}</h6>
+                            <small class="text-muted">{{ insight.created_at|timesince }} ago</small>
+                        </div>
+                        <p class="mb-1 small text-muted">{{ insight.content|truncatechars:100 }}</p>
+                        <div class="d-flex align-items-center mt-2">
+                            <span class="badge bg-{{ insight.insight_type|yesno:'success,warning,info,primary,secondary' }} me-2">{{ insight.insight_type|title }}</span>
+                            <div class="small text-muted">Confidence: {{ insight.confidence|floatformat:0 }}%</div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-robot fa-2x text-muted mb-3"></i>
+                        <p class="text-muted">No AI insights available</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Section -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <h5 class="text-dark mb-3 fw-bold">Quick Actions</h5>
+    </div>
+    <div class="col-12">
+        <div class="card border-0 shadow-sm transition-all hover:shadow stagger-item">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{% url 'surveys:survey_create' %}" class="d-flex align-items-center p-3 rounded bg-light text-decoration-none transition-all hover:bg-primary hover:text-white">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-clipboard-list fa-lg"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">New Questionnaire</h6>
+                                <small>Create a new assessment</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{% url 'surveys:qr_code_list' %}" class="d-flex align-items-center p-3 rounded bg-light text-decoration-none transition-all hover:bg-success hover:text-white">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-qrcode fa-lg"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">Generate QR Code</h6>
+                                <small>Create access codes</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="#" class="d-flex align-items-center p-3 rounded bg-light text-decoration-none transition-all hover:bg-info hover:text-white">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-chart-bar fa-lg"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">Generate Report</h6>
+                                <small>Create custom reports</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="#" class="d-flex align-items-center p-3 rounded bg-light text-decoration-none transition-all hover:bg-warning hover:text-white">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-cog fa-lg"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">System Settings</h6>
+                                <small>Configure application</small>
+                            </div>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -145,17 +609,17 @@
 </div>
 
 <!-- Admin Information Row -->
-<div class="row">
-    <div class="col-md-6 mb-4" data-aos="fade-up" data-aos-delay="100">
-        <div class="card shadow h-100 transition-all hover:shadow-lg stagger-item">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Recent Login Activity</h6>
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-primary">Recent Login Activity</h6>
                 <span class="badge bg-primary rounded-pill">{{ login_history|length }}</span>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 {% if login_history %}
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
                                 <th>Date/Time</th>
@@ -166,12 +630,11 @@
                         </thead>
                         <tbody>
                             {% for login in login_history %}
-                            <tr class="fade-in" style="animation-delay: {{ forloop.counter0|add:1 }}00ms;">
+                            <tr>
                                 <td>{{ login.login_time|date:"M d, Y H:i" }}</td>
                                 <td>
-                                    <span class="tooltip-container">
+                                    <span class="d-inline-block" data-bs-toggle="tooltip" title="User Agent: {{ login.user_agent|truncatechars:50 }}">
                                         {{ login.ip_address|default:"Unknown" }}
-                                        <span class="tooltip-text">User Agent: {{ login.user_agent|truncatechars:50 }}</span>
                                     </span>
                                 </td>
                                 <td>
@@ -194,12 +657,9 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="text-end mt-3">
-                    <a href="#" class="btn btn-sm btn-outline-primary">View All Activity <i class="fas fa-arrow-right ms-1"></i></a>
-                </div>
                 {% else %}
                 <div class="text-center py-5">
-                    <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                    <i class="fas fa-history fa-2x text-muted mb-3"></i>
                     <p class="text-muted">No login history available.</p>
                 </div>
                 {% endif %}
@@ -207,52 +667,84 @@
         </div>
     </div>
 
-    <div class="col-md-6 mb-4" data-aos="fade-up" data-aos-delay="200">
-        <div class="card shadow h-100 transition-all hover:shadow-lg stagger-item">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Admin Profile</h6>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-primary">Admin Profile</h6>
                 <span class="badge bg-success rounded-pill">Active</span>
             </div>
             <div class="card-body">
                 {% if admin_profile %}
-                <div class="text-center mb-4">
-                    {% if user.profile_image %}
-                    <img src="{{ user.profile_image.url }}" alt="{{ user.get_full_name }}" class="rounded-circle img-thumbnail" style="width: 100px; height: 100px;">
-                    {% else %}
-                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center mx-auto" style="width: 100px; height: 100px;">
-                        <span class="text-white display-6">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
+                <div class="d-flex align-items-center mb-4">
+                    <div class="flex-shrink-0">
+                        {% if user.profile_image %}
+                        <img src="{{ user.profile_image.url }}" alt="{{ user.get_full_name }}" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
+                        {% else %}
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                            <span class="text-white h3 mb-0">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
-                    <h5 class="mt-3">{{ user.get_full_name }}</h5>
-                    <p class="text-muted">{{ user.email }}</p>
+                    <div class="flex-grow-1 ms-3">
+                        <h5 class="mb-1">{{ user.get_full_name }}</h5>
+                        <p class="text-muted mb-0">{{ user.email }}</p>
+                        <div class="mt-2">
+                            <span class="badge {% if admin_profile.access_level == 'full' %}bg-success{% elif admin_profile.access_level == 'limited' %}bg-warning{% else %}bg-info{% endif %}">
+                                {{ admin_profile.get_access_level_display }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="row mb-3 slide-in-right">
-                    <div class="col-md-4 fw-bold">Department:</div>
-                    <div class="col-md-8">{{ admin_profile.department|default:"Not specified" }}</div>
-                </div>
-                <div class="row mb-3 slide-in-right delay-100">
-                    <div class="col-md-4 fw-bold">Position:</div>
-                    <div class="col-md-8">{{ admin_profile.position|default:"Not specified" }}</div>
-                </div>
-                <div class="row mb-3 slide-in-right delay-200">
-                    <div class="col-md-4 fw-bold">Employee ID:</div>
-                    <div class="col-md-8">{{ admin_profile.employee_id|default:"Not specified" }}</div>
-                </div>
-                <div class="row mb-3 slide-in-right delay-300">
-                    <div class="col-md-4 fw-bold">Access Level:</div>
-                    <div class="col-md-8">
-                        <span class="badge {% if admin_profile.access_level == 'full' %}bg-success{% elif admin_profile.access_level == 'limited' %}bg-warning{% else %}bg-info{% endif %}">
-                            {{ admin_profile.get_access_level_display }}
-                        </span>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 text-primary">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-2">
+                                <div class="small text-muted">Department</div>
+                                <div>{{ admin_profile.department|default:"Not specified" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 text-primary">
+                                <i class="fas fa-id-badge"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-2">
+                                <div class="small text-muted">Position</div>
+                                <div>{{ admin_profile.position|default:"Not specified" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 text-primary">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-2">
+                                <div class="small text-muted">Employee ID</div>
+                                <div>{{ admin_profile.employee_id|default:"Not specified" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 text-primary">
+                                <i class="fas fa-network-wired"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-2">
+                                <div class="small text-muted">Last Login IP</div>
+                                <div>{{ admin_profile.last_login_ip|default:"Not available" }}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="row mb-3 slide-in-right delay-400">
-                    <div class="col-md-4 fw-bold">Last Login IP:</div>
-                    <div class="col-md-8">{{ admin_profile.last_login_ip|default:"Not available" }}</div>
-                </div>
-                <div class="d-grid gap-2 mt-4">
-                    <a href="{% url 'admin_profile' %}" class="btn btn-primary ripple">
+
+                <div class="mt-4">
+                    <a href="{% url 'admin_profile' %}" class="btn btn-sm btn-primary">
                         <i class="fas fa-user-edit me-2"></i> Edit Profile
                     </a>
                 </div>
@@ -261,126 +753,13 @@
                     <i class="fas fa-user-circle fa-3x text-muted mb-3"></i>
                     <p class="text-muted">Admin profile not available.</p>
                     <div class="mt-3">
-                        <a href="{% url 'admin_profile' %}" class="btn btn-primary ripple">
+                        <a href="{% url 'admin_profile' %}" class="btn btn-primary">
                             <i class="fas fa-plus-circle me-2"></i> Create Profile
                         </a>
                     </div>
                 </div>
                 {% endif %}
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Actions Section -->
-<div class="row" data-aos="fade-up">
-    <div class="col-12 mb-4">
-        <div class="card shadow transition-all hover:shadow-lg stagger-item">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="{% url 'admin_create_user' %}" class="card text-center p-4 hover-lift interactive-card text-decoration-none">
-                            <div class="text-primary mb-3">
-                                <i class="fas fa-user-plus fa-2x"></i>
-                            </div>
-                            <h6 class="mb-0">Create Admin</h6>
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="{% url 'surveys:survey_create' %}" class="card text-center p-4 hover-lift interactive-card text-decoration-none">
-                            <div class="text-success mb-3">
-                                <i class="fas fa-clipboard-list fa-2x"></i>
-                            </div>
-                            <h6 class="mb-0">New Questionnaire</h6>
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="{% url 'surveys:qr_code_list' %}" class="card text-center p-4 hover-lift interactive-card text-decoration-none">
-                            <div class="text-warning mb-3">
-                                <i class="fas fa-qrcode fa-2x"></i>
-                            </div>
-                            <h6 class="mb-0">Generate QR Code</h6>
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="#" class="card text-center p-4 hover-lift interactive-card text-decoration-none">
-                            <div class="text-info mb-3">
-                                <i class="fas fa-chart-bar fa-2x"></i>
-                            </div>
-                            <h6 class="mb-0">View Reports</h6>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Recent Responses -->
-<div class="card shadow mb-4 transition-all hover:shadow-lg stagger-item">
-    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-        <h6 class="m-0 font-weight-bold text-success">Recent Responses</h6>
-        <a href="{% url 'feedback:response_list' %}" class="btn btn-sm btn-success" hx-boost="true">View All</a>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-bordered" width="100%" cellspacing="0">
-                <thead>
-                    <tr>
-                        <th>Questionnaire</th>
-                        <th>Respondent</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th>Score</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for response in recent_responses %}
-                    <tr class="transition-colors hover:bg-gray-50">
-                        <td>{{ response.questionnaire.title }}</td>
-                        <td>
-                            {% if response.patient_name %}
-                                {{ response.patient_name }}
-                            {% elif response.user %}
-                                {{ response.user.get_full_name|default:response.user.email }}
-                            {% elif response.patient_email %}
-                                {{ response.patient_email }}
-                            {% else %}
-                                Anonymous
-                            {% endif %}
-                        </td>
-                        <td>{{ response.completed_at|default:response.created_at|date:"M d, Y" }}</td>
-                        <td>
-                            <span class="badge {% if response.status == 'completed' %}bg-success{% elif response.status == 'in_progress' %}bg-warning{% else %}bg-secondary{% endif %}">
-                                {{ response.get_status_display }}
-                            </span>
-                        </td>
-                        <td>{{ response.score|default:"-" }}</td>
-                        <td>
-                            <div class="btn-group" role="group">
-                                <a href="{% url 'feedback:response_detail' pk=response.pk %}" class="btn btn-sm btn-info" hx-boost="true" data-bs-toggle="tooltip" title="View">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{% url 'feedback:response_analyze' pk=response.pk %}" class="btn btn-sm btn-primary" hx-boost="true" data-bs-toggle="tooltip" title="Analyze">
-                                    <i class="fas fa-chart-bar"></i>
-                                </a>
-                                <a href="#" class="btn btn-sm btn-success" hx-boost="true" data-bs-toggle="tooltip" title="Score">
-                                    <i class="fas fa-calculator"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center">No responses found.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
     </div>
 </div>
@@ -391,67 +770,414 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Questionnaires Chart
-        var ctx = document.getElementById('questionnairesChart').getContext('2d');
-        var questionnairesChart = new Chart(ctx, {
-            type: 'bar',
+        // Overview Response Trend Chart
+        const responseOverviewChart = document.getElementById('responseOverviewChart');
+        if (responseOverviewChart) {
+            const overviewCtx = responseOverviewChart.getContext('2d');
+            const trendData = {{ trend_data|safe }};
+            const responseLabels = trendData.labels;
+            const responseData = trendData.data;
+
+            new Chart(overviewCtx, {
+            type: 'line',
             data: {
-                labels: ['Active', 'Draft', 'Archived'],
+                labels: responseLabels,
                 datasets: [{
-                    label: 'Questionnaires by Status',
-                    data: [{{ active_questionnaires|default:0 }}, {{ draft_questionnaires|default:0 }}, {{ archived_questionnaires|default:0 }}],
-                    backgroundColor: [
-                        'rgba(75, 192, 192, 0.2)',
-                        'rgba(255, 206, 86, 0.2)',
-                        'rgba(201, 203, 207, 0.2)'
-                    ],
-                    borderColor: [
-                        'rgb(75, 192, 192)',
-                        'rgb(255, 206, 86)',
-                        'rgb(201, 203, 207)'
-                    ],
+                    label: 'Daily Responses',
+                    data: responseData,
+                    fill: {
+                        target: 'origin',
+                        above: 'rgba(13, 110, 253, 0.1)'
+                    },
+                    borderColor: '#ffffff',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#ffffff',
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#ffffff',
+                            maxRotation: 0,
+                            maxTicksLimit: 5
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#ffffff',
+                            precision: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        titleColor: '#0d6efd',
+                        bodyColor: '#212529',
+                        borderColor: '#0d6efd',
+                        borderWidth: 1,
+                        cornerRadius: 6,
+                        displayColors: false,
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                return tooltipItems[0].label;
+                            },
+                            label: function(context) {
+                                return `Responses: ${context.raw}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        }
+
+        // Response Trend Chart (Detailed)
+        const responseTrendChart = document.getElementById('responseTrendChart');
+        if (responseTrendChart) {
+            const trendCtx = responseTrendChart.getContext('2d');
+
+            new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: responseLabels,
+                datasets: [{
+                    label: 'Daily Responses',
+                    data: responseData,
+                    fill: false,
+                    borderColor: '#0d6efd',
+                    backgroundColor: '#0d6efd',
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            maxRotation: 0,
+                            maxTicksLimit: 10
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        cornerRadius: 6,
+                        displayColors: false
+                    }
+                }
+            }
+        });
+        }
+
+        // Risk Distribution Chart
+        const riskDistributionChart = document.getElementById('riskDistributionChart');
+        if (riskDistributionChart) {
+            const riskCtx = riskDistributionChart.getContext('2d');
+            const riskData = {{ risk_data|safe }};
+
+            new Chart(riskCtx, {
+            type: 'doughnut',
+            data: {
+                labels: riskData.labels,
+                datasets: [{
+                    data: riskData.data,
+                    backgroundColor: riskData.colors,
+                    borderColor: 'rgba(255, 255, 255, 0.8)',
+                    borderWidth: 2,
+                    hoverOffset: 15
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        cornerRadius: 6,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        }
+
+        // Categories Chart
+        const categoriesChart = document.getElementById('categoriesChart');
+        if (categoriesChart) {
+            const categoriesCtx = categoriesChart.getContext('2d');
+            const categoriesData = {{ top_questionnaires_data|safe }};
+
+            new Chart(categoriesCtx, {
+            type: 'pie',
+            data: {
+                labels: categoriesData.labels,
+                datasets: [{
+                    data: categoriesData.data,
+                    backgroundColor: categoriesData.colors,
+                    borderColor: 'rgba(255, 255, 255, 0.8)',
                     borderWidth: 1
                 }]
             },
             options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        cornerRadius: 6
                     }
-                },
-                animation: {
-                    duration: 1000,
-                    easing: 'easeOutQuart'
                 }
             }
         });
+        }
 
-        // Responses Chart
-        var ctx2 = document.getElementById('responsesChart').getContext('2d');
-        var responsesChart = new Chart(ctx2, {
-            type: 'line',
+        // Device Distribution Chart
+        const deviceDistributionChart = document.getElementById('deviceDistributionChart');
+        if (deviceDistributionChart) {
+            const deviceCtx = deviceDistributionChart.getContext('2d');
+            const deviceData = {{ device_data|safe }};
+
+            new Chart(deviceCtx, {
+            type: 'bar',
             data: {
-                labels: ['January', 'February', 'March', 'April', 'May', 'June'],
+                labels: deviceData.labels,
                 datasets: [{
-                    label: 'Responses Over Time',
-                    data: [12, 19, 3, 5, 2, 3],
-                    fill: false,
-                    borderColor: 'rgb(75, 192, 192)',
-                    tension: 0.1
+                    label: 'Responses by Device',
+                    data: deviceData.data,
+                    backgroundColor: deviceData.colors,
+                    borderColor: 'rgba(255, 255, 255, 0.8)',
+                    borderWidth: 1,
+                    borderRadius: 5,
+                    maxBarThickness: 40
                 }]
             },
             options: {
+                responsive: true,
+                maintainAspectRatio: false,
                 scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            precision: 0
+                        }
                     }
                 },
-                animation: {
-                    duration: 1000,
-                    easing: 'easeOutQuart'
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        cornerRadius: 6,
+                        displayColors: false
+                    }
                 }
             }
         });
+        }
+
+        // Demographics Charts
+        const genderChart = document.getElementById('genderChart');
+        if (genderChart) {
+            const genderCtx = genderChart.getContext('2d');
+            const genderData = {{ gender_distribution|safe }};
+
+            new Chart(genderCtx, {
+            type: 'pie',
+            data: {
+                labels: genderData.labels,
+                datasets: [{
+                    data: genderData.data,
+                    backgroundColor: genderData.colors,
+                    borderColor: 'rgba(255, 255, 255, 0.8)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        cornerRadius: 6
+                    }
+                }
+            }
+        });
+        }
+
+        const ageChart = document.getElementById('ageChart');
+        if (ageChart) {
+            const ageCtx = ageChart.getContext('2d');
+            const ageData = {{ age_distribution|safe }};
+
+            new Chart(ageCtx, {
+            type: 'bar',
+            data: {
+                labels: ageData.labels,
+                datasets: [{
+                    label: 'Responses by Age Group',
+                    data: ageData.data,
+                    backgroundColor: ageData.colors,
+                    borderColor: 'rgba(255, 255, 255, 0.8)',
+                    borderWidth: 1,
+                    borderRadius: 5,
+                    maxBarThickness: 30
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        cornerRadius: 6,
+                        displayColors: false
+                    }
+                }
+            }
+        });
+        }
+
+        // Toggle between gender and age charts
+        const genderTabBtn = document.getElementById('genderTabBtn');
+        const ageTabBtn = document.getElementById('ageTabBtn');
+
+        if (genderTabBtn && ageTabBtn) {
+            genderTabBtn.addEventListener('click', function() {
+                const genderChart = document.getElementById('genderChart');
+                const ageChart = document.getElementById('ageChart');
+
+                if (genderChart && ageChart) {
+                    genderChart.style.display = 'block';
+                    ageChart.style.display = 'none';
+                    this.classList.add('active');
+                    ageTabBtn.classList.remove('active');
+                }
+            });
+
+            ageTabBtn.addEventListener('click', function() {
+                const genderChart = document.getElementById('genderChart');
+                const ageChart = document.getElementById('ageChart');
+
+                if (genderChart && ageChart) {
+                    genderChart.style.display = 'none';
+                    ageChart.style.display = 'block';
+                    this.classList.add('active');
+                    genderTabBtn.classList.remove('active');
+                }
+            });
+        }
     });
 </script>
 {% endblock %}

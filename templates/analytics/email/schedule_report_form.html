@@ -1,0 +1,309 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Schedule Report{% endblock %}
+
+{% block extra_css %}
+<style>
+    .schedule-form-container {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .schedule-form-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 20px;
+    }
+    
+    .info-card {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .info-item {
+        display: flex;
+        margin-bottom: 8px;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        width: 150px;
+        color: #666;
+    }
+    
+    .info-value {
+        flex-grow: 1;
+    }
+    
+    .form-actions {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+    }
+    
+    .frequency-options {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .frequency-option {
+        flex: 1;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .frequency-option:hover {
+        border-color: #aaa;
+        background-color: #f8f9fa;
+    }
+    
+    .frequency-option.selected {
+        border-color: #2196F3;
+        background-color: #e3f2fd;
+    }
+    
+    .frequency-option-icon {
+        font-size: 24px;
+        margin-bottom: 10px;
+        color: #2196F3;
+    }
+    
+    .frequency-option-title {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .frequency-option-description {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .day-selector {
+        display: none;
+    }
+    
+    .day-selector.active {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">Schedule Recurring Report</h1>
+            {% if report %}
+                <p class="text-muted">{{ report.title }}</p>
+            {% elif questionnaire %}
+                <p class="text-muted">{{ questionnaire.title }}</p>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-md-end">
+            {% if report %}
+                <a href="{% url 'analytics:report_detail' pk=report.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Report
+                </a>
+            {% elif questionnaire %}
+                <a href="{% url 'analytics:questionnaire_dashboard' questionnaire_id=questionnaire.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="schedule-form-container">
+        <h2 class="schedule-form-title">Schedule Recurring Report</h2>
+        
+        {% if report %}
+            <div class="info-card">
+                <h3 class="h5 mb-3">Report Information</h3>
+                <div class="info-item">
+                    <div class="info-label">Title:</div>
+                    <div class="info-value">{{ report.title }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Type:</div>
+                    <div class="info-value">{{ report.get_report_type_display }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Created:</div>
+                    <div class="info-value">{{ report.created_at|date:"F j, Y, g:i a" }}</div>
+                </div>
+                {% if report.questionnaire %}
+                    <div class="info-item">
+                        <div class="info-label">Questionnaire:</div>
+                        <div class="info-value">{{ report.questionnaire.title }}</div>
+                    </div>
+                {% endif %}
+            </div>
+        {% elif questionnaire %}
+            <div class="info-card">
+                <h3 class="h5 mb-3">Questionnaire Information</h3>
+                <div class="info-item">
+                    <div class="info-label">Title:</div>
+                    <div class="info-value">{{ questionnaire.title }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Category:</div>
+                    <div class="info-value">{{ questionnaire.category|title }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Total Responses:</div>
+                    <div class="info-value">{{ questionnaire.responses.count }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Created By:</div>
+                    <div class="info-value">{{ questionnaire.created_by.get_full_name }}</div>
+                </div>
+            </div>
+        {% endif %}
+        
+        <form method="post" action="{% url 'analytics:create_scheduled_report' %}">
+            {% csrf_token %}
+            
+            {% if report %}
+                <input type="hidden" name="report_id" value="{{ report.id }}">
+                <input type="hidden" name="report_type" value="{{ report.report_type }}">
+            {% elif questionnaire %}
+                <input type="hidden" name="questionnaire_id" value="{{ questionnaire.id }}">
+                
+                <div class="mb-4">
+                    <label class="form-label">Report Type <span class="text-danger">*</span></label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="report_type" id="report_type_dashboard" value="dashboard" checked>
+                        <label class="form-check-label" for="report_type_dashboard">
+                            Dashboard Report
+                        </label>
+                        <div class="form-text">A comprehensive dashboard report with charts and statistics.</div>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="report_type" id="report_type_batch" value="batch">
+                        <label class="form-check-label" for="report_type_batch">
+                            Batch Report
+                        </label>
+                        <div class="form-text">A batch report containing all responses for this questionnaire.</div>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <div class="mb-3">
+                <label for="recipient_email" class="form-label">Recipient Email <span class="text-danger">*</span></label>
+                <input type="email" class="form-control" id="recipient_email" name="recipient_email" required>
+                <div class="form-text">Email address to send the recurring report to.</div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label">Frequency <span class="text-danger">*</span></label>
+                <div class="frequency-options">
+                    <div class="frequency-option selected" data-frequency="daily">
+                        <div class="frequency-option-icon">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div class="frequency-option-title">Daily</div>
+                        <div class="frequency-option-description">Send the report every day</div>
+                    </div>
+                    <div class="frequency-option" data-frequency="weekly">
+                        <div class="frequency-option-icon">
+                            <i class="fas fa-calendar-week"></i>
+                        </div>
+                        <div class="frequency-option-title">Weekly</div>
+                        <div class="frequency-option-description">Send the report once a week</div>
+                    </div>
+                    <div class="frequency-option" data-frequency="monthly">
+                        <div class="frequency-option-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="frequency-option-title">Monthly</div>
+                        <div class="frequency-option-description">Send the report once a month</div>
+                    </div>
+                </div>
+                <input type="hidden" name="frequency" id="frequency" value="daily">
+            </div>
+            
+            <div id="weekly_day_selector" class="day-selector mb-3">
+                <label class="form-label">Day of the Week</label>
+                <select class="form-select" name="day" id="weekly_day">
+                    <option value="0">Monday</option>
+                    <option value="1">Tuesday</option>
+                    <option value="2">Wednesday</option>
+                    <option value="3">Thursday</option>
+                    <option value="4">Friday</option>
+                    <option value="5">Saturday</option>
+                    <option value="6">Sunday</option>
+                </select>
+                <div class="form-text">The day of the week to send the report.</div>
+            </div>
+            
+            <div id="monthly_day_selector" class="day-selector mb-3">
+                <label class="form-label">Day of the Month</label>
+                <select class="form-select" name="day" id="monthly_day">
+                    {% for i in "123456789"|make_list %}
+                        <option value="{{ i }}">{{ i }}</option>
+                    {% endfor %}
+                    {% for i in "0123456789"|make_list %}
+                        {% for j in "0123456789"|make_list %}
+                            {% if i != "0" or j != "0" %}
+                                {% if i != "3" or j < "2" %}
+                                    <option value="{{ i }}{{ j }}">{{ i }}{{ j }}</option>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                </select>
+                <div class="form-text">The day of the month to send the report.</div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="time" class="form-label">Time</label>
+                <input type="time" class="form-control" id="time" name="time" value="08:00">
+                <div class="form-text">The time of day to send the report (in your local timezone).</div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-calendar-check me-1"></i> Schedule Report
+                </button>
+                <a href="{% if report %}{% url 'analytics:report_detail' pk=report.id %}{% elif questionnaire %}{% url 'analytics:questionnaire_dashboard' questionnaire_id=questionnaire.id %}{% endif %}" class="btn btn-outline-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Handle frequency option selection
+        $('.frequency-option').click(function() {
+            $('.frequency-option').removeClass('selected');
+            $(this).addClass('selected');
+            
+            var frequency = $(this).data('frequency');
+            $('#frequency').val(frequency);
+            
+            // Show/hide day selectors
+            $('.day-selector').removeClass('active');
+            if (frequency === 'weekly') {
+                $('#weekly_day_selector').addClass('active');
+            } else if (frequency === 'monthly') {
+                $('#monthly_day_selector').addClass('active');
+            }
+        });
+    });
+</script>
+{% endblock %}

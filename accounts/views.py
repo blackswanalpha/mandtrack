@@ -91,7 +91,7 @@ def admin_logout(request):
 @login_required
 def admin_dashboard(request):
     """
-    Admin dashboard view
+    Admin dashboard view with sample data
     """
     # Check if user is admin
     if not request.user.is_admin_user():
@@ -128,13 +128,145 @@ def admin_dashboard(request):
     admin_users_count = User.objects.filter(role__in=['admin', 'staff']).count()
     client_users_count = User.objects.filter(role='client').count()
 
+    # Generate sample data for dashboard
+    import json
+    import random
+    from datetime import datetime, timedelta
+
+    # Sample data for charts
+    trend_data = {
+        'labels': [],
+        'data': [],
+        'colors': []
+    }
+
+    # Generate sample trend data for the last 30 days
+    today = datetime.now().date()
+    for i in range(30):
+        date = today - timedelta(days=30-i)
+        trend_data['labels'].append(date.strftime('%b %d'))
+        trend_data['data'].append(random.randint(5, 25))
+        trend_data['colors'].append('rgba(54, 162, 235, 0.7)')
+
+    # Sample gender distribution data
+    gender_data = {
+        'labels': ['Male', 'Female', 'Non-binary', 'Prefer Not To Say'],
+        'data': [40, 45, 10, 5],
+        'colors': [
+            'rgba(54, 162, 235, 0.7)',
+            'rgba(255, 99, 132, 0.7)',
+            'rgba(255, 206, 86, 0.7)',
+            'rgba(75, 192, 192, 0.7)'
+        ]
+    }
+
+    # Sample age distribution data
+    age_data = {
+        'labels': ['Under 18', '18-24', '25-34', '35-44', '45-54', '55-64', '65+'],
+        'data': [5, 15, 25, 20, 15, 12, 8],
+        'colors': ['rgba(54, 162, 235, 0.7)'] * 7
+    }
+
+    # Sample device distribution data
+    device_data = {
+        'labels': ['Desktop', 'Mobile', 'Tablet'],
+        'data': [40, 45, 15],
+        'colors': [
+            'rgba(54, 162, 235, 0.7)',
+            'rgba(255, 99, 132, 0.7)',
+            'rgba(255, 206, 86, 0.7)'
+        ]
+    }
+
+    # Sample risk distribution data
+    risk_data = {
+        'labels': ['Low', 'Medium', 'High', 'Critical'],
+        'data': [45, 30, 15, 10],
+        'colors': [
+            'rgba(75, 192, 192, 0.7)',
+            'rgba(255, 206, 86, 0.7)',
+            'rgba(255, 159, 64, 0.7)',
+            'rgba(255, 99, 132, 0.7)'
+        ]
+    }
+
+    # Sample top questionnaires data
+    top_questionnaires_data = {
+        'labels': ['Mental Health Assessment', 'Physical Health Check', 'Customer Satisfaction', 'Employee Feedback', 'Product Feedback'],
+        'data': [35, 25, 20, 15, 5],
+        'colors': [
+            'rgba(54, 162, 235, 0.7)',
+            'rgba(255, 99, 132, 0.7)',
+            'rgba(255, 206, 86, 0.7)',
+            'rgba(75, 192, 192, 0.7)',
+            'rgba(153, 102, 255, 0.7)'
+        ]
+    }
+
+    # Sample category comparison data (for radar chart)
+    category_comparison_data = {
+        'labels': ['Completion Rate', 'Avg Score', 'Response Time', 'User Satisfaction', 'Engagement'],
+        'datasets': [
+            {
+                'label': 'Mental Health',
+                'data': [85, 70, 60, 80, 75],
+                'backgroundColor': 'rgba(54, 162, 235, 0.2)',
+                'borderColor': 'rgba(54, 162, 235, 1)',
+            },
+            {
+                'label': 'Physical Health',
+                'data': [70, 65, 70, 75, 80],
+                'backgroundColor': 'rgba(255, 99, 132, 0.2)',
+                'borderColor': 'rgba(255, 99, 132, 1)',
+            }
+        ]
+    }
+
+    # Sample response time heatmap data
+    response_time_heatmap_data = {
+        'labels': {
+            'x': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            'y': ['Morning', 'Afternoon', 'Evening', 'Night']
+        },
+        'data': [
+            [15, 12, 8, 9, 7, 5, 6],    # Morning
+            [10, 15, 13, 12, 9, 6, 5],  # Afternoon
+            [8, 9, 10, 11, 14, 12, 10], # Evening
+            [5, 6, 7, 8, 9, 10, 8]      # Night
+        ]
+    }
+
+    # Sample completion time data
+    completion_time_data = {
+        'average': 180,  # 3 minutes
+        'min': 60,       # 1 minute
+        'max': 600,      # 10 minutes
+        'average_display': '3m 0s',
+        'min_display': '1m 0s',
+        'max_display': '10m 0s'
+    }
+
     return render(request, 'dashboard/admin_dashboard.html', {
         'admin_profile': admin_profile,
         'login_history': login_history,
-        'questionnaires_count': questionnaires_count,
-        'responses_count': responses_count,
-        'admin_users_count': admin_users_count,
-        'client_users_count': client_users_count,
+        'total_questionnaires': questionnaires_count or 125,
+        'total_responses': responses_count or 1250,
+        'active_questionnaires': 75,
+        'draft_questionnaires': 35,
+        'archived_questionnaires': 15,
+        'total_users': admin_users_count + client_users_count or 250,
+        'total_organizations': 15,
+        'completion_rate': 85,
+        'avg_score': 7.5,
+        'completion_time_data': completion_time_data,
+        'trend_data': json.dumps(trend_data),
+        'gender_distribution': json.dumps(gender_data),
+        'age_distribution': json.dumps(age_data),
+        'device_data': json.dumps(device_data),
+        'risk_data': json.dumps(risk_data),
+        'top_questionnaires_data': json.dumps(top_questionnaires_data),
+        'category_comparison_data': json.dumps(category_comparison_data),
+        'response_time_heatmap_data': json.dumps(response_time_heatmap_data),
     })
 
 @login_required

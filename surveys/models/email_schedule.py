@@ -259,7 +259,7 @@ class EmailLog(models.Model):
     Model for tracking email sending
     """
     template = models.ForeignKey('surveys.EmailTemplate', on_delete=models.CASCADE, related_name='logs')
-    recipient_email = models.EmailField()
+    recipient_email = models.EmailField(null=True, blank=True)  # Made nullable
     subject = models.CharField(max_length=255)
     sent_at = models.DateTimeField()
 

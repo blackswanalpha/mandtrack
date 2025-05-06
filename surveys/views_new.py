@@ -1089,12 +1089,12 @@ def generate_qr_code(request, pk):
         buffer = BytesIO()
         img.save(buffer, format="PNG")
         buffer.seek(0)
-        questionnaire.qr_code.save(f"qr_{questionnaire.slug}.png", File(buffer), save=True)
+        questionnaire.qr_code.save(f"qr_{questionnaire.id}.png", File(buffer), save=True)
 
     # If download parameter is provided, return the image as a download
     if download:
         response = HttpResponse(content_type="image/png")
-        response['Content-Disposition'] = f'attachment; filename="qr_code_{questionnaire.slug}.png"'
+        response['Content-Disposition'] = f'attachment; filename="qr_code_{questionnaire.id}.png"'
         img.save(response, "PNG")
         return response
 
@@ -1108,15 +1108,13 @@ def generate_qr_code(request, pk):
     return render(request, 'surveys/qr_code.html', {'survey': questionnaire})
 
 
-def survey_respond(request, slug=None, pk=None):
+def survey_respond(request, pk=None):
     """
     Public view for responding to a questionnaire via QR code or direct link
-    Can be accessed by slug or pk
+    Can be accessed by pk
     """
-    # Get the questionnaire by slug or pk
-    if slug:
-        questionnaire = get_object_or_404(Questionnaire, slug=slug)
-    elif pk:
+    # Get the questionnaire by pk
+    if pk:
         questionnaire = get_object_or_404(Questionnaire, pk=pk)
     else:
         messages.error(request, "Invalid questionnaire link.")

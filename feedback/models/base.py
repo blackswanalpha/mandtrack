@@ -35,6 +35,8 @@ class Response(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     # Use the correct model reference with the actual model name
     survey = models.ForeignKey('surveys.SurveysQuestionnaire', on_delete=models.CASCADE, related_name='responses', null=True)
+    # Add a questionnaire field as an alias for survey to maintain compatibility
+    questionnaire = models.ForeignKey('surveys.SurveysQuestionnaire', on_delete=models.CASCADE, related_name='questionnaire_responses', null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='questionnaire_responses')
     patient_identifier = models.CharField(max_length=50, blank=True, null=True)
     patient_name = models.CharField(max_length=255, blank=True, null=True)

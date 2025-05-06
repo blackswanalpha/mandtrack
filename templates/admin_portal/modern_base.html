@@ -85,6 +85,16 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    <!-- jQuery (required for some dashboard components) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Moment.js (required for date handling) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+
+    <!-- Date Range Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.css">
+
     <!-- Custom CSS -->
     <style>
         /* Animations */
@@ -305,6 +315,197 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            max-width: 320px;
+        }
+
+        .toast-container.top-right {
+            top: 1rem;
+            right: 1rem;
+        }
+
+        .toast-container.top-left {
+            top: 1rem;
+            left: 1rem;
+        }
+
+        .toast-container.bottom-right {
+            bottom: 1rem;
+            right: 1rem;
+        }
+
+        .toast-container.bottom-left {
+            bottom: 1rem;
+            left: 1rem;
+        }
+
+        .toast-container.top-center {
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .toast-container.bottom-center {
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .toast {
+            position: relative;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+            pointer-events: auto;
+            overflow: hidden;
+            display: flex;
+            width: 100%;
+            max-width: 100%;
+            font-size: 0.875rem;
+            background-clip: padding-box;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.3s ease-in-out;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .toast-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.75rem;
+            font-size: 1.25rem;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .toast-message {
+            word-wrap: break-word;
+        }
+
+        .toast-close {
+            cursor: pointer;
+            background: transparent;
+            border: 0;
+            padding: 0.25rem;
+            margin-left: 0.75rem;
+            font-size: 1rem;
+            line-height: 1;
+            color: rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+        }
+
+        .toast-close:hover {
+            color: rgba(0, 0, 0, 0.75);
+        }
+
+        .toast-success {
+            background-color: rgba(209, 250, 229, 0.95);
+            border-left: 4px solid #10b981;
+        }
+
+        .toast-success .toast-icon {
+            color: #10b981;
+        }
+
+        .toast-error {
+            background-color: rgba(254, 226, 226, 0.95);
+            border-left: 4px solid #ef4444;
+        }
+
+        .toast-error .toast-icon {
+            color: #ef4444;
+        }
+
+        .toast-warning {
+            background-color: rgba(254, 243, 199, 0.95);
+            border-left: 4px solid #f59e0b;
+        }
+
+        .toast-warning .toast-icon {
+            color: #f59e0b;
+        }
+
+        .toast-info {
+            background-color: rgba(219, 234, 254, 0.95);
+            border-left: 4px solid #3b82f6;
+        }
+
+        .toast-info .toast-icon {
+            color: #3b82f6;
+        }
+
+        .dark .toast {
+            background-color: #1f2937;
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #e5e7eb;
+        }
+
+        .dark .toast-close {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .dark .toast-close:hover {
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        .dark .toast-success {
+            background-color: rgba(6, 78, 59, 0.9);
+            border-left: 4px solid #10b981;
+            color: #d1fae5;
+        }
+
+        .dark .toast-error {
+            background-color: rgba(127, 29, 29, 0.9);
+            border-left: 4px solid #ef4444;
+            color: #fee2e2;
+        }
+
+        .dark .toast-warning {
+            background-color: rgba(120, 53, 15, 0.9);
+            border-left: 4px solid #f59e0b;
+            color: #fef3c7;
+        }
+
+        .dark .toast-info {
+            background-color: rgba(30, 58, 138, 0.9);
+            border-left: 4px solid #3b82f6;
+            color: #dbeafe;
+        }
+
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background-color: rgba(255, 255, 255, 0.7);
+            animation: toast-progress linear forwards;
+        }
+
+        @keyframes toast-progress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
     </style>
 
     {% block extra_css %}{% endblock %}
@@ -363,6 +564,9 @@
                         <p class="text-gray-700 font-medium">Loading...</p>
                     </div>
                 </div>
+
+                <!-- Toast Notifications Container -->
+                <div class="toast-container top-right fixed top-4 right-4 z-50 flex flex-col gap-2 w-80"></div>
 
                 <!-- Page Content -->
                 <div id="admin-content" class="fade-in" hx-target="this" hx-indicator="#loading-indicator">
@@ -423,11 +627,17 @@
     <!-- Dashboard Charts -->
     <script src="{% static 'js/dashboard-charts.js' %}"></script>
 
+    <!-- Dashboard Filters -->
+    <script src="{% static 'js/dashboard-filters.js' %}"></script>
+
     <!-- Search Functionality -->
     <script src="{% static 'js/search.js' %}"></script>
 
     <!-- Notifications Functionality -->
     <script src="{% static 'js/notifications.js' %}"></script>
+
+    <!-- Toast Notifications -->
+    <script src="{% static 'js/toast.js' %}"></script>
 
     <!-- Theme Switcher -->
     <script src="{% static 'js/theme-switcher.js' %}"></script>

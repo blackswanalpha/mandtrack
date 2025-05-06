@@ -1,9 +1,28 @@
-{% extends 'base/base.html' %}
+{% extends 'admin_portal/modern_base.html' %}
 {% load static %}
 
 {% block extra_head %}
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<!-- Ensure Chart.js is loaded -->
+<script>
+  // Check if Chart.js is loaded, if not, load it again
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof Chart === 'undefined') {
+      console.warn('Chart.js not loaded, attempting to load again');
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js';
+      script.onload = function() {
+        console.log('Chart.js loaded successfully');
+        // Initialize charts after loading
+        if (typeof initializeAdminDashboardCharts === 'function') {
+          initializeAdminDashboardCharts();
+        }
+      };
+      document.head.appendChild(script);
+    }
+  });
+</script>
 <!-- Hidden data for charts -->
 <script id="trend-data" type="application/json">{{ trend_data|safe }}</script>
 <script id="gender-distribution" type="application/json">{{ gender_distribution|safe }}</script>

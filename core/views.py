@@ -48,12 +48,17 @@ def contact(request):
     return render(request, 'core/contact.html')
 
 @login_required
-def dashboard(_):
+def dashboard(request):
     """
     Dashboard view (requires login)
-    Redirects to the new dashboard app
+    Redirects to the new dashboard app based on user role
     """
-    return redirect('dashboard:user_dashboard')
+    # Use direct URL to avoid namespace issues
+    if hasattr(request.user, 'is_admin_user') and request.user.is_admin_user():
+        return redirect('/admin-portal/dashboard/')
+    else:
+        # For regular users or if is_admin_user doesn't exist
+        return redirect('/client-portal/dashboard/')
 
 @csrf_exempt
 def test_database(request):

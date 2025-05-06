@@ -89,7 +89,11 @@ try:
         """
         # Use CharField instead of BigAutoField to match the database schema
         # The database has a char(32) field, not a BigAutoField
-        id = models.CharField(max_length=32, primary_key=True, default=lambda: uuid.uuid4().hex, editable=False)
+        # Define a function to generate UUID hex
+        def generate_uuid_hex():
+            return uuid.uuid4().hex
+
+        id = models.CharField(max_length=32, primary_key=True, default=generate_uuid_hex, editable=False)
         title = models.CharField(max_length=255)
         slug = models.SlugField(max_length=255, unique=True)
         description = models.TextField(blank=True, null=True)

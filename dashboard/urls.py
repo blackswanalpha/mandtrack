@@ -1,11 +1,22 @@
 from django.urls import path
+from django.shortcuts import render, redirect
 from . import views
 from . import api
 
 app_name = 'dashboard'
 
+# Simple redirect view to avoid redirect loops
+def dashboard_redirect(request):
+    if request.user.is_authenticated:
+        if hasattr(request.user, 'is_admin_user') and request.user.is_admin_user():
+            return redirect('/admin-portal/dashboard/')
+        else:
+            return redirect('/client-portal/dashboard/')
+    else:
+        return redirect('/admin-portal/login/?next=/dashboard/')
+
 urlpatterns = [
-    path('', views.user_dashboard, name='user_dashboard'),
+    path('', dashboard_redirect, name='dashboard_redirect'),
     path('admin/', views.admin_dashboard, name='admin_dashboard'),
     path('search/', views.search, name='search'),
 
@@ -31,4 +42,8 @@ urlpatterns = [
     path('scoring/', views.scoring_management, name='scoring_management'),
     path('scoring/<int:system_id>/', views.scoring_detail, name='scoring_detail'),
     path('scoring/create/', views.scoring_create, name='scoring_create'),
+    path('toast-demo/', views.toast_demo, name='toast_demo'),
+    path('test/', views.dashboard_test, name='dashboard_test'),
+    # Add a direct URL for testing without login
+    path('test-no-auth/', lambda request: render(request, 'dashboard/simple_test.html'), name='dashboard_test_no_auth'),
 ]

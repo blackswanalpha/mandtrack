@@ -11,6 +11,17 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
+
+    # Override username field to provide a default value
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.',
+        error_messages={
+            'unique': "A user with that username already exists.",
+        },
+        default=''
+    )
     ROLE_CHOICES = [
         ('admin', 'Administrator'),
         ('staff', 'Staff'),
@@ -27,7 +38,7 @@ class User(AbstractUser):
     account_locked_until = models.DateTimeField(blank=True, null=True)
     last_password_change = models.DateTimeField(blank=True, null=True)
     force_password_change = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

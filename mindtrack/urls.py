@@ -60,7 +60,6 @@ urlpatterns = [
     path('q/', include([
         path('<uuid:pk>/', views_new.direct_questionnaire_access, name='direct_questionnaire_access_uuid'),
         path('<str:pk>/', views_new.direct_questionnaire_access, name='direct_questionnaire_access_str'),
-        path('<slug:slug>/', views_new.direct_questionnaire_access, name='direct_questionnaire_access_slug'),
     ])),
 
     # Keep old URLs for backward compatibility - temporarily commented out

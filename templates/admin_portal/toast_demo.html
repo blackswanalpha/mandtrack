@@ -1,0 +1,163 @@
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
+
+{% block title %}Toast Notifications Demo{% endblock %}
+
+{% block page_title %}Toast Notifications Demo{% endblock %}
+
+{% block breadcrumbs %}
+<li aria-current="page">
+    <div class="flex items-center">
+        <i class="fas fa-chevron-right text-gray-400 text-xs mx-1"></i>
+        <span class="text-sm text-gray-500">Toast Notifications</span>
+    </div>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Toast Notification System</h2>
+    <p class="text-gray-600 dark:text-gray-400 mb-6">
+        This demo shows how to use the toast notification system. Click the buttons below to display different types of toast notifications.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+            <h3 class="text-lg font-medium text-gray-800 dark:text-gray-200 mb-3">Toast Types</h3>
+            <div class="flex flex-wrap gap-2">
+                <button id="success-toast" class="btn-animated px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md">
+                    Success Toast
+                </button>
+                <button id="error-toast" class="btn-animated px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md">
+                    Error Toast
+                </button>
+                <button id="warning-toast" class="btn-animated px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md">
+                    Warning Toast
+                </button>
+                <button id="info-toast" class="btn-animated px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md">
+                    Info Toast
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+            <h3 class="text-lg font-medium text-gray-800 dark:text-gray-200 mb-3">Toast Options</h3>
+            <div class="flex flex-wrap gap-2">
+                <button id="custom-duration" class="btn-animated px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-md">
+                    Custom Duration (10s)
+                </button>
+                <button id="no-auto-dismiss" class="btn-animated px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-md">
+                    No Auto-Dismiss
+                </button>
+                <button id="clear-all" class="btn-animated px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md">
+                    Clear All Toasts
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-6">
+        <h3 class="text-lg font-medium text-gray-800 dark:text-gray-200 mb-3">Usage Example</h3>
+        <pre class="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm">
+<code class="language-javascript">// Show a success toast
+toast.success('Operation completed successfully!', 'Success', {
+    duration: 5000
+});
+
+// Show an error toast
+toast.error('An error occurred while processing your request.', 'Error');
+
+// Show a warning toast
+toast.warning('This action cannot be undone.', 'Warning');
+
+// Show an info toast
+toast.info('Your session will expire in 5 minutes.', 'Information');
+
+// Show a toast with custom options
+toast.show({
+    type: 'success',
+    title: 'Custom Toast',
+    message: 'This is a custom toast with specific options.',
+    duration: 10000,
+    dismissible: true,
+    position: 'top-right',
+    theme: 'light',
+    animation: 'slide-right'
+});
+
+// Clear all toasts
+toast.clearAll();</code>
+        </pre>
+    </div>
+
+    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+        <h3 class="text-lg font-medium text-gray-800 dark:text-gray-200 mb-3">Integration with Django Messages</h3>
+        <p class="text-gray-600 dark:text-gray-400 mb-4">
+            The toast system automatically integrates with Django's messaging framework. When you add messages in your views:
+        </p>
+        <pre class="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm">
+<code class="language-python">from django.contrib import messages
+
+def my_view(request):
+    # Add messages
+    messages.success(request, "Operation completed successfully!")
+    messages.error(request, "An error occurred.")
+    messages.warning(request, "This is a warning message.")
+    messages.info(request, "This is an informational message.")
+    
+    return render(request, 'template.html')</code>
+        </pre>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Success toast
+        document.getElementById('success-toast').addEventListener('click', function() {
+            toast.success('Operation completed successfully!', 'Success');
+        });
+
+        // Error toast
+        document.getElementById('error-toast').addEventListener('click', function() {
+            toast.error('An error occurred while processing your request.', 'Error');
+        });
+
+        // Warning toast
+        document.getElementById('warning-toast').addEventListener('click', function() {
+            toast.warning('This action cannot be undone.', 'Warning');
+        });
+
+        // Info toast
+        document.getElementById('info-toast').addEventListener('click', function() {
+            toast.info('Your session will expire in 5 minutes.', 'Information');
+        });
+
+        // Custom duration toast
+        document.getElementById('custom-duration').addEventListener('click', function() {
+            toast.show({
+                type: 'info',
+                title: 'Custom Duration',
+                message: 'This toast will automatically dismiss after 10 seconds.',
+                duration: 10000
+            });
+        });
+
+        // No auto-dismiss toast
+        document.getElementById('no-auto-dismiss').addEventListener('click', function() {
+            toast.show({
+                type: 'warning',
+                title: 'No Auto-Dismiss',
+                message: 'This toast will not automatically dismiss. Click the X to close it.',
+                duration: 0
+            });
+        });
+
+        // Clear all toasts
+        document.getElementById('clear-all').addEventListener('click', function() {
+            toast.clearAll();
+        });
+    });
+</script>
+{% endblock %}

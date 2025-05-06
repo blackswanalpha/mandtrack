@@ -217,8 +217,8 @@ ACCOUNT = {
 }
 
 # Login/Logout URLs
-LOGIN_URL = '/accounts/login/'
-LOGIN_REDIRECT_URL = '/'  # Redirect to home page after login
+LOGIN_URL = '/admin-portal/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'  # Redirect to dashboard after login
 LOGOUT_REDIRECT_URL = '/'
 
 # Email settings

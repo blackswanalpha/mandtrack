@@ -30,7 +30,6 @@ urlpatterns = [
     path('<str:pk>/archive/', views.survey_archive, name='survey_archive'),
     path('<str:pk>/restore/', views.survey_restore, name='survey_restore'),
     path('<str:pk>/respond/', views.survey_respond, name='survey_respond'),
-    path('<slug:slug>/', views.survey_respond, name='survey_respond_slug'),
 
     # Question URLs
     path('<str:pk>/questions/', views.question_list, name='question_list'),

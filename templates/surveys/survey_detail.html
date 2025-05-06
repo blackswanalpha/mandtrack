@@ -99,7 +99,7 @@
                     <div class="flex-1 min-w-[200px]">
                         <h3 class="text-sm font-medium text-gray-500 mb-1">Survey Link</h3>
                         <div class="flex items-center">
-                            <input type="text" value="{{ request.scheme }}://{{ request.get_host }}/surveys/{{ questionnaire.slug }}/" readonly
+                            <input type="text" value="{{ request.scheme }}://{{ request.get_host }}/surveys/{{ questionnaire.id }}/" readonly
                                    class="enhanced-input block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500 pr-10">
                             <button type="button" class="copy-btn -ml-8 inline-flex items-center p-1 border border-transparent rounded-md text-gray-500 hover:text-gray-700 focus:outline-none"
                                     onclick="navigator.clipboard.writeText(this.previousElementSibling.value)">
@@ -443,7 +443,7 @@
                                             <p class="text-xs text-primary-600">Share this questionnaire with your audience</p>
                                         </div>
                                         <div class="flex flex-wrap gap-2">
-                                            <button type="button" onclick="navigator.clipboard.writeText('{{ request.scheme }}://{{ request.get_host }}/surveys/{{ questionnaire.slug }}/')"
+                                            <button type="button" onclick="navigator.clipboard.writeText('{{ request.scheme }}://{{ request.get_host }}/surveys/{{ questionnaire.id }}/')"
                                                     class="inline-flex items-center px-3 py-1.5 border border-primary-300 text-xs font-medium rounded-md text-primary-700 bg-white hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
                                                 <i class="fas fa-copy mr-1.5"></i> Copy Link
                                             </button>

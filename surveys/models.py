@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
+from django.utils import timezone
 import uuid
 import qrcode
 from io import BytesIO
@@ -35,9 +36,12 @@ class Questionnaire(models.Model):
 
     # Use CharField instead of UUIDField to match the database schema
     # The database has a char(32) field, not a UUID field
-    id = models.CharField(max_length=32, primary_key=True, default=lambda: uuid.uuid4().hex, editable=False)
+    # Define a function to generate UUID hex
+    def generate_uuid_hex():
+        return uuid.uuid4().hex
+
+    id = models.CharField(max_length=32, primary_key=True, default=generate_uuid_hex, editable=False)
     title = models.CharField(max_length=255)
-    slug = models.SlugField(max_length=255, unique=True, blank=True)
     description = models.TextField(blank=True)
     instructions = models.TextField(blank=True)
     type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='standard')
@@ -82,17 +86,6 @@ class Questionnaire(models.Model):
         return self.title
 
     def save(self, *args, **kwargs):
-        # Generate slug if not provided
-        if not self.slug:
-            self.slug = slugify(self.title)
-
-            # Ensure slug is unique
-            original_slug = self.slug
-            counter = 1
-            while Questionnaire.objects.filter(slug=self.slug).exists():
-                self.slug = f"{original_slug}-{counter}"
-                counter += 1
-
         # Generate access code if not provided
         if not self.access_code:
             self.access_code = str(uuid.uuid4())[:8].upper()
@@ -105,18 +98,18 @@ class Questionnaire(models.Model):
                 box_size=10,
                 border=4,
             )
-            qr.add_data(f"{settings.SITE_URL}/questionnaires/{self.slug}/")
+            qr.add_data(f"{settings.SITE_URL}/questionnaires/{self.id}/")
             qr.make(fit=True)
 
             img = qr.make_image(fill_color="black", back_color="white")
             buffer = BytesIO()
             img.save(buffer, format="PNG")
-            self.qr_code.save(f"qr_{self.slug}.png", File(buffer), save=False)
+            self.qr_code.save(f"qr_{self.id}.png", File(buffer), save=False)
 
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return f"/questionnaires/{self.slug}/"
+        return f"/questionnaires/{self.id}/"
 
     def get_question_count(self):
         return self.questions.count()
@@ -612,7 +605,7 @@ class EmailLog(models.Model):
     subject = models.CharField(max_length=255)
     message = models.TextField()
     html_content = models.TextField(blank=True)
-    recipient = models.EmailField()
+    recipient_email = models.EmailField()  # Changed from recipient to recipient_email
     recipient_name = models.CharField(max_length=255, blank=True, null=True)
     sent_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, default='sent')
@@ -628,14 +621,14 @@ class EmailLog(models.Model):
         verbose_name = 'Email Log'
         verbose_name_plural = 'Email Logs'
         indexes = [
-            models.Index(fields=['recipient'], name='surveys_emaillog_recipient_idx'),
+            models.Index(fields=['recipient_email'], name='surveys_emaillog_recipient_idx'),
             models.Index(fields=['sent_at'], name='surveys_emaillog_sent_at_idx'),
             models.Index(fields=['status'], name='surveys_emaillog_status_idx'),
             models.Index(fields=['template'], name='surveys_emaillog_template_idx'),
         ]
 
     def __str__(self):
-        return f"Email to {self.recipient} - {self.subject}"
+        return f"Email to {self.recipient_email} - {self.subject}"
 
 
 # Create an alias for Questionnaire to maintain backward compatibility

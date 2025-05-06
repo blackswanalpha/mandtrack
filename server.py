@@ -346,11 +346,32 @@ def collect_static(settings_module):
         logger.debug(e.stderr)
         return False
 
+def delete_database():
+    """Delete the SQLite database file."""
+    logger.info("Deleting SQLite database file...")
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db.sqlite3')
+
+    if os.path.exists(db_path):
+        try:
+            os.remove(db_path)
+            logger.info(f"Database file {db_path} deleted successfully.")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to delete database file: {e}")
+            return False
+    else:
+        logger.info(f"Database file {db_path} does not exist. Nothing to delete.")
+        return True
+
 def run_migrations(settings_module):
     """Run database migrations."""
     logger.info("Running database migrations...")
     env = os.environ.copy()
     env['DJANGO_SETTINGS_MODULE'] = settings_module
+
+    # Delete the database first
+    if not delete_database():
+        logger.warning("Failed to delete database. Continuing with migrations anyway.")
 
     try:
         result = subprocess.run(

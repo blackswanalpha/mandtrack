@@ -34,16 +34,7 @@ class SurveyForm(forms.ModelForm):
             import uuid
             from django.utils.text import slugify
 
-            # Generate slug if not provided
-            if not instance.slug:
-                instance.slug = slugify(instance.title)
-
-                # Ensure slug is unique
-                original_slug = instance.slug
-                counter = 1
-                while Questionnaire.objects.filter(slug=instance.slug).exists():
-                    instance.slug = f"{original_slug}-{counter}"
-                    counter += 1
+            # Slug field has been removed
 
             # Generate access code if not provided
             if not instance.access_code:
@@ -53,16 +44,15 @@ class SurveyForm(forms.ModelForm):
                 # Insert directly into surveys_questionnaire table
                 cursor.execute("""
                     INSERT INTO surveys_questionnaire
-                    (title, slug, description, instructions, category, type, status,
+                    (title, description, instructions, category, type, status,
                     is_template, allow_anonymous, requires_auth, created_by_id,
                     organization_id, created_at, updated_at, qr_code, access_code, estimated_time,
                     is_active, is_adaptive, is_qr_enabled, is_public, version, tags, language, time_limit)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), %s, %s, %s,
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), %s, %s, %s,
                     %s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING id
                 """, [
                     instance.title,
-                    instance.slug,
                     instance.description or '',
                     instance.instructions or '',
                     instance.category,

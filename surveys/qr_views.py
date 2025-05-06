@@ -35,7 +35,11 @@ def qr_code_list_redirect(request):
     """
     Redirect to the QR codes list page
     """
-    return redirect('surveys:qr_code_list_alt')
+    # Check if we're coming from /questionnaires/qr-codes/
+    if request.path.startswith('/questionnaires/'):
+        return redirect('/questionnaires/qr-codes/list/')
+    else:
+        return redirect('/qr/codes/list/')
 
 @login_required
 def qr_code_create(request):
@@ -48,10 +52,10 @@ def qr_code_create(request):
             qr_code = form.save(commit=False)
             qr_code.created_by = request.user
 
-            # Generate URL for the QR code
+            # Generate URL for the QR code that redirects to member access page
             questionnaire = qr_code.survey
             qr_code.url = request.build_absolute_uri(
-                reverse('surveys:survey_respond_slug', kwargs={'slug': questionnaire.slug})
+                reverse('members:qr_member_access', kwargs={'qr_code_id': qr_code.id})
             )
 
             qr_code.save()
@@ -101,18 +105,21 @@ def generate_survey_qr_code(request, pk):
         qr_code = existing_qr_codes.first()
         messages.info(request, "Using existing QR code for this questionnaire.")
     else:
-        # Create a new QR code
-        questionnaire_url = request.build_absolute_uri(
-            reverse('surveys:survey_respond_slug', kwargs={'slug': questionnaire.slug})
-        )
-
+        # Create a new QR code that redirects to member access page
+        # First save the QR code to get an ID
         qr_code = QRCode(
             survey=questionnaire,
             name=f"QR Code for {questionnaire.title}",
             description=f"QR Code for accessing {questionnaire.title}",
-            url=questionnaire_url,
+            url="",  # Temporary placeholder
             is_active=True,
             created_by=request.user
+        )
+        qr_code.save()
+
+        # Now update with the correct URL that includes the QR code ID
+        qr_code.url = request.build_absolute_uri(
+            reverse('members:qr_member_access', kwargs={'qr_code_id': qr_code.id})
         )
         qr_code.save()
         messages.success(request, "QR code generated successfully.")

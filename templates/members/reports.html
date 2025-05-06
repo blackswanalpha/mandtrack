@@ -1,0 +1,209 @@
+{% extends 'client/base.html' %}
+{% load static %}
+
+{% block title %}Reports - MindTrack{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-display font-bold text-gray-900">Reports</h1>
+            <p class="mt-2 text-gray-600">
+                View and download your response reports.
+            </p>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white shadow rounded-lg mb-8 overflow-hidden">
+            <div class="px-4 py-5 sm:p-6">
+                <form method="get" class="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:space-x-4">
+                    <div class="w-full sm:w-1/3">
+                        <label for="questionnaire" class="block text-sm font-medium text-gray-700 mb-1">Questionnaire</label>
+                        <select name="questionnaire" id="questionnaire" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            <option value="">All Questionnaires</option>
+                            {% for questionnaire in questionnaires %}
+                                <option value="{{ questionnaire.id }}" {% if selected_questionnaire == questionnaire.id %}selected{% endif %}>
+                                    {{ questionnaire.title }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="w-full sm:w-1/3">
+                        <label for="date_range" class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                        <select name="date_range" id="date_range" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            <option value="all" {% if date_range == 'all' %}selected{% endif %}>All Time</option>
+                            <option value="week" {% if date_range == 'week' %}selected{% endif %}>Last Week</option>
+                            <option value="month" {% if date_range == 'month' %}selected{% endif %}>Last Month</option>
+                            <option value="quarter" {% if date_range == 'quarter' %}selected{% endif %}>Last 3 Months</option>
+                            <option value="year" {% if date_range == 'year' %}selected{% endif %}>Last Year</option>
+                        </select>
+                    </div>
+                    <div class="w-full sm:w-1/3 flex items-end">
+                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                            <i class="fas fa-filter mr-2"></i> Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Reports List -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Response Reports</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    {% if responses %}
+                        Showing {{ responses|length }} report{{ responses|length|pluralize }}
+                        {% if selected_questionnaire %}for selected questionnaire{% endif %}
+                        {% if date_range != 'all' %}in the selected time period{% endif %}
+                    {% else %}
+                        No reports found
+                        {% if selected_questionnaire %}for selected questionnaire{% endif %}
+                        {% if date_range != 'all' %}in the selected time period{% endif %}
+                    {% endif %}
+                </p>
+            </div>
+            
+            {% if responses %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Questionnaire
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Date
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Score
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for response in responses %}
+                                <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900">{{ response.survey.title }}</div>
+                                        <div class="text-xs text-gray-500">{{ response.survey.description|truncatechars:50 }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900">{{ response.created_at|date:"M j, Y" }}</div>
+                                        <div class="text-xs text-gray-500">{{ response.created_at|time:"g:i A" }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                            {% if response.score >= 80 %}bg-green-100 text-green-800
+                                            {% elif response.score >= 50 %}bg-yellow-100 text-yellow-800
+                                            {% else %}bg-red-100 text-red-800{% endif %}">
+                                            {{ response.score|floatformat:0 }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {% if response.ai_analysis %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                <i class="fas fa-check-circle mr-1"></i> Analysis Complete
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                <i class="fas fa-clock mr-1"></i> Pending Analysis
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex space-x-3">
+                                            <a href="{% url 'members:response_detail' pk=response.pk %}" class="text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                                                <i class="fas fa-eye mr-1"></i> View
+                                            </a>
+                                            <a href="{% url 'members:download_report' pk=response.pk %}" class="text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                                                <i class="fas fa-download mr-1"></i> Download
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="px-4 py-5 sm:p-6 text-center">
+                    <p class="text-gray-500 mb-4">No reports found for the selected filters.</p>
+                    <button type="button" onclick="document.getElementById('questionnaire').value = ''; document.getElementById('date_range').value = 'all'; document.querySelector('form').submit();" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                        <i class="fas fa-sync-alt mr-2"></i> Reset Filters
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Comparative Reports -->
+        <div class="mt-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Comparative Reports</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="bg-white shadow rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="flex-shrink-0 bg-blue-100 rounded-md p-3">
+                                <i class="fas fa-chart-line text-blue-600 text-xl"></i>
+                            </div>
+                            <h3 class="ml-3 text-lg font-medium text-gray-900">Progress Report</h3>
+                        </div>
+                        <p class="text-sm text-gray-500 mb-4">
+                            Track your progress over time with comparative analysis of your responses.
+                        </p>
+                        <div class="mt-4">
+                            <a href="{% url 'members:progress_report' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                                View Report
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white shadow rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
+                                <i class="fas fa-chart-bar text-green-600 text-xl"></i>
+                            </div>
+                            <h3 class="ml-3 text-lg font-medium text-gray-900">Trend Analysis</h3>
+                        </div>
+                        <p class="text-sm text-gray-500 mb-4">
+                            Analyze trends in your responses and identify patterns over time.
+                        </p>
+                        <div class="mt-4">
+                            <a href="{% url 'members:trend_analysis' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                                View Analysis
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white shadow rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="flex-shrink-0 bg-purple-100 rounded-md p-3">
+                                <i class="fas fa-brain text-purple-600 text-xl"></i>
+                            </div>
+                            <h3 class="ml-3 text-lg font-medium text-gray-900">AI Insights</h3>
+                        </div>
+                        <p class="text-sm text-gray-500 mb-4">
+                            Get AI-powered insights and recommendations based on your responses.
+                        </p>
+                        <div class="mt-4">
+                            <a href="{% url 'members:ai_insights' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                                View Insights
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

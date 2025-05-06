@@ -1,0 +1,363 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Patient Assessments - MindTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .risk-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .risk-low {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    
+    .risk-medium {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+    
+    .risk-high {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+    
+    .risk-critical {
+        background-color: #7f1d1d;
+        color: #fee2e2;
+    }
+    
+    .assessment-card {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .assessment-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Patient Assessments</h1>
+        <div>
+            <a href="{% url 'assessments:assessment_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i> New Assessment
+            </a>
+            <a href="{% url 'assessments:assessment_list' %}" class="btn btn-outline-secondary ms-2">
+                <i class="fas fa-list me-2"></i> View All
+            </a>
+        </div>
+    </div>
+
+    <!-- Status Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2 stats-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Pending Assessments</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2 stats-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                In Progress</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ in_progress_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-spinner fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2 stats-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Completed</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2 stats-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Consultations Required</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ required_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-md fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Risk Level Distribution -->
+    <div class="row mb-4">
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Risk Level Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="riskLevelChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Consultation Status</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="consultationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- High Risk Assessments -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-danger">High Risk Patients</h6>
+                </div>
+                <div class="card-body">
+                    {% if high_risk_assessments %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Patient ID</th>
+                                    <th>Risk Level</th>
+                                    <th>Assessment Date</th>
+                                    <th>Consultation</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for assessment in high_risk_assessments %}
+                                <tr>
+                                    <td>{{ assessment.response.patient_identifier|default:"Anonymous" }}</td>
+                                    <td>
+                                        <span class="risk-badge risk-{{ assessment.get_risk_level }}">
+                                            {{ assessment.get_risk_level|title }}
+                                        </span>
+                                    </td>
+                                    <td>{{ assessment.assessment_date|date:"M d, Y" }}</td>
+                                    <td>{{ assessment.get_consultation_recommended_display }}</td>
+                                    <td>
+                                        <a href="{% url 'assessments:assessment_detail' pk=assessment.pk %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if assessment.consultation_recommended == 'not_required' or assessment.consultation_recommended == 'recommended' %}
+                                        <a href="{% url 'assessments:consultation_create' assessment_id=assessment.pk %}" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-user-md"></i> Schedule
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <p class="mb-0">No high-risk patients at this time.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Assessments -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Assessments</h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_assessments %}
+                    <div class="row">
+                        {% for assessment in recent_assessments %}
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card border assessment-card h-100">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <span>{{ assessment.response.patient_identifier|default:"Anonymous" }}</span>
+                                    <span class="risk-badge risk-{{ assessment.get_risk_level }}">
+                                        {{ assessment.get_risk_level|title }}
+                                    </span>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text">
+                                        <strong>Status:</strong> {{ assessment.get_status_display }}<br>
+                                        <strong>Date:</strong> {{ assessment.assessment_date|date:"M d, Y" }}<br>
+                                        <strong>Consultation:</strong> {{ assessment.get_consultation_recommended_display }}
+                                    </p>
+                                    {% if assessment.notes %}
+                                    <p class="card-text">{{ assessment.notes|truncatechars:100 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <a href="{% url 'assessments:assessment_detail' pk=assessment.pk %}" class="btn btn-sm btn-primary">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clipboard fa-3x text-gray-300 mb-3"></i>
+                        <p class="mb-0">No assessments have been created yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Risk Level Chart
+        var riskCtx = document.getElementById('riskLevelChart').getContext('2d');
+        var riskChart = new Chart(riskCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Low', 'Medium', 'High', 'Critical'],
+                datasets: [{
+                    label: 'Number of Patients',
+                    data: [{{ low_risk_count }}, {{ medium_risk_count }}, {{ high_risk_count }}, {{ critical_risk_count }}],
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(153, 27, 27, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(153, 27, 27, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+
+        // Consultation Chart
+        var consultationCtx = document.getElementById('consultationChart').getContext('2d');
+        var consultationChart = new Chart(consultationCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Not Required', 'Recommended', 'Required', 'Scheduled', 'Completed'],
+                datasets: [{
+                    data: [
+                        {{ not_required_count }}, 
+                        {{ recommended_count }}, 
+                        {{ required_count }}, 
+                        {{ scheduled_count }}, 
+                        {{ completed_consult_count }}
+                    ],
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(75, 192, 192, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(75, 192, 192, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

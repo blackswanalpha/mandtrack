@@ -20,7 +20,7 @@ def admin_login(request):
     """
     # Redirect if already logged in as admin
     if request.user.is_authenticated and request.user.is_admin_user():
-        return redirect('dashboard:admin_dashboard')
+        return redirect('admin_dashboard')
 
     # Handle login form
     if request.method == 'POST':
@@ -53,8 +53,11 @@ def admin_login(request):
             next_url = request.GET.get('next')
             if next_url:
                 return redirect(next_url)
-            return redirect('dashboard:admin_dashboard')
+            return redirect('admin_dashboard')
         else:
+            # Add error message for toast notification
+            messages.error(request, 'Invalid username or password. Please try again.')
+
             # Record failed login attempt
             if 'username' in request.POST:
                 try:

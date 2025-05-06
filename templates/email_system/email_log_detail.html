@@ -1,0 +1,250 @@
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
+
+{% block title %}Email Log: {{ log.subject }} - MindTrack{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-6">
+            <div class="flex items-center">
+                <a href="{% url 'email_system:email_log_list' %}" class="mr-2 text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900 truncate">Email: {{ log.subject }}</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                Sent to {{ log.to_email }} on {{ log.sent_at|date:"F j, Y, g:i a"|default:"Not sent yet" }}
+            </p>
+        </div>
+
+        <!-- Email Actions -->
+        <div class="mb-6 flex flex-wrap gap-3">
+            {% if log.status == 'sent' or log.status == 'failed' %}
+                <a href="{% url 'email_system:resend_email' pk=log.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                    <i class="fas fa-paper-plane mr-2"></i> Resend Email
+                </a>
+            {% endif %}
+            
+            {% if log.template %}
+                <a href="{% url 'email_system:template_detail' pk=log.template.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                    <i class="fas fa-file-alt mr-2"></i> View Template
+                </a>
+            {% endif %}
+            
+            {% if log.response %}
+                <a href="{% url 'feedback:response_detail' pk=log.response.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                    <i class="fas fa-clipboard-list mr-2"></i> View Response
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Email Details -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Email Details</h2>
+            </div>
+            <div class="border-t border-gray-200">
+                <dl>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Status</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                {% if log.status == 'sent' %}bg-green-100 text-green-800
+                                {% elif log.status == 'failed' %}bg-red-100 text-red-800
+                                {% elif log.status == 'sending' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ log.status|title }}
+                            </span>
+                            
+                            {% if log.status == 'failed' and log.error_message %}
+                                <div class="mt-2 text-sm text-red-600">
+                                    <p class="font-medium">Error:</p>
+                                    <p class="mt-1">{{ log.error_message }}</p>
+                                </div>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">From</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ log.from_email }}
+                        </dd>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">To</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ log.to_email }}
+                        </dd>
+                    </div>
+                    {% if log.cc_emails %}
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">CC</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                {{ log.cc_emails }}
+                            </dd>
+                        </div>
+                    {% endif %}
+                    {% if log.bcc_emails %}
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">BCC</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                {{ log.bcc_emails }}
+                            </dd>
+                        </div>
+                    {% endif %}
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Subject</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ log.subject }}
+                        </dd>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Sent At</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {% if log.sent_at %}
+                                {{ log.sent_at|date:"F j, Y, g:i a" }}
+                            {% else %}
+                                Not sent yet
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Sent By</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {% if log.sent_by %}
+                                {{ log.sent_by.get_full_name|default:log.sent_by.email }}
+                            {% else %}
+                                System
+                            {% endif %}
+                        </dd>
+                    </div>
+                    {% if log.template %}
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">Template</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                <a href="{% url 'email_system:template_detail' pk=log.template.pk %}" class="text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                                    {{ log.template.name }}
+                                </a>
+                                <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    {{ log.template.category|title }}
+                                </span>
+                            </dd>
+                        </div>
+                    {% endif %}
+                    {% if log.response %}
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">Related Response</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                <a href="{% url 'feedback:response_detail' pk=log.response.pk %}" class="text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                                    {{ log.response.survey.title }}
+                                </a>
+                                <div class="mt-1 text-xs text-gray-500">
+                                    Submitted on {{ log.response.created_at|date:"F j, Y, g:i a" }}
+                                </div>
+                            </dd>
+                        </div>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        <!-- Email Content -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Email Content</h2>
+            </div>
+            
+            <div class="border-t border-gray-200">
+                <div class="px-4 py-5 sm:p-6">
+                    <!-- Email Content Tabs -->
+                    <div class="border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                            <button type="button" class="email-tab-btn active border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-target="html-content">
+                                HTML Version
+                            </button>
+                            <button type="button" class="email-tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-target="text-content">
+                                Plain Text Version
+                            </button>
+                        </nav>
+                    </div>
+                    
+                    <!-- Email Content -->
+                    <div class="py-4">
+                        <div id="html-content" class="email-tab-content">
+                            {% if log.html_content %}
+                                <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                    <iframe id="html-preview" class="w-full min-h-[500px]" frameborder="0"></iframe>
+                                </div>
+                            {% else %}
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <h3 class="text-sm font-medium text-yellow-800">No HTML Content</h3>
+                                            <div class="mt-2 text-sm text-yellow-700">
+                                                <p>This email does not have HTML content.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div id="text-content" class="email-tab-content hidden">
+                            <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                <pre class="whitespace-pre-wrap font-mono text-sm text-gray-800">{{ log.message }}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab switching
+        const tabButtons = document.querySelectorAll('.email-tab-btn');
+        const tabContents = document.querySelectorAll('.email-tab-content');
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Deactivate all tabs
+                tabButtons.forEach(btn => {
+                    btn.classList.remove('active', 'border-indigo-500', 'text-indigo-600');
+                    btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                });
+                
+                // Hide all content
+                tabContents.forEach(content => {
+                    content.classList.add('hidden');
+                });
+                
+                // Activate clicked tab
+                button.classList.add('active', 'border-indigo-500', 'text-indigo-600');
+                button.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                
+                // Show corresponding content
+                const targetId = button.getAttribute('data-target');
+                document.getElementById(targetId).classList.remove('hidden');
+            });
+        });
+        
+        // Initialize HTML preview iframe
+        const htmlPreview = document.getElementById('html-preview');
+        if (htmlPreview) {
+            const htmlContent = `{% if log.html_content %}{{ log.html_content|escapejs }}{% endif %}`;
+            const doc = htmlPreview.contentWindow.document;
+            doc.open();
+            doc.write(htmlContent);
+            doc.close();
+        }
+    });
+</script>
+{% endblock %}

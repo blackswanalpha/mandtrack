@@ -1,9 +1,18 @@
 # Import the base models to avoid circular imports
 from django.db import models
 from django.conf import settings
-from surveys.models import Questionnaire
-from feedback.models import Response
+from django.apps import apps
 from groups.models import Organization
+
+# Get model references with direct database model names for reliability
+try:
+    Questionnaire = apps.get_model('surveys', 'SurveysQuestionnaire')
+    Response = apps.get_model('feedback', 'FeedbackResponse')
+except Exception:
+    # Fallback to app-provided models
+    from surveys.models import get_questionnaire
+    from feedback.models import Response
+    Questionnaire = get_questionnaire()
 
 # Dashboard and Widget models are now defined in analytics/models/dashboard.py
 

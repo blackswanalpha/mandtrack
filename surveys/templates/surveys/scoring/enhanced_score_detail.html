@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Enhanced Score Details{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold mb-2">Enhanced Score Details</h1>
+        <p class="text-gray-600">
+            Response to <a href="{% url 'surveys:survey_detail' pk=questionnaire.id %}" class="text-blue-600 hover:underline">{{ questionnaire.title }}</a>
+            by {{ response.respondent_email }}
+        </p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold">Score Summary</h2>
+            <span class="text-sm text-gray-500">Calculated on {{ score.calculated_at|date:"F j, Y, g:i a" }}</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <!-- Raw Score -->
+            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <h3 class="text-lg font-medium mb-2">Raw Score</h3>
+                <div class="flex items-end">
+                    <span class="text-3xl font-bold text-indigo-600">{{ score.raw_score|floatformat:1 }}</span>
+                    <span class="text-gray-500 ml-2 mb-1">/ {{ scoring_system.max_score|default:"100" }}</span>
+                </div>
+                {% if score.score_range %}
+                <div class="mt-2 inline-block px-3 py-1 rounded-full text-sm font-medium" 
+                     style="background-color: {{ score.score_range.color }}; color: {% if score.score_range.color == 'yellow' or score.score_range.color == 'green' %}#333{% else %}white{% endif %};">
+                    {{ score.score_range.name }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Z-Score -->
+            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <h3 class="text-lg font-medium mb-2">Z-Score</h3>
+                <div class="flex items-end">
+                    <span class="text-3xl font-bold {% if score.z_score > 0 %}text-green-600{% elif score.z_score < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                        {{ score.z_score|floatformat:2 }}
+                    </span>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">
+                    {% if score.z_score > 0 %}
+                        {{ score.z_score|floatformat:2 }} standard deviations above average
+                    {% elif score.z_score < 0 %}
+                        {{ score.z_score|abs|floatformat:2 }} standard deviations below average
+                    {% else %}
+                        At the average
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Percentile -->
+            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <h3 class="text-lg font-medium mb-2">Percentile</h3>
+                <div class="flex items-end">
+                    <span class="text-3xl font-bold text-blue-600">{{ score.percentile|floatformat:1 }}</span>
+                    <span class="text-gray-500 ml-1 mb-1">%</span>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">
+                    Better than {{ score.percentile|floatformat:1 }}% of respondents
+                </p>
+            </div>
+        </div>
+
+        <!-- Interpretation -->
+        {% if score.score_range and score.score_range.interpretation %}
+        <div class="bg-blue-50 rounded-lg p-4 border border-blue-200 mb-6">
+            <h3 class="text-lg font-medium mb-2 text-blue-800">Interpretation</h3>
+            <p class="text-blue-800">{{ score.score_range.interpretation }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Visualization -->
+        <div class="mb-8">
+            <h3 class="text-lg font-medium mb-4">Score Visualization</h3>
+            <div class="h-8 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 rounded-full"
+                     style="width: {{ score.percentile }}%;">
+                </div>
+            </div>
+            <div class="flex justify-between mt-1 text-xs text-gray-500">
+                <span>0%</span>
+                <span>50%</span>
+                <span>100%</span>
+            </div>
+        </div>
+
+        <!-- Category Scores -->
+        {% if score.additional_data.category_scores %}
+        <div class="mb-8">
+            <h3 class="text-lg font-medium mb-4">Category Scores</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for category, category_score in score.additional_data.category_scores.items %}
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <h4 class="font-medium mb-2 capitalize">{{ category }}</h4>
+                    <div class="flex items-center">
+                        <div class="w-full bg-gray-200 rounded-full h-4 mr-2">
+                            <div class="bg-blue-600 h-4 rounded-full" style="width: {{ category_score }}0%;"></div>
+                        </div>
+                        <span class="text-sm font-medium">{{ category_score }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Subscale Scores -->
+        {% if score.additional_data.subscales %}
+        <div class="mb-8">
+            <h3 class="text-lg font-medium mb-4">Subscale Scores</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for subscale, subscale_score in score.additional_data.subscales.items %}
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <h4 class="font-medium mb-2 capitalize">{{ subscale }}</h4>
+                    <div class="flex items-center">
+                        <div class="w-full bg-gray-200 rounded-full h-4 mr-2">
+                            <div class="bg-purple-600 h-4 rounded-full" style="width: {{ subscale_score }}0%;"></div>
+                        </div>
+                        <span class="text-sm font-medium">{{ subscale_score }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Conditional Adjustments -->
+        {% if score.additional_data.conditional_adjustments %}
+        <div class="mb-8">
+            <h3 class="text-lg font-medium mb-4">Score Adjustments</h3>
+            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rule</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Condition</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adjustment</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for adjustment in score.additional_data.conditional_adjustments %}
+                        <tr>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">Rule #{{ adjustment.rule_id }}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                {% if adjustment.condition.answer %}
+                                    Answer: "{{ adjustment.condition.answer }}"
+                                {% else %}
+                                    Custom condition
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm font-medium {% if adjustment.adjustment > 0 %}text-green-600{% elif adjustment.adjustment < 0 %}text-red-600{% else %}text-gray-500{% endif %}">
+                                {% if adjustment.adjustment > 0 %}+{% endif %}{{ adjustment.adjustment }}
+                            </td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{{ adjustment.message }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="flex justify-between">
+        <a href="{% url 'feedback:response_detail' pk=response.id %}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded">
+            Back to Response
+        </a>
+        <a href="{% url 'surveys:enhanced_calculate_score' questionnaire_id=questionnaire.id response_id=response.id %}" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded">
+            Recalculate Score
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Add any JavaScript for interactive charts here
+    document.addEventListener('DOMContentLoaded', function() {
+        // You can add Chart.js visualizations here
+    });
+</script>
+{% endblock %}

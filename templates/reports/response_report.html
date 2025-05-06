@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Response Report - {{ questionnaire.title }}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 2cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .header h1 {
+            color: #4f46e5;
+            margin-bottom: 5px;
+        }
+        .header p {
+            color: #666;
+            margin-top: 0;
+        }
+        .section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        .section h2 {
+            color: #4f46e5;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .section h3 {
+            color: #4338ca;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8fafc;
+        }
+        .stats-grid {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+        .stat-card {
+            flex: 1 1 calc(33.333% - 20px);
+            margin: 10px;
+            padding: 15px;
+            background-color: #f8fafc;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4f46e5;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+        .risk-assessment {
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .risk-low {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .risk-medium {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .risk-high {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            color: #666;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+        .question {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8fafc;
+            border-radius: 5px;
+        }
+        .question-text {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .answer {
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Response Report</h1>
+            <p>{{ questionnaire.title }} - {{ report_date|date:"F j, Y" }}</p>
+        </div>
+        
+        <div class="section">
+            <h2>Response Information</h2>
+            <table>
+                <tr>
+                    <th>Questionnaire</th>
+                    <td>{{ questionnaire.title }}</td>
+                </tr>
+                <tr>
+                    <th>Organization</th>
+                    <td>{{ organization.name|default:"N/A" }}</td>
+                </tr>
+                <tr>
+                    <th>Respondent</th>
+                    <td>{{ response.user.get_full_name|default:"Anonymous" }}</td>
+                </tr>
+                <tr>
+                    <th>Email</th>
+                    <td>{{ response.user.email|default:response.patient_email|default:"N/A" }}</td>
+                </tr>
+                <tr>
+                    <th>Date</th>
+                    <td>{{ response.created_at|date:"F j, Y" }}</td>
+                </tr>
+                <tr>
+                    <th>Status</th>
+                    <td>{{ response.get_status_display }}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2>Response Summary</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{{ response.score|floatformat:1 }}</div>
+                    <div class="stat-label">Score</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ response.get_risk_level_display }}</div>
+                    <div class="stat-label">Risk Level</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ response.completion_time|default:"N/A" }}</div>
+                    <div class="stat-label">Completion Time</div>
+                </div>
+            </div>
+            
+            <div class="risk-assessment risk-{{ response.risk_level }}">
+                <h3>Risk Assessment</h3>
+                <p>
+                    {% if response.risk_level == 'high' %}
+                        This response indicates a high level of risk. Immediate attention may be required.
+                    {% elif response.risk_level == 'medium' %}
+                        This response indicates a moderate level of risk. Consider implementing some of the recommendations.
+                    {% else %}
+                        This response indicates a low level of risk. Continue with current practices and monitor regularly.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        
+        {% if ai_analysis %}
+            <div class="section">
+                <h2>AI Analysis</h2>
+                <div class="analysis-content">
+                    <h3>Summary</h3>
+                    <p>{{ ai_analysis.summary }}</p>
+                    
+                    {% if ai_analysis.detailed_analysis %}
+                        <h3>Detailed Analysis</h3>
+                        <p>{{ ai_analysis.detailed_analysis }}</p>
+                    {% endif %}
+                    
+                    {% if ai_analysis.recommendations %}
+                        <h3>Recommendations</h3>
+                        <p>{{ ai_analysis.recommendations }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+        
+        <div class="page-break"></div>
+        
+        <div class="section">
+            <h2>Responses to Questions</h2>
+            {% for answer in answers %}
+                <div class="question">
+                    <div class="question-text">{{ forloop.counter }}. {{ answer.question.text }}</div>
+                    <div class="answer">
+                        {% if answer.question.question_type == 'text' %}
+                            {{ answer.text_answer|default:"No answer provided" }}
+                        {% elif answer.question.question_type == 'single_choice' %}
+                            {{ answer.selected_choice.text|default:"No answer provided" }}
+                        {% elif answer.question.question_type == 'multiple_choice' %}
+                            <ul>
+                                {% for choice in answer.multiple_choices.all %}
+                                    <li>{{ choice.text }}</li>
+                                {% empty %}
+                                    <li>No choices selected</li>
+                                {% endfor %}
+                            </ul>
+                        {% elif answer.question.question_type == 'rating' %}
+                            {{ answer.rating_answer|default:"No rating provided" }} / {{ answer.question.max_rating|default:5 }}
+                        {% elif answer.question.question_type == 'country' %}
+                            {{ answer.country_answer|default:"No country selected" }}
+                        {% else %}
+                            {{ answer.text_answer|default:"No answer provided" }}
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <p>No answers found for this response.</p>
+            {% endfor %}
+        </div>
+        
+        <div class="footer">
+            <p>Generated on {{ report_date|date:"F j, Y" }} at {{ report_date|time:"H:i" }}</p>
+            <p>MindTrack - Response Report</p>
+        </div>
+    </div>
+</body>
+</html>

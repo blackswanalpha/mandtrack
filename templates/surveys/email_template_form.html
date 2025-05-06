@@ -1,0 +1,226 @@
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
+
+{% block title %}{% if is_edit %}Edit{% else %}Create{% endif %} Email Template{% endblock %}
+
+{% block page_title %}{% if is_edit %}Edit{% else %}Create{% endif %} Email Template{% endblock %}
+
+{% block breadcrumbs %}
+<li>
+    <div class="flex items-center">
+        <i class="fas fa-chevron-right text-gray-400 text-xs mx-1"></i>
+        <a href="{% url 'surveys:email_template_list' %}" class="text-sm text-gray-500 hover:text-gray-700">
+            Email Templates
+        </a>
+    </div>
+</li>
+<li aria-current="page">
+    <div class="flex items-center">
+        <i class="fas fa-chevron-right text-gray-400 text-xs mx-1"></i>
+        <span class="text-sm text-gray-500">{% if is_edit %}Edit{% else %}Create{% endif %} Template</span>
+    </div>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
+    <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+        {% if is_edit %}Edit{% else %}Create{% endif %} Email Template
+    </h2>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <div>
+                    <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Template Name <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.name.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.subject.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Email Subject <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.subject }}
+                    {% if form.subject.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.subject.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.organization.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Organization
+                    </label>
+                    {{ form.organization }}
+                    {% if form.organization.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.organization.errors }}</p>
+                    {% endif %}
+                    <p class="text-gray-500 text-xs mt-1">Optional. If selected, this template will be available to all members of the organization.</p>
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="{{ form.template_type.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Template Type <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.template_type }}
+                    {% if form.template_type.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.template_type.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.is_active.id_for_label }}" class="flex items-center">
+                        {{ form.is_active }}
+                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Active</span>
+                    </label>
+                    {% if form.is_active.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.is_active.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.is_default.id_for_label }}" class="flex items-center">
+                        {{ form.is_default }}
+                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Default Template</span>
+                    </label>
+                    {% if form.is_default.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.is_default.errors }}</p>
+                    {% endif %}
+                    <p class="text-gray-500 text-xs mt-1">If checked, this will be used as the default template for this type.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div>
+            <label for="{{ form.content.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Email Content <span class="text-red-500">*</span>
+            </label>
+            {{ form.content }}
+            {% if form.content.errors %}
+            <p class="text-red-500 text-xs mt-1">{{ form.content.errors }}</p>
+            {% endif %}
+            <p class="text-gray-500 text-xs mt-1">
+                You can use HTML and the following variables:
+                <code>{name}</code>, <code>{survey_title}</code>, <code>{survey_link}</code>, <code>{organization}</code>
+            </p>
+        </div>
+        
+        <div class="flex justify-between pt-4">
+            <a href="{% url 'surveys:email_template_list' %}" class="btn-secondary">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Templates
+            </a>
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-save mr-1"></i> {% if is_edit %}Update{% else %}Create{% endif %} Template
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+        <i class="fas fa-info-circle mr-2 text-blue-500"></i> Template Variables
+    </h3>
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Variable
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Description
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Example
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                        <code>{name}</code>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        Recipient's name
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        John Doe
+                    </td>
+                </tr>
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                        <code>{survey_title}</code>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        Title of the questionnaire
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        Mental Health Assessment
+                    </td>
+                </tr>
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                        <code>{survey_link}</code>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        Direct link to the questionnaire
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        https://example.com/q/abc123/
+                    </td>
+                </tr>
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                        <code>{organization}</code>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        Organization name
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        MindTrack Health
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add enhanced styling to form elements
+        const inputs = document.querySelectorAll('input[type="text"], input[type="email"], textarea, select');
+        inputs.forEach(input => {
+            input.classList.add('enhanced-input', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'dark:border-gray-600', 'px-3', 'py-2', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500', 'dark:bg-gray-700', 'dark:text-white');
+        });
+        
+        // Style checkboxes
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.classList.add('h-4', 'w-4', 'text-blue-600', 'rounded', 'border-gray-300', 'focus:ring-blue-500', 'dark:border-gray-600', 'dark:bg-gray-700');
+        });
+        
+        // Add rich text editor to content field if available
+        const contentField = document.getElementById('{{ form.content.id_for_label }}');
+        if (contentField) {
+            contentField.classList.add('h-64');
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base/base.html" %}
+
+{% block title %}Test Login{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h2 class="text-center mb-4">Test Login</h2>
+                    
+                    <form method="post" action="{% url 'admin_login' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" placeholder="Enter username">
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Enter password">
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </div>
+                    </form>
+                    
+                    <div class="mt-4">
+                        <button id="showSuccessToast" class="btn btn-success">Show Success Toast</button>
+                        <button id="showErrorToast" class="btn btn-danger">Show Error Toast</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Test toast buttons
+        document.getElementById('showSuccessToast').addEventListener('click', function() {
+            toast.success('This is a success message', 'Success');
+        });
+        
+        document.getElementById('showErrorToast').addEventListener('click', function() {
+            toast.error('This is an error message', 'Error');
+        });
+    });
+</script>
+{% endblock %}

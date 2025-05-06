@@ -1,0 +1,229 @@
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
+
+{% block title %}{{ scheduled_email.name }} - Scheduled Email - MindTrack{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-6">
+            <div class="flex items-center">
+                <a href="{% url 'email_system:scheduled_email_list' %}" class="mr-2 text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">{{ scheduled_email.name }}</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                {{ scheduled_email.description|default:"No description provided." }}
+            </p>
+        </div>
+
+        <!-- Email Actions -->
+        <div class="mb-6 flex flex-wrap gap-3">
+            {% if scheduled_email.status == 'scheduled' %}
+                <a href="{% url 'email_system:scheduled_email_edit' pk=scheduled_email.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                    <i class="fas fa-edit mr-2"></i> Edit
+                </a>
+                <a href="{% url 'email_system:scheduled_email_cancel' pk=scheduled_email.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+                    <i class="fas fa-ban mr-2"></i> Cancel
+                </a>
+            {% endif %}
+            <a href="{% url 'email_system:scheduled_email_delete' pk=scheduled_email.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+                <i class="fas fa-trash-alt mr-2"></i> Delete
+            </a>
+            {% if scheduled_email.template %}
+                <a href="{% url 'email_system:template_detail' pk=scheduled_email.template.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                    <i class="fas fa-file-alt mr-2"></i> View Template
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Scheduled Email Details -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Scheduled Email Details</h2>
+            </div>
+            <div class="border-t border-gray-200">
+                <dl>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Status</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                {% if scheduled_email.status == 'scheduled' %}bg-blue-100 text-blue-800
+                                {% elif scheduled_email.status == 'processing' %}bg-yellow-100 text-yellow-800
+                                {% elif scheduled_email.status == 'completed' %}bg-green-100 text-green-800
+                                {% elif scheduled_email.status == 'cancelled' %}bg-gray-100 text-gray-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ scheduled_email.get_status_display }}
+                            </span>
+                            
+                            {% if scheduled_email.status == 'error' and scheduled_email.error_message %}
+                                <div class="mt-2 text-sm text-red-600">
+                                    <p class="font-medium">Error:</p>
+                                    <p class="mt-1">{{ scheduled_email.error_message }}</p>
+                                </div>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Frequency</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ scheduled_email.get_frequency_display }}
+                            
+                            {% if scheduled_email.frequency == 'weekly' and scheduled_email.weekday is not None %}
+                                <span class="ml-2 text-gray-500">({{ scheduled_email.get_weekday_display }})</span>
+                            {% elif scheduled_email.frequency in 'monthly,quarterly,yearly' and scheduled_email.day_of_month %}
+                                <span class="ml-2 text-gray-500">(Day {{ scheduled_email.day_of_month }} of the month)</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Scheduled Time</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ scheduled_email.scheduled_time|date:"F j, Y, g:i a" }}
+                        </dd>
+                    </div>
+                    {% if scheduled_email.end_date %}
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">End Date</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                {{ scheduled_email.end_date|date:"F j, Y" }}
+                            </dd>
+                        </div>
+                    {% endif %}
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Next Scheduled</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {% if scheduled_email.next_scheduled %}
+                                {{ scheduled_email.next_scheduled|date:"F j, Y, g:i a" }}
+                            {% else %}
+                                <span class="text-gray-500">Not scheduled</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Last Sent</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {% if scheduled_email.last_sent %}
+                                {{ scheduled_email.last_sent|date:"F j, Y, g:i a" }}
+                            {% else %}
+                                <span class="text-gray-500">Never sent</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Created By</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ scheduled_email.created_by.get_full_name|default:scheduled_email.created_by.email|default:"System" }}
+                        </dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Created At</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ scheduled_email.created_at|date:"F j, Y, g:i a" }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Email Content -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Email Content</h2>
+            </div>
+            <div class="border-t border-gray-200">
+                <dl>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Template</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {% if scheduled_email.template %}
+                                <a href="{% url 'email_system:template_detail' pk=scheduled_email.template.pk %}" class="text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                                    {{ scheduled_email.template.name }}
+                                </a>
+                                <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    {{ scheduled_email.template.category|title }}
+                                </span>
+                            {% else %}
+                                <span class="text-gray-500">No template selected</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Subject</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {% if scheduled_email.subject_override %}
+                                {{ scheduled_email.subject_override }}
+                                <span class="text-xs text-gray-500">(Override)</span>
+                            {% elif scheduled_email.template %}
+                                {{ scheduled_email.template.subject }}
+                            {% else %}
+                                <span class="text-gray-500">No subject</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Message</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {% if scheduled_email.message_override %}
+                                <div class="bg-gray-50 p-4 rounded whitespace-pre-wrap font-mono text-xs">{{ scheduled_email.message_override }}</div>
+                                <p class="mt-2 text-xs text-gray-500">(Override)</p>
+                            {% elif scheduled_email.template %}
+                                <div class="bg-gray-50 p-4 rounded whitespace-pre-wrap font-mono text-xs">{{ scheduled_email.template.message }}</div>
+                            {% else %}
+                                <span class="text-gray-500">No message</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Recipient Information -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Recipient Information</h2>
+            </div>
+            <div class="border-t border-gray-200">
+                <dl>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">To</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ scheduled_email.to_email }}
+                        </dd>
+                    </div>
+                    {% if scheduled_email.cc_emails %}
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">CC</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                {{ scheduled_email.cc_emails }}
+                            </dd>
+                        </div>
+                    {% endif %}
+                    {% if scheduled_email.bcc_emails %}
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">BCC</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                {{ scheduled_email.bcc_emails }}
+                            </dd>
+                        </div>
+                    {% endif %}
+                    {% if scheduled_email.response %}
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">Related Response</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                <a href="{% url 'feedback:response_detail' pk=scheduled_email.response.pk %}" class="text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                                    {{ scheduled_email.response.survey.title }}
+                                </a>
+                                <div class="mt-1 text-xs text-gray-500">
+                                    Submitted on {{ scheduled_email.response.created_at|date:"F j, Y, g:i a" }}
+                                </div>
+                            </dd>
+                        </div>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if is_update %}Update{% else %}Schedule{% endif %} Consultation - MindTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .form-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .risk-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .risk-low {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    
+    .risk-medium {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+    
+    .risk-high {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+    
+    .risk-critical {
+        background-color: #7f1d1d;
+        color: #fee2e2;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% if is_update %}{% url 'assessments:assessment_detail' pk=consultation.assessment.pk %}{% else %}{% url 'assessments:assessment_detail' pk=assessment.pk %}{% endif %}" class="btn btn-outline-primary mb-2">
+                <i class="fas fa-arrow-left me-2"></i> Back to Assessment
+            </a>
+            <h1 class="h3 mb-0 text-gray-800">{% if is_update %}Update{% else %}Schedule{% endif %} Consultation</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4 form-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        {% if is_update %}
+                        Update Consultation for {{ consultation.assessment.response.patient_identifier|default:"Anonymous" }}
+                        {% else %}
+                        New Consultation for {{ assessment.response.patient_identifier|default:"Anonymous" }}
+                        <span class="risk-badge risk-{{ assessment.get_risk_level }} ms-2">
+                            {{ assessment.get_risk_level|title }} Risk
+                        </span>
+                        {% endif %}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.consultant|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.status|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.scheduled_date|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.follow_up_required|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        {{ form.notes|as_crispy_field }}
+                        
+                        {% if is_update %}
+                        {{ form.outcome|as_crispy_field }}
+                        {% endif %}
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% if is_update %}{% url 'assessments:assessment_detail' pk=consultation.assessment.pk %}{% else %}{% url 'assessments:assessment_detail' pk=assessment.pk %}{% endif %}" class="btn btn-secondary me-md-2">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if is_update %}Update{% else %}Schedule{% endif %} Consultation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

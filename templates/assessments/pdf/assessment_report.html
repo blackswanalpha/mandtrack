@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Patient Assessment Report</title>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>Patient Assessment Report</h1>
+            <p>Generated on {{ generated_at|date:"F d, Y H:i" }}</p>
+        </div>
+        {% if logo_path %}
+        <img src="{{ logo_path }}" alt="Logo" class="logo">
+        {% endif %}
+    </div>
+    
+    <div class="section">
+        <h2>Patient Information</h2>
+        <table class="metadata-table">
+            <tr>
+                <td class="metadata-label">Patient ID:</td>
+                <td>{{ patient_id }}</td>
+            </tr>
+            {% if response.patient_email %}
+            <tr>
+                <td class="metadata-label">Email:</td>
+                <td>{{ response.patient_email }}</td>
+            </tr>
+            {% endif %}
+            {% if response.patient_age %}
+            <tr>
+                <td class="metadata-label">Age:</td>
+                <td>{{ response.patient_age }}</td>
+            </tr>
+            {% endif %}
+            {% if response.patient_gender %}
+            <tr>
+                <td class="metadata-label">Gender:</td>
+                <td>{{ response.get_patient_gender_display }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td class="metadata-label">Risk Level:</td>
+                <td><span class="risk-badge risk-{{ risk_level }}">{{ risk_level|title }}</span></td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="section">
+        <h2>Assessment Information</h2>
+        <table class="metadata-table">
+            <tr>
+                <td class="metadata-label">Assessment Date:</td>
+                <td>{{ assessment_date|date:"F d, Y H:i" }}</td>
+            </tr>
+            <tr>
+                <td class="metadata-label">Assessor:</td>
+                <td>{{ assessor }}</td>
+            </tr>
+            <tr>
+                <td class="metadata-label">Status:</td>
+                <td>{{ assessment.get_status_display }}</td>
+            </tr>
+            <tr>
+                <td class="metadata-label">Questionnaire:</td>
+                <td>{{ response.survey.title }}</td>
+            </tr>
+            <tr>
+                <td class="metadata-label">Consultation:</td>
+                <td><span class="consultation-badge consultation-{{ assessment.consultation_recommended }}">{{ consultation_status }}</span></td>
+            </tr>
+            {% if assessment.consultation_urgency > 0 %}
+            <tr>
+                <td class="metadata-label">Urgency:</td>
+                <td>{{ assessment.consultation_urgency }}/10</td>
+            </tr>
+            {% endif %}
+            {% if assessment.follow_up_date %}
+            <tr>
+                <td class="metadata-label">Follow-up Date:</td>
+                <td>{{ assessment.follow_up_date|date:"F d, Y" }}</td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+    
+    {% if assessment.notes %}
+    <div class="section">
+        <h2>Assessment Notes</h2>
+        <p>{{ assessment.notes|linebreaks }}</p>
+    </div>
+    {% endif %}
+    
+    {% if assessment.risk_factors %}
+    <div class="section">
+        <h2>Risk Factors</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Factor</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for factor, details in assessment.risk_factors.items %}
+                <tr>
+                    <td>{{ factor }}</td>
+                    <td>{{ details }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    
+    {% if assessment.strengths %}
+    <div class="section">
+        <h2>Strengths</h2>
+        <p>{{ assessment.strengths|linebreaks }}</p>
+    </div>
+    {% endif %}
+    
+    {% if assessment.concerns %}
+    <div class="section">
+        <h2>Concerns</h2>
+        <p>{{ assessment.concerns|linebreaks }}</p>
+    </div>
+    {% endif %}
+    
+    {% if assessment.consultation_notes %}
+    <div class="section">
+        <h2>Consultation Notes</h2>
+        <p>{{ assessment.consultation_notes|linebreaks }}</p>
+    </div>
+    {% endif %}
+    
+    {% if assessment.follow_up_notes %}
+    <div class="section">
+        <h2>Follow-up Notes</h2>
+        <p>{{ assessment.follow_up_notes|linebreaks }}</p>
+    </div>
+    {% endif %}
+    
+    <div class="section">
+        <h2>Questionnaire Responses</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Question</th>
+                    <th>Answer</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for answer in response.answers.all %}
+                <tr>
+                    <td>{{ answer.question.text }}</td>
+                    <td>
+                        {% if answer.selected_choice %}
+                        {{ answer.selected_choice.text }}
+                        {% elif answer.text_answer %}
+                        {{ answer.text_answer }}
+                        {% elif answer.numeric_value is not None %}
+                        {{ answer.numeric_value }}
+                        {% else %}
+                        <em>No answer provided</em>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if assessment.consultations.exists %}
+    <div class="section">
+        <h2>Consultation History</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Consultant</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for consultation in assessment.consultations.all %}
+                <tr>
+                    <td>{{ consultation.scheduled_date|date:"F d, Y H:i" }}</td>
+                    <td>{{ consultation.consultant.get_full_name|default:consultation.consultant.username }}</td>
+                    <td>{{ consultation.get_status_display }}</td>
+                    <td>
+                        {% if consultation.notes %}
+                        {{ consultation.notes|linebreaks }}
+                        {% endif %}
+                        {% if consultation.outcome and consultation.status == 'completed' %}
+                        <strong>Outcome:</strong> {{ consultation.outcome }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    
+    <div class="footer">
+        <p>This report is confidential and intended for authorized healthcare professionals only.</p>
+        <p>MindTrack Assessment System - {{ generated_at|date:"Y" }}</p>
+    </div>
+</body>
+</html>

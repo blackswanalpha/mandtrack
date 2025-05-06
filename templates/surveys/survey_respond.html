@@ -109,40 +109,165 @@
                     </div>
                 {% endif %}
 
-                <!-- Question Display -->
-                <div id="question-container" class="question-container">
-                    <!-- This will be populated by JavaScript -->
-                    <div class="question-card p-6 mb-6">
-                        <h2 class="text-xl font-medium text-gray-900 mb-4">Sample Question</h2>
-                        <p class="text-gray-700 mb-6">This is a sample question. The actual questions will be loaded when the survey is implemented.</p>
+                <!-- Questionnaire Form -->
+                <form method="post" id="questionnaireForm">
+                    {% csrf_token %}
 
-                        <!-- Sample Radio Options -->
-                        <div class="space-y-3">
-                            <div class="radio-option p-3 flex items-center">
-                                <input type="radio" id="option1" name="sample" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
-                                <label for="option1" class="ml-3 block text-gray-700">Option 1</label>
+                    <!-- Patient Information Section -->
+                    <div class="question-card p-6 mb-6" id="patient-info-section">
+                        <h2 class="text-xl font-medium text-gray-900 mb-4">Your Information</h2>
+                        <p class="text-gray-700 mb-6">Please provide some basic information about yourself.</p>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label for="patient_email" class="block text-sm font-medium text-gray-700">Email <span class="text-red-500">*</span></label>
+                                <input type="email" id="patient_email" name="patient_email" required
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                                <p class="mt-1 text-xs text-gray-500">Your email will be used to identify your responses.</p>
                             </div>
-                            <div class="radio-option p-3 flex items-center">
-                                <input type="radio" id="option2" name="sample" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
-                                <label for="option2" class="ml-3 block text-gray-700">Option 2</label>
+
+                            <div>
+                                <label for="patient_age" class="block text-sm font-medium text-gray-700">Age</label>
+                                <input type="number" id="patient_age" name="patient_age" min="1" max="120"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
                             </div>
-                            <div class="radio-option p-3 flex items-center">
-                                <input type="radio" id="option3" name="sample" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300">
-                                <label for="option3" class="ml-3 block text-gray-700">Option 3</label>
+
+                            <div>
+                                <label for="patient_gender" class="block text-sm font-medium text-gray-700">Gender</label>
+                                <select id="patient_gender" name="patient_gender"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                                    <option value="">Select gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="non-binary">Non-Binary</option>
+                                    <option value="prefer_not_to_say">Prefer Not to Say</option>
+                                    <option value="other">Other</option>
+                                </select>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Navigation Buttons -->
-                <div class="flex justify-between mt-6">
-                    <button id="prev-button" class="nav-button inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50" disabled>
-                        <i class="fas fa-arrow-left mr-2"></i> Previous
-                    </button>
-                    <button id="next-button" class="nav-button inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                        Next <i class="fas fa-arrow-right ml-2"></i>
-                    </button>
-                </div>
+                    <!-- Questions -->
+                    <div id="questions-container">
+                        {% for question in questions %}
+                            <div class="question-card p-6 mb-6 question-container"
+                                 id="question-{{ question.id }}"
+                                 data-question-index="{{ forloop.counter0 }}"
+                                 style="display: none;">
+
+                                <h2 class="text-xl font-medium text-gray-900 mb-2">{{ question.text }}</h2>
+                                {% if question.description %}
+                                    <p class="text-gray-700 mb-4">{{ question.description }}</p>
+                                {% endif %}
+
+                                <div class="mt-4">
+                                    {% if question.question_type == 'text' %}
+                                        <input type="text" name="question_{{ question.id }}" id="question_{{ question.id }}"
+                                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                               {% if question.required %}required{% endif %}>
+
+                                    {% elif question.question_type == 'textarea' %}
+                                        <textarea name="question_{{ question.id }}" id="question_{{ question.id }}" rows="4"
+                                                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                                  {% if question.required %}required{% endif %}></textarea>
+
+                                    {% elif question.question_type == 'single_choice' %}
+                                        <div class="space-y-3">
+                                            {% for choice in question.choices.all %}
+                                                <div class="radio-option p-3 flex items-center">
+                                                    <input type="radio" id="choice_{{ choice.id }}" name="question_{{ question.id }}"
+                                                           value="{{ choice.id }}" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                                                           {% if question.required %}required{% endif %}>
+                                                    <label for="choice_{{ choice.id }}" class="ml-3 block text-gray-700">{{ choice.text }}</label>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+
+                                    {% elif question.question_type == 'multiple_choice' %}
+                                        <div class="space-y-3">
+                                            {% for choice in question.choices.all %}
+                                                <div class="checkbox-option p-3 flex items-center">
+                                                    <input type="checkbox" id="choice_{{ choice.id }}" name="question_{{ question.id }}"
+                                                           value="{{ choice.id }}" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                                    <label for="choice_{{ choice.id }}" class="ml-3 block text-gray-700">{{ choice.text }}</label>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+
+                                    {% elif question.question_type == 'scale' %}
+                                        <div class="mt-2">
+                                            <div class="flex justify-between mb-2">
+                                                <span class="text-sm text-gray-500">0</span>
+                                                <span class="text-sm text-gray-500">10</span>
+                                            </div>
+                                            <input type="range" name="question_{{ question.id }}" id="question_{{ question.id }}"
+                                                   min="0" max="10" step="1" value="5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                                   {% if question.required %}required{% endif %}
+                                                   oninput="document.getElementById('scale_value_{{ question.id }}').textContent = this.value">
+                                            <div class="mt-2 text-center">
+                                                <span class="text-sm font-medium text-gray-700" id="scale_value_{{ question.id }}">5</span>
+                                            </div>
+                                        </div>
+
+                                    {% elif question.question_type == 'country' %}
+                                        <select name="question_{{ question.id }}" id="question_{{ question.id }}"
+                                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                               {% if question.required %}required{% endif %}>
+                                            <option value="">Select a country</option>
+                                            {% load countries %}
+                                            {% get_countries as countries %}
+                                            {% for country in countries %}
+                                                <option value="{{ country.code }}">{{ country.name }}</option>
+                                            {% endfor %}
+                                        </select>
+
+                                    {% elif question.question_type == 'date' %}
+                                        <input type="date" name="question_{{ question.id }}" id="question_{{ question.id }}"
+                                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                               {% if question.required %}required{% endif %}>
+
+                                    {% elif question.question_type == 'number' %}
+                                        <input type="number" name="question_{{ question.id }}" id="question_{{ question.id }}"
+                                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                               {% if question.required %}required{% endif %}>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+
+                        <!-- Submission Section -->
+                        <div class="question-card p-6 mb-6 question-container" id="submission-section" style="display: none;">
+                            <h2 class="text-xl font-medium text-gray-900 mb-4">Review & Submit</h2>
+                            <p class="text-gray-700 mb-6">Thank you for completing the questionnaire. Please review your answers and click submit when you're ready.</p>
+
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-check-circle text-green-400"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm text-green-700">
+                                            All questions have been answered. Click the Submit button to complete the questionnaire.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Buttons -->
+                    <div class="flex justify-between mt-6">
+                        <button type="button" id="prev-button" class="nav-button inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50" disabled>
+                            <i class="fas fa-arrow-left mr-2"></i> Previous
+                        </button>
+                        <button type="button" id="next-button" class="nav-button inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            Next <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                        <button type="submit" id="submit-button" class="nav-button inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500" style="display: none;">
+                            Submit <i class="fas fa-check ml-2"></i>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -155,14 +280,14 @@
                     Your responses will be kept confidential and used to provide better support and services.
                 </p>
 
-                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
                     <div class="flex">
                         <div class="flex-shrink-0">
-                            <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                            <i class="fas fa-info-circle text-blue-400"></i>
                         </div>
                         <div class="ml-3">
-                            <p class="text-sm text-yellow-700">
-                                This is a demonstration of how the questionnaire will look. The actual implementation will load questions from the database.
+                            <p class="text-sm text-blue-700">
+                                Your privacy is important to us. Your responses are stored securely and a unique identifier is generated for your submission.
                             </p>
                         </div>
                     </div>
@@ -178,70 +303,125 @@
     </div>
 </div>
 
-<!-- Set question count from server -->
-<script>
-    // Get the total number of questions from the server-side
-    var totalQuestionsValue = {% if survey.get_question_count %}{{ survey.get_question_count }}{% else %}5{% endif %};
-</script>
-
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // This is a placeholder for the actual implementation
-        // In a real implementation, this would load questions from the server
-
-        // Sample implementation to demonstrate the UI
+        // Get elements
         const nextButton = document.getElementById('next-button');
         const prevButton = document.getElementById('prev-button');
+        const submitButton = document.getElementById('submit-button');
         const progressBar = document.getElementById('progress-bar');
         const progressText = document.getElementById('progress-text');
+        const patientInfoSection = document.getElementById('patient-info-section');
+        const submissionSection = document.getElementById('submission-section');
+        const form = document.getElementById('questionnaireForm');
 
-        let currentQuestion = 1;
-        const totalQuestions = totalQuestionsValue;
+        // Get all question containers
+        const questionContainers = document.querySelectorAll('.question-container');
+        const totalSections = questionContainers.length + 2; // +2 for patient info and submission sections
 
-        // Update progress
-        function updateProgress() {
-            const progress = (currentQuestion / totalQuestions) * 100;
+        // Initialize current section (0 = patient info, 1...n = questions, n+1 = submission)
+        let currentSection = 0;
+
+        // Function to update the UI based on current section
+        function updateUI() {
+            // Update progress bar
+            const progress = ((currentSection + 1) / totalSections) * 100;
             progressBar.style.width = progress + '%';
-            progressText.textContent = 'Question ' + currentQuestion + ' of ' + totalQuestions;
+
+            // Update progress text
+            if (currentSection === 0) {
+                progressText.textContent = 'Patient Information';
+            } else if (currentSection === totalSections - 1) {
+                progressText.textContent = 'Review & Submit';
+            } else {
+                progressText.textContent = `Question ${currentSection} of ${totalSections - 2}`;
+            }
+
+            // Show/hide sections
+            if (currentSection === 0) {
+                // Show patient info section
+                patientInfoSection.style.display = 'block';
+                submissionSection.style.display = 'none';
+                questionContainers.forEach(container => {
+                    container.style.display = 'none';
+                });
+            } else if (currentSection === totalSections - 1) {
+                // Show submission section
+                patientInfoSection.style.display = 'none';
+                submissionSection.style.display = 'block';
+                questionContainers.forEach(container => {
+                    container.style.display = 'none';
+                });
+
+                // Show submit button, hide next button
+                nextButton.style.display = 'none';
+                submitButton.style.display = 'inline-flex';
+            } else {
+                // Show current question
+                patientInfoSection.style.display = 'none';
+                submissionSection.style.display = 'none';
+                questionContainers.forEach((container, index) => {
+                    container.style.display = index === currentSection - 1 ? 'block' : 'none';
+                });
+
+                // Show next button, hide submit button
+                nextButton.style.display = 'inline-flex';
+                submitButton.style.display = 'none';
+            }
 
             // Enable/disable navigation buttons
-            prevButton.disabled = currentQuestion === 1;
-
-            if (currentQuestion === totalQuestions) {
-                nextButton.innerHTML = 'Submit <i class="fas fa-check ml-2"></i>';
-            } else {
-                nextButton.innerHTML = 'Next <i class="fas fa-arrow-right ml-2"></i>';
-            }
+            prevButton.disabled = currentSection === 0;
         }
 
         // Handle next button click
         nextButton.addEventListener('click', function() {
-            if (currentQuestion < totalQuestions) {
-                currentQuestion++;
-                updateProgress();
+            // Validate current section before proceeding
+            if (currentSection === 0) {
+                // Validate patient info
+                const emailInput = document.getElementById('patient_email');
+                if (!emailInput.value) {
+                    alert('Please enter your email address.');
+                    emailInput.focus();
+                    return;
+                }
             } else {
-                // Submit the form
-                alert('This would submit the form in a real implementation.');
+                // Validate current question if required
+                const currentQuestion = questionContainers[currentSection - 1];
+                const requiredInputs = currentQuestion.querySelectorAll('[required]');
+
+                for (const input of requiredInputs) {
+                    if (!input.value) {
+                        alert('Please answer all required questions before proceeding.');
+                        input.focus();
+                        return;
+                    }
+                }
+            }
+
+            // Move to next section
+            if (currentSection < totalSections - 1) {
+                currentSection++;
+                updateUI();
             }
         });
 
         // Handle previous button click
         prevButton.addEventListener('click', function() {
-            if (currentQuestion > 1) {
-                currentQuestion--;
-                updateProgress();
+            if (currentSection > 0) {
+                currentSection--;
+                updateUI();
             }
         });
 
-        // Initialize
-        updateProgress();
-
-        // Add click handlers for radio options (for demo purposes)
+        // Add click handlers for radio options
         document.querySelectorAll('.radio-option').forEach(function(option) {
             option.addEventListener('click', function() {
-                // Remove selected class from all options
-                document.querySelectorAll('.radio-option').forEach(function(opt) {
-                    opt.classList.remove('selected');
+                // Get the name of the radio group
+                const radioName = this.querySelector('input[type="radio"]').name;
+
+                // Remove selected class from all options in this group
+                document.querySelectorAll(`.radio-option input[name="${radioName}"]`).forEach(function(radio) {
+                    radio.closest('.radio-option').classList.remove('selected');
                 });
 
                 // Add selected class to clicked option
@@ -252,6 +432,23 @@
                 radio.checked = true;
             });
         });
+
+        // Add click handlers for checkbox options
+        document.querySelectorAll('.checkbox-option').forEach(function(option) {
+            option.addEventListener('click', function(event) {
+                // Don't toggle if clicking directly on the checkbox
+                if (event.target.type !== 'checkbox') {
+                    const checkbox = this.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                }
+
+                // Toggle selected class
+                this.classList.toggle('selected', this.querySelector('input[type="checkbox"]').checked);
+            });
+        });
+
+        // Initialize UI
+        updateUI();
     });
 </script>
 {% endblock %}

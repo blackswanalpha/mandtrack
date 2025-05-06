@@ -1,0 +1,79 @@
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
+
+{% block title %}Cancel Scheduled Email - MindTrack{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-6">
+            <div class="flex items-center">
+                <a href="{% url 'email_system:scheduled_email_detail' pk=scheduled_email.pk %}" class="mr-2 text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Cancel Scheduled Email</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                Confirm that you want to cancel this scheduled email.
+            </p>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-yellow-800">Confirmation</h3>
+                            <div class="mt-2 text-sm text-yellow-700">
+                                <p>You are about to cancel the scheduled email "{{ scheduled_email.name }}".</p>
+                                <p class="mt-2">This will prevent the email from being sent at its scheduled time. This action cannot be undone.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Scheduled Email Details</h3>
+                    <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Name</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ scheduled_email.name }}</dd>
+                        </div>
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Recipient</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ scheduled_email.to_email }}</dd>
+                        </div>
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Frequency</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ scheduled_email.get_frequency_display }}</dd>
+                        </div>
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Next Scheduled</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ scheduled_email.next_scheduled|date:"F j, Y, g:i a" }}</dd>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <dt class="text-sm font-medium text-gray-500">Template</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ scheduled_email.template.name }} ({{ scheduled_email.template.category|title }})</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="flex justify-end space-x-3">
+                        <a href="{% url 'email_system:scheduled_email_detail' pk=scheduled_email.pk %}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                            Go Back
+                        </a>
+                        <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+                            <i class="fas fa-ban mr-2"></i> Cancel Scheduled Email
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

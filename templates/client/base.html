@@ -70,6 +70,7 @@
     <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=1.0.1">
     <link rel="stylesheet" href="{% static 'css/animations.css' %}?v=1.0.1">
     <link rel="stylesheet" href="{% static 'css/enhanced-styles.css' %}?v=1.0.1">
+    <link rel="stylesheet" href="{% static 'css/toast.css' %}?v=1.0.0">
 
     <!-- AOS - Animate On Scroll Library -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -80,41 +81,41 @@
             from { opacity: 0; }
             to { opacity: 1; }
         }
-        
+
         @keyframes slideUp {
             from { transform: translateY(20px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
-        
+
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
-        
+
         .animate-fade-in {
             animation: fadeIn 0.6s ease-out forwards;
         }
-        
+
         .animate-slide-up {
             animation: slideUp 0.8s ease-out forwards;
         }
-        
+
         .animate-pulse {
             animation: pulse 2s infinite;
         }
-        
+
         /* Transitions */
         .transition-all {
             transition-property: all;
             transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
             transition-duration: 300ms;
         }
-        
+
         .hover-scale:hover {
             transform: scale(1.03);
         }
-        
+
         /* Spinner Animation */
         .spinner {
             width: 30px;
@@ -124,7 +125,7 @@
             border-top-color: rgba(79, 70, 229, 0.8);
             animation: spin 1s linear infinite;
         }
-        
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
@@ -205,7 +206,17 @@
 
     <!-- Custom JavaScript -->
     <script src="{% static 'js/main.js' %}?v=1.0.1"></script>
-    
+    <script src="{% static 'js/toast.js' %}?v=1.0.0"></script>
+
     {% block extra_js %}{% endblock %}
+
+    <!-- Django Messages for Toast -->
+    {% if messages %}
+    <div class="hidden">
+        {% for message in messages %}
+            <div class="django-message" data-type="{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
 </body>
 </html>

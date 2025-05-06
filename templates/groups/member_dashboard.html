@@ -1,0 +1,468 @@
+{% extends 'admin_portal/modern_base.html' %}
+
+{% block title %}{{ member.user.get_full_name|default:member.user.email }} Dashboard - {{ organization.name }} - MindTrack{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+<style>
+    .risk-low {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    .risk-medium {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+    .risk-high {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+    .dashboard-card {
+        transition: all 0.3s ease;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% url 'groups:member_detail' org_pk=organization.id pk=member.id %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Member Dashboard</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                Viewing dashboard for {{ member.user.get_full_name|default:member.user.email }} in {{ organization.name }}
+            </p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Total Responses -->
+            <div class="dashboard-card bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-50 mr-4">
+                        <i class="fas fa-clipboard-list text-blue-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Total Responses</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ total_responses }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completed Responses -->
+            <div class="dashboard-card bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-50 mr-4">
+                        <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Completed</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ completed_responses }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Average Score -->
+            <div class="dashboard-card bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-50 mr-4">
+                        <i class="fas fa-star text-purple-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Average Score</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ average_score|floatformat:1 }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Level -->
+            <div class="dashboard-card bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full {% if risk_level == 'high' %}bg-red-50{% elif risk_level == 'medium' %}bg-yellow-50{% else %}bg-green-50{% endif %} mr-4">
+                        <i class="fas fa-exclamation-triangle {% if risk_level == 'high' %}text-red-600{% elif risk_level == 'medium' %}text-yellow-600{% else %}text-green-600{% endif %} text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Risk Level</p>
+                        <p class="text-2xl font-semibold {% if risk_level == 'high' %}text-red-600{% elif risk_level == 'medium' %}text-yellow-600{% else %}text-green-600{% endif %}">
+                            {{ risk_level|title }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Assessment -->
+        <div class="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Risk Assessment</h2>
+            <div class="p-4 rounded-lg {% if risk_level == 'high' %}risk-high{% elif risk_level == 'medium' %}risk-medium{% else %}risk-low{% endif %}">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-0.5">
+                        <i class="fas {% if risk_level == 'high' %}fa-exclamation-circle{% elif risk_level == 'medium' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium">{{ risk_level|title }} Risk Assessment</h3>
+                        <div class="mt-2 text-sm">
+                            <p>{{ risk_description }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Score Trend Chart -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Score Trend</h2>
+                <div class="h-80">
+                    <canvas id="scoreChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Response Distribution Chart -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Response Distribution</h2>
+                <div class="h-80">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Responses -->
+        <div class="bg-white shadow rounded-lg overflow-hidden mb-8">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Recent Responses</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Questionnaire</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk Level</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for response in recent_responses %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ response.survey.title }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500">{{ response.created_at|date:"M d, Y" }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium {% if response.score >= 80 %}text-green-600{% elif response.score >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                        {{ response.score|floatformat:1 }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                        {% if response.risk_level == 'high' %}bg-red-100 text-red-800
+                                        {% elif response.risk_level == 'medium' %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-green-100 text-green-800{% endif %}">
+                                        {{ response.risk_level|title }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                        {% if response.status == 'completed' %}bg-green-100 text-green-800
+                                        {% elif response.status == 'in_progress' %}bg-blue-100 text-blue-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ response.get_status_display }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <a href="{% url 'feedback:response_detail' pk=response.id %}" class="text-primary-600 hover:text-primary-900">
+                                        View Details
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    No responses found.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Flagged Responses -->
+        {% if has_flagged_responses %}
+            <div class="bg-white shadow rounded-lg overflow-hidden mb-8">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200 bg-red-50">
+                    <h2 class="text-lg font-medium text-red-800">Flagged Responses</h2>
+                    <p class="mt-1 text-sm text-red-600">These responses have been flagged for review.</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Questionnaire</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk Level</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for response in flagged_responses %}
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900">{{ response.survey.title }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-500">{{ response.created_at|date:"M d, Y" }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-red-600">{{ response.score|floatformat:1 }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                            {{ response.risk_level|title }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <a href="{% url 'feedback:response_detail' pk=response.id %}" class="text-primary-600 hover:text-primary-900">
+                                            View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Actions Section -->
+        <div class="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Actions</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <a href="{% url 'feedback:response_list' %}?user={{ member.user.id }}" class="bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200 flex items-center">
+                    <div class="p-2 rounded-full bg-blue-100 mr-3">
+                        <i class="fas fa-clipboard-list text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-900">View All Responses</h3>
+                        <p class="text-xs text-gray-500">See all responses from this member</p>
+                    </div>
+                </a>
+
+                {% if has_high_risk_responses %}
+                <form method="post" action="{% url 'groups:view_member_dashboard' org_pk=organization.id member_pk=member.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="send_email" value="1">
+                    <input type="hidden" name="email_type" value="high_risk">
+                    <input type="hidden" name="response_id" value="{{ high_risk_responses.first.id }}">
+                    <button type="submit" class="w-full text-left bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200 flex items-center">
+                        <div class="p-2 rounded-full bg-red-100 mr-3">
+                            <i class="fas fa-envelope text-red-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-900">Send Risk Assessment Email</h3>
+                            <p class="text-xs text-gray-500">Notify about high risk responses</p>
+                        </div>
+                    </button>
+                </form>
+                {% endif %}
+
+                {% if recent_responses %}
+                <form method="post" action="{% url 'groups:view_member_dashboard' org_pk=organization.id member_pk=member.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="send_email" value="1">
+                    <input type="hidden" name="email_type" value="report">
+                    <input type="hidden" name="response_id" value="{{ recent_responses.first.id }}">
+                    <button type="submit" class="w-full text-left bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200 flex items-center">
+                        <div class="p-2 rounded-full bg-green-100 mr-3">
+                            <i class="fas fa-envelope text-green-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-900">Send Response Report</h3>
+                            <p class="text-xs text-gray-500">Email latest response report to member</p>
+                        </div>
+                    </button>
+                </form>
+                {% endif %}
+
+                <form method="post" action="{% url 'groups:view_member_dashboard' org_pk=organization.id member_pk=member.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="generate_pdf" value="1">
+                    <input type="hidden" name="report_type" value="member_report">
+                    <button type="submit" class="w-full text-left bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200 flex items-center">
+                        <div class="p-2 rounded-full bg-green-100 mr-3">
+                            <i class="fas fa-file-pdf text-green-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-900">Generate PDF Report</h3>
+                            <p class="text-xs text-gray-500">Create a comprehensive PDF report</p>
+                        </div>
+                    </button>
+                </form>
+
+                {% if recent_responses %}
+                <form method="post" action="{% url 'groups:view_member_dashboard' org_pk=organization.id member_pk=member.id %}" class="mt-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="generate_pdf" value="1">
+                    <input type="hidden" name="report_type" value="response_report">
+                    <input type="hidden" name="response_id" value="{{ recent_responses.first.id }}">
+                    <button type="submit" class="w-full text-left bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200 flex items-center">
+                        <div class="p-2 rounded-full bg-blue-100 mr-3">
+                            <i class="fas fa-file-pdf text-blue-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-900">Generate Response Report</h3>
+                            <p class="text-xs text-gray-500">Create a PDF report for the latest response</p>
+                        </div>
+                    </button>
+                </form>
+                {% endif %}
+
+                <a href="{% url 'analytics:analyze_member_responses' org_pk=organization.id member_pk=member.id %}" class="bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200 flex items-center mt-4">
+                    <div class="p-2 rounded-full bg-purple-100 mr-3">
+                        <i class="fas fa-brain text-purple-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-900">Advanced AI Analysis</h3>
+                        <p class="text-xs text-gray-500">Analyze responses with advanced AI</p>
+                    </div>
+                </a>
+
+                <a href="{% url 'analytics:member_trend_analysis' org_pk=organization.id member_pk=member.id %}" class="bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200 flex items-center mt-4">
+                    <div class="p-2 rounded-full bg-green-100 mr-3">
+                        <i class="fas fa-chart-line text-green-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-900">Trend Analysis</h3>
+                        <p class="text-xs text-gray-500">View detailed trends over time</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        {% if request.session.member_analysis %}
+        <div class="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">AI Analysis Results</h2>
+
+            <div class="bg-purple-50 p-4 rounded-lg mb-4">
+                <h3 class="text-md font-medium text-purple-800 mb-2">Summary</h3>
+                <p class="text-sm text-purple-700">{{ request.session.member_analysis.summary }}</p>
+            </div>
+
+            {% if request.session.member_analysis.trends %}
+            <h3 class="text-md font-medium text-gray-800 mb-2">Identified Trends</h3>
+            <div class="space-y-4 mb-4">
+                {% for trend in request.session.member_analysis.trends %}
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <h4 class="text-sm font-medium text-gray-900 mb-1">{{ trend.trend }}</h4>
+                    <p class="text-xs text-gray-600 mb-2"><strong>Evidence:</strong> {{ trend.evidence }}</p>
+                    <p class="text-xs text-gray-600"><strong>Impact:</strong> {{ trend.impact }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if request.session.member_analysis.recommendations %}
+            <div class="bg-blue-50 p-4 rounded-lg">
+                <h3 class="text-md font-medium text-blue-800 mb-2">Recommendations</h3>
+                <p class="text-sm text-blue-700">{{ request.session.member_analysis.recommendations }}</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sample data for score trend chart - in a real implementation, this would come from the backend
+        const scoreData = {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Score',
+                data: [65, 72, 68, 75, 82, 78],
+                borderColor: 'rgb(79, 70, 229)',
+                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                tension: 0.3,
+                fill: true
+            }]
+        };
+
+        // Create score trend chart
+        const scoreCtx = document.getElementById('scoreChart').getContext('2d');
+        new Chart(scoreCtx, {
+            type: 'line',
+            data: scoreData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        // Sample data for distribution chart - in a real implementation, this would come from the backend
+        const distributionData = {
+            labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+            datasets: [{
+                label: 'Responses',
+                data: [5, 3, 2],
+                backgroundColor: [
+                    'rgba(16, 185, 129, 0.7)',
+                    'rgba(245, 158, 11, 0.7)',
+                    'rgba(239, 68, 68, 0.7)'
+                ],
+                borderColor: [
+                    'rgb(16, 185, 129)',
+                    'rgb(245, 158, 11)',
+                    'rgb(239, 68, 68)'
+                ],
+                borderWidth: 1
+            }]
+        };
+
+        // Create distribution chart
+        const distributionCtx = document.getElementById('distributionChart').getContext('2d');
+        new Chart(distributionCtx, {
+            type: 'pie',
+            data: distributionData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

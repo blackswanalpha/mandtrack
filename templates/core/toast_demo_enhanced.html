@@ -1,0 +1,439 @@
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
+
+{% block title %}Enhanced Toast Demo - MindTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+  .demo-section {
+    margin-bottom: 2rem;
+  }
+
+  .demo-section h2 {
+    margin-bottom: 1rem;
+  }
+
+  .demo-card {
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .demo-button {
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .demo-button:hover {
+    opacity: 0.9;
+  }
+
+  .demo-button:focus {
+    outline: 2px solid rgba(59, 130, 246, 0.5);
+    outline-offset: 2px;
+  }
+
+  .demo-button-success {
+    background-color: #10b981;
+    color: white;
+  }
+
+  .demo-button-error {
+    background-color: #ef4444;
+    color: white;
+  }
+
+  .demo-button-warning {
+    background-color: #f59e0b;
+    color: white;
+  }
+
+  .demo-button-info {
+    background-color: #3b82f6;
+    color: white;
+  }
+
+  .demo-button-neutral {
+    background-color: #6b7280;
+    color: white;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #374151;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  }
+
+  .form-check {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-check input {
+    margin-right: 0.5rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="mb-6">
+      <div class="flex items-center">
+        <a href="{% url 'core:toast_demo' %}" class="mr-2 text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+          <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="text-3xl font-display font-bold text-gray-900">Enhanced Toast Notification Demo</h1>
+      </div>
+      <p class="mt-2 text-gray-600">
+        Explore the enhanced toast notification system with customizable options.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Toast Types -->
+      <div class="lg:col-span-2">
+        <div class="demo-card demo-section">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Toast Types</h2>
+          <p class="text-gray-600 mb-4">Click the buttons below to see different toast types.</p>
+
+          <div class="button-group">
+            <button type="button" class="demo-button demo-button-success" onclick="showToast('success')">
+              Success
+            </button>
+            <button type="button" class="demo-button demo-button-error" onclick="showToast('error')">
+              Error
+            </button>
+            <button type="button" class="demo-button demo-button-warning" onclick="showToast('warning')">
+              Warning
+            </button>
+            <button type="button" class="demo-button demo-button-info" onclick="showToast('info')">
+              Info
+            </button>
+          </div>
+        </div>
+
+        <!-- Positions -->
+        <div class="demo-card demo-section">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Toast Positions</h2>
+          <p class="text-gray-600 mb-4">Try different positions for the toast notifications.</p>
+
+          <div class="button-group">
+            <button type="button" class="demo-button demo-button-neutral" onclick="updatePosition('top-right')">
+              Top Right
+            </button>
+            <button type="button" class="demo-button demo-button-neutral" onclick="updatePosition('top-left')">
+              Top Left
+            </button>
+            <button type="button" class="demo-button demo-button-neutral" onclick="updatePosition('bottom-right')">
+              Bottom Right
+            </button>
+            <button type="button" class="demo-button demo-button-neutral" onclick="updatePosition('bottom-left')">
+              Bottom Left
+            </button>
+            <button type="button" class="demo-button demo-button-neutral" onclick="updatePosition('top-center')">
+              Top Center
+            </button>
+            <button type="button" class="demo-button demo-button-neutral" onclick="updatePosition('bottom-center')">
+              Bottom Center
+            </button>
+          </div>
+        </div>
+
+        <!-- Animations -->
+        <div class="demo-card demo-section">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Toast Animations</h2>
+          <p class="text-gray-600 mb-4">Try different animations for the toast notifications.</p>
+
+          <div class="button-group">
+            <button type="button" class="demo-button demo-button-neutral" onclick="updateAnimation('slide-right')">
+              Slide Right
+            </button>
+            <button type="button" class="demo-button demo-button-neutral" onclick="updateAnimation('slide-left')">
+              Slide Left
+            </button>
+            <button type="button" class="demo-button demo-button-neutral" onclick="updateAnimation('slide-up')">
+              Slide Up
+            </button>
+            <button type="button" class="demo-button demo-button-neutral" onclick="updateAnimation('slide-down')">
+              Slide Down
+            </button>
+            <button type="button" class="demo-button demo-button-neutral" onclick="updateAnimation('fade')">
+              Fade
+            </button>
+            <button type="button" class="demo-button demo-button-neutral" onclick="updateAnimation('bounce')">
+              Bounce
+            </button>
+          </div>
+        </div>
+
+        <!-- Themes -->
+        <div class="demo-card demo-section">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Toast Themes</h2>
+          <p class="text-gray-600 mb-4">Try different themes for the toast notifications.</p>
+
+          <div class="button-group">
+            <button type="button" class="demo-button demo-button-neutral" onclick="updateTheme('light')">
+              Light Theme
+            </button>
+            <button type="button" class="demo-button demo-button-neutral" onclick="updateTheme('dark')">
+              Dark Theme
+            </button>
+            <button type="button" class="demo-button demo-button-neutral" onclick="updateTheme('colored')">
+              Colored Theme
+            </button>
+          </div>
+        </div>
+
+        <!-- Multiple Toasts -->
+        <div class="demo-card demo-section">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Multiple Toasts</h2>
+          <p class="text-gray-600 mb-4">Test how multiple toasts stack and behave.</p>
+
+          <div class="button-group">
+            <button type="button" class="demo-button demo-button-info" onclick="showMultipleToasts(3)">
+              Show 3 Toasts
+            </button>
+            <button type="button" class="demo-button demo-button-warning" onclick="showMultipleToasts(5)">
+              Show 5 Toasts
+            </button>
+            <button type="button" class="demo-button demo-button-error" onclick="showMultipleToasts(10)">
+              Show 10 Toasts
+            </button>
+            <button type="button" class="demo-button demo-button-neutral" onclick="toast.clearAll()">
+              Clear All
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom Toast Form -->
+      <div class="lg:col-span-1">
+        <div class="demo-card sticky top-4">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Custom Toast</h2>
+          <p class="text-gray-600 mb-4">Create a custom toast with your own settings.</p>
+
+          <form id="customToastForm">
+            <div class="form-group">
+              <label for="toastType">Type</label>
+              <select id="toastType" class="form-control">
+                <option value="success">Success</option>
+                <option value="error">Error</option>
+                <option value="warning">Warning</option>
+                <option value="info" selected>Info</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="toastTitle">Title</label>
+              <input type="text" id="toastTitle" class="form-control" value="Custom Toast">
+            </div>
+
+            <div class="form-group">
+              <label for="toastMessage">Message</label>
+              <textarea id="toastMessage" class="form-control" rows="3">This is a custom toast message with your own settings.</textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="toastDuration">Duration (ms)</label>
+              <input type="number" id="toastDuration" class="form-control" value="5000" min="1000" step="1000">
+            </div>
+
+            <div class="form-group">
+              <label for="toastPosition">Position</label>
+              <select id="toastPosition" class="form-control">
+                <option value="top-right" selected>Top Right</option>
+                <option value="top-left">Top Left</option>
+                <option value="bottom-right">Bottom Right</option>
+                <option value="bottom-left">Bottom Left</option>
+                <option value="top-center">Top Center</option>
+                <option value="bottom-center">Bottom Center</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="toastAnimation">Animation</label>
+              <select id="toastAnimation" class="form-control">
+                <option value="slide-right" selected>Slide Right</option>
+                <option value="slide-left">Slide Left</option>
+                <option value="slide-up">Slide Up</option>
+                <option value="slide-down">Slide Down</option>
+                <option value="fade">Fade</option>
+                <option value="bounce">Bounce</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="toastTheme">Theme</label>
+              <select id="toastTheme" class="form-control">
+                <option value="light" selected>Light</option>
+                <option value="dark">Dark</option>
+                <option value="colored">Colored</option>
+              </select>
+            </div>
+
+            <div class="form-check">
+              <input type="checkbox" id="toastDismissible" checked>
+              <label for="toastDismissible">Dismissible</label>
+            </div>
+
+            <div class="form-check">
+              <input type="checkbox" id="toastSound">
+              <label for="toastSound">Play Sound</label>
+            </div>
+
+            <button type="button" class="demo-button demo-button-info w-full" onclick="showCustomToast()">
+              Show Custom Toast
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Current toast settings
+  let currentSettings = {
+    position: 'top-right',
+    animation: 'slide-right',
+    theme: 'light'
+  };
+
+  // Update toast position
+  function updatePosition(position) {
+    currentSettings.position = position;
+    toast.updateOptions({ position });
+
+    // Show a toast to confirm the change
+    toast.info(`Position changed to ${position}`, 'Position Updated');
+
+    // Update the form select
+    document.getElementById('toastPosition').value = position;
+  }
+
+  // Update toast animation
+  function updateAnimation(animation) {
+    currentSettings.animation = animation;
+    toast.updateOptions({ animation });
+
+    // Show a toast to confirm the change
+    toast.info(`Animation changed to ${animation}`, 'Animation Updated');
+
+    // Update the form select
+    document.getElementById('toastAnimation').value = animation;
+  }
+
+  // Update toast theme
+  function updateTheme(theme) {
+    currentSettings.theme = theme;
+    toast.updateOptions({ theme });
+
+    // Show a toast to confirm the change
+    toast.info(`Theme changed to ${theme}`, 'Theme Updated');
+
+    // Update the form select
+    document.getElementById('toastTheme').value = theme;
+  }
+
+  // Show a toast of the specified type
+  function showToast(type) {
+    const titles = {
+      success: 'Success',
+      error: 'Error',
+      warning: 'Warning',
+      info: 'Information'
+    };
+
+    const messages = {
+      success: 'The operation was completed successfully.',
+      error: 'An error occurred while processing your request.',
+      warning: 'Please review the information before proceeding.',
+      info: 'Here is some information you might find useful.'
+    };
+
+    toast[type](messages[type], titles[type]);
+  }
+
+  // Show multiple toasts
+  function showMultipleToasts(count) {
+    const types = ['success', 'error', 'warning', 'info'];
+
+    for (let i = 0; i < count; i++) {
+      const type = types[i % types.length];
+      const delay = i * 300; // Stagger the toasts
+
+      setTimeout(() => {
+        toast[type](`This is toast #${i + 1} of ${count}`, `${type.charAt(0).toUpperCase() + type.slice(1)} Toast`);
+      }, delay);
+    }
+  }
+
+  // Show a custom toast
+  function showCustomToast() {
+    const type = document.getElementById('toastType').value;
+    const title = document.getElementById('toastTitle').value;
+    const message = document.getElementById('toastMessage').value;
+    const duration = parseInt(document.getElementById('toastDuration').value);
+    const position = document.getElementById('toastPosition').value;
+    const animation = document.getElementById('toastAnimation').value;
+    const theme = document.getElementById('toastTheme').value;
+    const dismissible = document.getElementById('toastDismissible').checked;
+    const sound = document.getElementById('toastSound').checked;
+
+    // Update global settings if they've changed
+    if (position !== currentSettings.position ||
+        animation !== currentSettings.animation ||
+        theme !== currentSettings.theme) {
+      currentSettings = { position, animation, theme };
+      toast.updateOptions(currentSettings);
+    }
+
+    // Show the toast
+    toast.show({
+      type,
+      title,
+      message,
+      duration,
+      dismissible,
+      sound
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends 'client/base.html' %}
+{% load static %}
+
+{% block title %}AI Insights - MindTrack{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% url 'members:reports' %}" class="mr-2 text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">AI Insights</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                AI-powered insights and recommendations based on your responses.
+            </p>
+        </div>
+
+        <!-- AI Insights Overview -->
+        <div class="bg-white shadow rounded-lg mb-8 overflow-hidden">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-medium text-gray-900">Overview</h2>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        <i class="fas fa-robot mr-1"></i> AI Generated
+                    </span>
+                </div>
+            </div>
+            
+            <div class="px-4 py-5 sm:p-6">
+                <div class="prose max-w-none">
+                    <p>Based on your response patterns, our AI has identified several key insights that may help you understand your well-being better. These insights are derived from analyzing trends and patterns in your responses over time.</p>
+                    
+                    <p>Your responses indicate a generally positive outlook with some areas for improvement. You appear to be managing stress effectively in most situations, though there are specific triggers that may benefit from additional coping strategies.</p>
+                    
+                    <p>Your social connections appear strong, which is a significant protective factor for overall well-being. Continue to nurture these relationships as they provide important support during challenging times.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Insights -->
+        <div class="bg-white shadow rounded-lg mb-8 overflow-hidden">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Key Insights</h2>
+            </div>
+            
+            <div class="px-4 py-5 sm:p-6">
+                <div class="space-y-4">
+                    <div class="bg-purple-50 border-l-4 border-purple-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-lightbulb text-purple-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-purple-800">Emotional Regulation</h3>
+                                <div class="mt-2 text-sm text-purple-700">
+                                    <p>Your responses show strong emotional regulation in most situations, with occasional challenges during high-stress periods. Consider developing additional strategies for these specific scenarios.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-purple-50 border-l-4 border-purple-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-lightbulb text-purple-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-purple-800">Sleep Patterns</h3>
+                                <div class="mt-2 text-sm text-purple-700">
+                                    <p>Your sleep patterns show some inconsistency, which may be affecting your energy levels and mood. Establishing a more consistent sleep schedule could improve your overall well-being.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-purple-50 border-l-4 border-purple-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-lightbulb text-purple-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-purple-800">Social Support</h3>
+                                <div class="mt-2 text-sm text-purple-700">
+                                    <p>You have a strong social support network, which is a significant protective factor for mental health. Continue to nurture these relationships as they provide important support during challenging times.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Personalized Recommendations -->
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Personalized Recommendations</h2>
+            </div>
+            
+            <div class="px-4 py-5 sm:p-6">
+                <div class="space-y-6">
+                    <div class="bg-green-50 border-l-4 border-green-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-check-circle text-green-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-green-800">Mindfulness Practice</h3>
+                                <div class="mt-2 text-sm text-green-700">
+                                    <p>Consider incorporating 5-10 minutes of mindfulness meditation daily to reduce stress and improve focus. This can be particularly helpful during the high-stress periods you've identified.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-green-50 border-l-4 border-green-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-check-circle text-green-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-green-800">Sleep Hygiene</h3>
+                                <div class="mt-2 text-sm text-green-700">
+                                    <p>Establish a consistent sleep schedule and avoid screens for at least 30 minutes before bedtime. This can help improve your sleep quality and overall energy levels.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-green-50 border-l-4 border-green-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-check-circle text-green-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-green-800">Regular Exercise</h3>
+                                <div class="mt-2 text-sm text-green-700">
+                                    <p>Aim for at least 150 minutes of moderate exercise per week to improve mood and overall health. Even short walks can have significant benefits for mental well-being.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 text-center">
+                    <a href="{% url 'members:analytics_dashboard' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                        <i class="fas fa-chart-line mr-2"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

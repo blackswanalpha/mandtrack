@@ -1,0 +1,90 @@
+{% extends 'admin_portal/modern_base.html' %}
+
+{% block title %}Toast Notification Demo - MindTrack{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-display font-bold text-gray-900">Toast Notification System</h1>
+            <p class="mt-2 text-gray-600">
+                Demonstrate the toast notification system with different types of notifications.
+            </p>
+            <div class="mt-4">
+                <a href="{% url 'core:enhanced_toast_demo' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                    <i class="fas fa-star mr-2"></i> Try Enhanced Toast Demo
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6">
+                <h2 class="text-lg font-medium text-gray-900">Django Messages</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    These toasts use Django's messaging framework.
+                </p>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <a href="{% url 'core:show_toast' toast_type='success' %}" class="inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
+                        <i class="fas fa-check-circle mr-2"></i> Success Toast
+                    </a>
+                    <a href="{% url 'core:show_toast' toast_type='error' %}" class="inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+                        <i class="fas fa-exclamation-circle mr-2"></i> Error Toast
+                    </a>
+                    <a href="{% url 'core:show_toast' toast_type='warning' %}" class="inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors duration-200">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> Warning Toast
+                    </a>
+                    <a href="{% url 'core:show_toast' toast_type='info' %}" class="inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                        <i class="fas fa-info-circle mr-2"></i> Info Toast
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6">
+                <h2 class="text-lg font-medium text-gray-900">JavaScript Toasts</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    These toasts are triggered directly from JavaScript.
+                </p>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <button onclick="toast.success('This is a success message', 'Success')" class="inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
+                        <i class="fas fa-check-circle mr-2"></i> Success Toast
+                    </button>
+                    <button onclick="toast.error('This is an error message', 'Error')" class="inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+                        <i class="fas fa-exclamation-circle mr-2"></i> Error Toast
+                    </button>
+                    <button onclick="toast.warning('This is a warning message', 'Warning')" class="inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors duration-200">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> Warning Toast
+                    </button>
+                    <button onclick="toast.info('This is an info message', 'Information')" class="inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                        <i class="fas fa-info-circle mr-2"></i> Info Toast
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6">
+                <h2 class="text-lg font-medium text-gray-900">Custom Toasts</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    Customize toast duration and dismissibility.
+                </p>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button onclick="toast.show({type: 'info', title: 'Long Duration', message: 'This toast will stay for 10 seconds', duration: 10000})" class="inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                        <i class="fas fa-clock mr-2"></i> Long Duration Toast (10s)
+                    </button>
+                    <button onclick="toast.show({type: 'info', title: 'Non-dismissible', message: 'This toast cannot be dismissed manually', dismissible: false})" class="inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200">
+                        <i class="fas fa-lock mr-2"></i> Non-dismissible Toast
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

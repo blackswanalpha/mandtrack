@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Response Report - {{ questionnaire.title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #fff;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+        }
+        .button {
+            display: inline-block;
+            background-color: #0369a1;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .info-table th, .info-table td {
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            text-align: left;
+        }
+        .info-table th {
+            background-color: #f9fafb;
+        }
+        .section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .risk-low {
+            color: #065f46;
+        }
+        .risk-medium {
+            color: #92400e;
+        }
+        .risk-high {
+            color: #b91c1c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Response Report</h1>
+            <p>{{ questionnaire.title }}</p>
+        </div>
+        <div class="content">
+            <p>Dear {{ respondent_name }},</p>
+            
+            <p>Thank you for completing the questionnaire. Below is a summary of your responses.</p>
+            
+            <h2>Response Summary</h2>
+            <table class="info-table">
+                <tr>
+                    <th>Questionnaire</th>
+                    <td>{{ questionnaire.title }}</td>
+                </tr>
+                <tr>
+                    <th>Organization</th>
+                    <td>{{ organization.name|default:"N/A" }}</td>
+                </tr>
+                <tr>
+                    <th>Score</th>
+                    <td>{{ score }}</td>
+                </tr>
+                <tr>
+                    <th>Risk Level</th>
+                    <td class="risk-{{ risk_level|lower }}">{{ risk_level }}</td>
+                </tr>
+                <tr>
+                    <th>Completed At</th>
+                    <td>{{ completed_at }}</td>
+                </tr>
+            </table>
+            
+            {% if analysis %}
+            <div class="section">
+                <h2>Analysis</h2>
+                <p>{{ analysis.summary }}</p>
+                
+                {% if analysis.detailed_analysis %}
+                <h3>Detailed Analysis</h3>
+                <p>{{ analysis.detailed_analysis }}</p>
+                {% endif %}
+                
+                {% if analysis.recommendations %}
+                <h3>Recommendations</h3>
+                <p>{{ analysis.recommendations }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if response_url %}
+            <div style="text-align: center;">
+                <a href="{{ response_url }}" class="button">View Full Response</a>
+            </div>
+            {% endif %}
+            
+            <p>If you have any questions or concerns, please contact your healthcare provider.</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated report from MindTrack. Please do not reply to this email.</p>
+            <p>© {% now "Y" %} MindTrack. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

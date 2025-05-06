@@ -1,0 +1,258 @@
+{% extends 'client/base.html' %}
+{% load static %}
+
+{% block title %}Risk Assessment - MindTrack{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% url 'members:analytics_dashboard' %}" class="mr-2 text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Risk Assessment</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                Detailed analysis of your risk factors based on your responses.
+            </p>
+        </div>
+
+        <!-- Overall Risk Status -->
+        <div class="bg-white shadow rounded-lg p-6 mb-8">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 mr-4">
+                    {% if risk_level == 'low' %}
+                        <div class="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
+                            <i class="fas fa-shield-alt text-green-600 text-2xl"></i>
+                        </div>
+                    {% elif risk_level == 'medium' %}
+                        <div class="h-16 w-16 rounded-full bg-yellow-100 flex items-center justify-center">
+                            <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl"></i>
+                        </div>
+                    {% else %}
+                        <div class="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center">
+                            <i class="fas fa-exclamation-circle text-red-600 text-2xl"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">
+                        {% if risk_level == 'low' %}
+                            Low Risk
+                        {% elif risk_level == 'medium' %}
+                            Medium Risk
+                        {% else %}
+                            High Risk
+                        {% endif %}
+                    </h2>
+                    <p class="mt-1 text-gray-600">{{ risk_description }}</p>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-3">Risk Score Trend</h3>
+                <div class="h-64">
+                    <canvas id="riskTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Factors -->
+        <div class="bg-white shadow rounded-lg overflow-hidden mb-8">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Risk Factors</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    Breakdown of individual risk factors based on your responses.
+                </p>
+            </div>
+            
+            <div class="px-4 py-5 sm:p-6">
+                <div class="grid grid-cols-1 gap-6">
+                    <!-- Risk Factor 1 -->
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-lg font-medium text-gray-900">Emotional Well-being</h3>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                {% if factor1_score >= 80 %}bg-green-100 text-green-800
+                                {% elif factor1_score >= 50 %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ factor1_score|floatformat:0 }}/100
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-4">{{ factor1_description }}</p>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="h-2.5 rounded-full 
+                                {% if factor1_score >= 80 %}bg-green-600
+                                {% elif factor1_score >= 50 %}bg-yellow-500
+                                {% else %}bg-red-600{% endif %}" 
+                                style="width: {{ factor1_score }}%">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Risk Factor 2 -->
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-lg font-medium text-gray-900">Stress Management</h3>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                {% if factor2_score >= 80 %}bg-green-100 text-green-800
+                                {% elif factor2_score >= 50 %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ factor2_score|floatformat:0 }}/100
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-4">{{ factor2_description }}</p>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="h-2.5 rounded-full 
+                                {% if factor2_score >= 80 %}bg-green-600
+                                {% elif factor2_score >= 50 %}bg-yellow-500
+                                {% else %}bg-red-600{% endif %}" 
+                                style="width: {{ factor2_score }}%">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Risk Factor 3 -->
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-lg font-medium text-gray-900">Social Support</h3>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                {% if factor3_score >= 80 %}bg-green-100 text-green-800
+                                {% elif factor3_score >= 50 %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ factor3_score|floatformat:0 }}/100
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-4">{{ factor3_description }}</p>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="h-2.5 rounded-full 
+                                {% if factor3_score >= 80 %}bg-green-600
+                                {% elif factor3_score >= 50 %}bg-yellow-500
+                                {% else %}bg-red-600{% endif %}" 
+                                style="width: {{ factor3_score }}%">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Recommendations</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    Personalized recommendations based on your risk assessment.
+                </p>
+            </div>
+            
+            <div class="px-4 py-5 sm:p-6">
+                <div class="space-y-6">
+                    <!-- Recommendation 1 -->
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-info-circle text-blue-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-blue-800">{{ recommendation1_title }}</h3>
+                                <div class="mt-2 text-sm text-blue-700">
+                                    <p>{{ recommendation1_description }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recommendation 2 -->
+                    <div class="bg-green-50 border-l-4 border-green-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-check-circle text-green-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-green-800">{{ recommendation2_title }}</h3>
+                                <div class="mt-2 text-sm text-green-700">
+                                    <p>{{ recommendation2_description }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recommendation 3 -->
+                    <div class="bg-purple-50 border-l-4 border-purple-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-lightbulb text-purple-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-purple-800">{{ recommendation3_title }}</h3>
+                                <div class="mt-2 text-sm text-purple-700">
+                                    <p>{{ recommendation3_description }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 text-center">
+                    <a href="{% url 'members:download_risk_report' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                        <i class="fas fa-download mr-2"></i> Download Full Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sample data - replace with actual data from backend
+        const riskData = {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Risk Score',
+                data: [75, 68, 62, 55, 48, 42],
+                borderColor: 'rgb(239, 68, 68)',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                tension: 0.3,
+                fill: true
+            }]
+        };
+        
+        // Risk Trend Chart
+        const riskCtx = document.getElementById('riskTrendChart').getContext('2d');
+        new Chart(riskCtx, {
+            type: 'line',
+            data: riskData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        reverse: true, // Lower is better for risk scores
+                        title: {
+                            display: true,
+                            text: 'Risk Score (lower is better)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High Risk Responses Alert</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #fff;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        .alert-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+        }
+        .button {
+            display: inline-block;
+            background-color: #b91c1c;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .info-table th, .info-table td {
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            text-align: left;
+        }
+        .info-table th {
+            background-color: #f9fafb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="alert-icon">⚠️</div>
+            <h1>High Risk Responses Alert</h1>
+        </div>
+        <div class="content">
+            <p>Multiple high-risk responses have been detected for {{ organization.name }}.</p>
+            
+            <h2>Summary</h2>
+            <p>There are <strong>{{ response_count }}</strong> high-risk responses that require attention.</p>
+            
+            <h2>Response Details</h2>
+            <table class="info-table">
+                <tr>
+                    <th>Questionnaire</th>
+                    <th>Respondent</th>
+                    <th>Date</th>
+                    <th>Score</th>
+                </tr>
+                {% for response in responses %}
+                <tr>
+                    <td>{{ response.survey.title }}</td>
+                    <td>{{ response.user.get_full_name|default:response.patient_name|default:"Anonymous" }}</td>
+                    <td>{{ response.created_at|date:"M d, Y" }}</td>
+                    <td>{{ response.score|floatformat:1 }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            
+            <p><strong>Immediate attention may be required.</strong> Please review these responses as soon as possible.</p>
+            
+            {% if base_url %}
+            <div style="text-align: center;">
+                <a href="{{ base_url }}/analytics/comparative/organization/{{ organization.id }}/" class="button">View Organization Dashboard</a>
+            </div>
+            {% endif %}
+        </div>
+        <div class="footer">
+            <p>This is an automated notification from MindTrack. Please do not reply to this email.</p>
+            <p>© {% now "Y" %} MindTrack. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

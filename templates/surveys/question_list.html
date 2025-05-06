@@ -2,6 +2,11 @@
 
 {% block title %}Questions for {{ questionnaire.title }} - MindTrack{% endblock %}
 
+{% block extra_head %}
+    {% csrf_token %}
+    <meta name="csrf-token" content="{{ csrf_token }}">
+{% endblock %}
+
 {% block content %}
 <div class="bg-white py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -15,7 +20,10 @@
                 </div>
                 <p class="mt-2 text-gray-600">Manage questions for "{{ questionnaire.title }}"</p>
             </div>
-            <div class="mt-4 md:mt-0">
+            <div class="mt-4 md:mt-0 flex space-x-3">
+                <a href="{% url 'surveys:country_question_create' survey_pk=questionnaire.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-globe mr-2"></i> Add Country Question
+                </a>
                 <a href="{% url 'surveys:question_create' survey_pk=questionnaire.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                     <i class="fas fa-plus mr-2"></i> Add Question
                 </a>
@@ -113,6 +121,54 @@
 {% if questions %}
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
     <script>
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            // Create toast container if it doesn't exist
+            let toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toast-container';
+                toastContainer.className = 'fixed top-4 right-4 z-50 flex flex-col space-y-2';
+                document.body.appendChild(toastContainer);
+            }
+
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = 'px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 ease-in-out';
+
+            // Set background color based on type
+            if (type === 'success') {
+                toast.classList.add('bg-green-500', 'text-white');
+            } else if (type === 'error') {
+                toast.classList.add('bg-red-500', 'text-white');
+            } else if (type === 'warning') {
+                toast.classList.add('bg-yellow-500', 'text-white');
+            } else {
+                toast.classList.add('bg-blue-500', 'text-white');
+            }
+
+            // Add message
+            toast.textContent = message;
+
+            // Add to container
+            toastContainer.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => {
+                toast.classList.add('translate-y-0', 'opacity-100');
+            }, 10);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+
+            return toast;
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const sortableList = document.getElementById('sortable-questions');
 
@@ -132,16 +188,20 @@
                     const questionIds = Array.from(items).map(item => item.dataset.id);
 
                     // Send the new order to the server
-                    // This would be implemented in a real app
                     console.log('New order:', questionIds);
 
-                    // In a real app, you'd make an AJAX request to update the order
-                    /*
-                    fetch('/surveys/{{ questionnaire.pk }}/questions/reorder/', {
+                    // Get CSRF token
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                    // Show loading indicator
+                    const loadingToast = showToast('Updating question order...', 'info');
+
+                    // Make AJAX request to update the order
+                    fetch('{% url "surveys:question_reorder" survey_pk=questionnaire.pk %}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                            'X-CSRFToken': csrfToken
                         },
                         body: JSON.stringify({
                             question_ids: questionIds
@@ -150,11 +210,16 @@
                     .then(response => response.json())
                     .then(data => {
                         console.log('Success:', data);
+                        if (data.success) {
+                            showToast('Questions reordered successfully!', 'success');
+                        } else {
+                            showToast('Error: ' + data.message, 'error');
+                        }
                     })
                     .catch(error => {
                         console.error('Error:', error);
+                        showToast('Error reordering questions. Please try again.', 'error');
                     });
-                    */
                 }
             });
         });

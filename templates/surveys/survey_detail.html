@@ -17,11 +17,19 @@
                         </span>
                         <span class="flex items-center">
                             <i class="fas fa-calendar mr-1.5 text-gray-400"></i>
-                            Created {{ questionnaire.created_at|date:"M d, Y" }}
+                            {% if questionnaire.created_at %}
+                                Created {{ questionnaire.created_at|date:"M d, Y" }}
+                            {% else %}
+                                Created date unknown
+                            {% endif %}
                         </span>
                         <span class="flex items-center">
                             <i class="fas fa-user mr-1.5 text-gray-400"></i>
-                            {{ questionnaire.created_by.get_full_name|default:questionnaire.created_by.email }}
+                            {% if questionnaire.created_by %}
+                                {{ questionnaire.created_by.get_full_name|default:questionnaire.created_by.email }}
+                            {% else %}
+                                Unknown creator
+                            {% endif %}
                         </span>
                         {% if questionnaire.organization %}
                             <span class="flex items-center">
@@ -157,93 +165,299 @@
             <!-- Tab Content -->
             <div class="mt-6">
                 <!-- Overview Tab -->
-                <div x-show="activeTab === 'overview'" class="fade-in enhanced-card bg-white shadow overflow-hidden sm:rounded-lg">
-                    <div class="px-4 py-5 sm:px-6 enhanced-card-header">
-                        <h2 class="text-xl font-display font-bold text-gray-900">Overview</h2>
+                <div x-show="activeTab === 'overview'" class="fade-in" x-cloak>
+                    <!-- Hero Section with Description -->
+                    <div class="bg-gradient-to-r from-primary-50 to-primary-100 rounded-xl p-6 mb-6 shadow-sm border border-primary-200 transform transition-all duration-500 hover:shadow-md">
+                        <div class="flex flex-col md:flex-row items-start md:items-center gap-6">
+                            <div class="flex-1">
+                                <h2 class="text-2xl font-display font-bold text-primary-800 mb-3">{{ questionnaire.title }}</h2>
+                                {% if questionnaire.description %}
+                                    <p class="text-primary-700 mb-4 leading-relaxed">{{ questionnaire.description|linebreaks }}</p>
+                                {% endif %}
+                                {% if questionnaire.instructions %}
+                                    <div class="bg-white bg-opacity-70 rounded-lg p-4 border border-primary-200">
+                                        <h3 class="flex items-center text-lg font-medium text-primary-700 mb-2">
+                                            <i class="fas fa-info-circle mr-2 text-primary-500"></i>Instructions
+                                        </h3>
+                                        <p class="text-gray-700">{{ questionnaire.instructions|linebreaks }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="flex-shrink-0 w-full md:w-auto">
+                                <div class="bg-white rounded-lg p-4 shadow-sm border border-primary-200 text-center">
+                                    <div class="text-5xl font-bold text-primary-600 mb-2">{{ questions|length }}</div>
+                                    <div class="text-sm text-gray-600">Questions</div>
+                                    <a href="#" @click.prevent="activeTab = 'questions'" class="mt-3 inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-800 transition-colors">
+                                        <span>View Questions</span>
+                                        <i class="fas fa-arrow-right ml-1.5"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="border-t border-gray-200 px-4 py-5 sm:px-6 enhanced-card-body">
-                        {% if questionnaire.description %}
-                            <div class="mb-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">Description</h3>
-                                <p class="text-gray-600">{{ questionnaire.description|linebreaks }}</p>
-                            </div>
-                        {% endif %}
 
-                        {% if questionnaire.instructions %}
-                            <div class="mb-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">Instructions</h3>
-                                <p class="text-gray-600">{{ questionnaire.instructions|linebreaks }}</p>
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <!-- Total Responses Card -->
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 transform transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]">
+                            <div class="flex items-center">
+                                <div class="rounded-full bg-blue-100 p-3 mr-4">
+                                    <i class="fas fa-users text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-500 mb-1">Total Responses</div>
+                                    <div class="text-2xl font-bold text-gray-800">{{ response_count }}</div>
+                                </div>
                             </div>
-                        {% endif %}
+                            <div class="mt-3">
+                                <a href="{% url 'feedback:questionnaire_response_list' questionnaire_pk=questionnaire.pk|default:questionnaire.id %}" class="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center">
+                                    <span>View all responses</span>
+                                    <i class="fas fa-chevron-right ml-1 text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">Details</h3>
-                                <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
-                                    <div class="sm:col-span-1">
-                                        <dt class="text-sm font-medium text-gray-500">Category</dt>
-                                        <dd class="mt-1 text-sm text-gray-900">{{ questionnaire.get_category_display }}</dd>
+                        <!-- Completion Rate Card -->
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 transform transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]">
+                            <div class="flex items-center">
+                                <div class="rounded-full bg-green-100 p-3 mr-4">
+                                    <i class="fas fa-chart-pie text-green-600"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-500 mb-1">Completion Rate</div>
+                                    <div class="text-2xl font-bold text-gray-800">
+                                        {% if response_count > 0 %}
+                                            {{ completion_rate|default:"0" }}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
                                     </div>
-                                    <div class="sm:col-span-1">
-                                        <dt class="text-sm font-medium text-gray-500">Status</dt>
-                                        <dd class="mt-1 text-sm text-gray-900">{{ questionnaire.get_status_display }}</dd>
-                                    </div>
-                                    <div class="sm:col-span-1">
-                                        <dt class="text-sm font-medium text-gray-500">Created By</dt>
-                                        <dd class="mt-1 text-sm text-gray-900">{{ questionnaire.created_by.get_full_name|default:questionnaire.created_by.email }}</dd>
-                                    </div>
-                                    <div class="sm:col-span-1">
-                                        <dt class="text-sm font-medium text-gray-500">Created At</dt>
-                                        <dd class="mt-1 text-sm text-gray-900">{{ questionnaire.created_at|date:"M d, Y" }}</dd>
-                                    </div>
-                                    <div class="sm:col-span-1">
-                                        <dt class="text-sm font-medium text-gray-500">Last Updated</dt>
-                                        <dd class="mt-1 text-sm text-gray-900">{{ questionnaire.updated_at|date:"M d, Y" }}</dd>
-                                    </div>
-                                    <div class="sm:col-span-1">
-                                        <dt class="text-sm font-medium text-gray-500">Questions</dt>
-                                        <dd class="mt-1 text-sm text-gray-900">{{ questions|length }}</dd>
-                                    </div>
-                                </dl>
+                                </div>
                             </div>
-                            <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">Statistics</h3>
-                                <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
-                                    <div class="sm:col-span-1">
-                                        <dt class="text-sm font-medium text-gray-500">Total Responses</dt>
-                                        <dd class="mt-1 text-sm text-gray-900">{{ response_count }}</dd>
+                            <div class="mt-3">
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 75%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Average Score Card -->
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 transform transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]">
+                            <div class="flex items-center">
+                                <div class="rounded-full bg-purple-100 p-3 mr-4">
+                                    <i class="fas fa-star-half-alt text-purple-600"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-500 mb-1">Average Score</div>
+                                    <div class="text-2xl font-bold text-gray-800">
+                                        {% if response_count > 0 %}
+                                            {{ average_score|default:"N/A" }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
                                     </div>
-                                    <div class="sm:col-span-1">
-                                        <dt class="text-sm font-medium text-gray-500">Completion Rate</dt>
-                                        <dd class="mt-1 text-sm text-gray-900">
-                                            {% if response_count > 0 %}
-                                                {{ completion_rate|default:"N/A" }}%
-                                            {% else %}
-                                                N/A
-                                            {% endif %}
-                                        </dd>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex">
+                                {% for i in "12345" %}
+                                    <i class="fas fa-star text-{% if forloop.counter <= average_score|default:0|floatformat:"0"|add:"0" %}yellow-400{% else %}gray-300{% endif %} mr-1"></i>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Average Time Card -->
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 transform transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]">
+                            <div class="flex items-center">
+                                <div class="rounded-full bg-orange-100 p-3 mr-4">
+                                    <i class="fas fa-clock text-orange-600"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-500 mb-1">Average Time</div>
+                                    <div class="text-2xl font-bold text-gray-800">
+                                        {% if response_count > 0 %}
+                                            {{ average_time|default:"N/A" }} min
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
                                     </div>
-                                    <div class="sm:col-span-1">
-                                        <dt class="text-sm font-medium text-gray-500">Average Score</dt>
-                                        <dd class="mt-1 text-sm text-gray-900">
-                                            {% if response_count > 0 %}
-                                                {{ average_score|default:"N/A" }}
-                                            {% else %}
-                                                N/A
-                                            {% endif %}
-                                        </dd>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-xs text-gray-500">
+                                <span>Typical completion time</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Details and Activity Section -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Details Card -->
+                        <div class="md:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                                <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                                    <i class="fas fa-info-circle mr-2 text-gray-500"></i>
+                                    Details
+                                </h3>
+                            </div>
+                            <div class="p-4">
+                                <ul class="space-y-3">
+                                    <li class="flex items-start">
+                                        <div class="flex-shrink-0 h-5 w-5 flex items-center justify-center rounded-full bg-primary-100 text-primary-600">
+                                            <i class="fas fa-tag text-xs"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-gray-900">Category</p>
+                                            <p class="text-sm text-gray-500">{{ questionnaire.get_category_display }}</p>
+                                        </div>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <div class="flex-shrink-0 h-5 w-5 flex items-center justify-center rounded-full bg-primary-100 text-primary-600">
+                                            <i class="fas fa-circle text-xs"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-gray-900">Status</p>
+                                            <p class="text-sm">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                    {% if questionnaire.status == 'active' %}bg-green-100 text-green-800
+                                                    {% elif questionnaire.status == 'draft' %}bg-yellow-100 text-yellow-800
+                                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                    {{ questionnaire.get_status_display }}
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <div class="flex-shrink-0 h-5 w-5 flex items-center justify-center rounded-full bg-primary-100 text-primary-600">
+                                            <i class="fas fa-user text-xs"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-gray-900">Created By</p>
+                                            <p class="text-sm text-gray-500">{{ questionnaire.created_by.get_full_name|default:questionnaire.created_by.email }}</p>
+                                        </div>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <div class="flex-shrink-0 h-5 w-5 flex items-center justify-center rounded-full bg-primary-100 text-primary-600">
+                                            <i class="fas fa-calendar text-xs"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-gray-900">Created At</p>
+                                            <p class="text-sm text-gray-500">{{ questionnaire.created_at|date:"M d, Y" }}</p>
+                                        </div>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <div class="flex-shrink-0 h-5 w-5 flex items-center justify-center rounded-full bg-primary-100 text-primary-600">
+                                            <i class="fas fa-edit text-xs"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-gray-900">Last Updated</p>
+                                            <p class="text-sm text-gray-500">{{ questionnaire.updated_at|date:"M d, Y" }}</p>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Activity and Quick Actions -->
+                        <div class="md:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                                <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                                    <i class="fas fa-chart-line mr-2 text-gray-500"></i>
+                                    Activity & Quick Actions
+                                </h3>
+                            </div>
+                            <div class="p-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- Recent Activity -->
+                                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                        <h4 class="text-sm font-medium text-gray-700 mb-3">Recent Activity</h4>
+                                        {% if response_count > 0 %}
+                                            <div class="space-y-3">
+                                                <div class="flex items-start">
+                                                    <div class="flex-shrink-0 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                                        <i class="fas fa-user-check text-blue-600"></i>
+                                                    </div>
+                                                    <div class="ml-3">
+                                                        <p class="text-sm font-medium text-gray-900">New response received</p>
+                                                        <p class="text-xs text-gray-500">10 minutes ago</p>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-start">
+                                                    <div class="flex-shrink-0 h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                                                        <i class="fas fa-chart-bar text-green-600"></i>
+                                                    </div>
+                                                    <div class="ml-3">
+                                                        <p class="text-sm font-medium text-gray-900">Response analysis updated</p>
+                                                        <p class="text-xs text-gray-500">2 hours ago</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <div class="text-center py-4">
+                                                <i class="fas fa-chart-line text-gray-300 text-3xl mb-2"></i>
+                                                <p class="text-sm text-gray-500">No recent activity</p>
+                                                <p class="text-xs text-gray-400 mt-1">Share your questionnaire to start collecting responses</p>
+                                            </div>
+                                        {% endif %}
                                     </div>
-                                    <div class="sm:col-span-1">
-                                        <dt class="text-sm font-medium text-gray-500">Average Time</dt>
-                                        <dd class="mt-1 text-sm text-gray-900">
-                                            {% if response_count > 0 %}
-                                                {{ average_time|default:"N/A" }} min
-                                            {% else %}
-                                                N/A
-                                            {% endif %}
-                                        </dd>
+
+                                    <!-- Quick Actions -->
+                                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                        <h4 class="text-sm font-medium text-gray-700 mb-3">Quick Actions</h4>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <a href="{% url 'surveys:survey_preview' pk=questionnaire.pk|default:questionnaire.id %}?preview=true"
+                                               class="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200 hover:bg-primary-50 hover:border-primary-200 transition-colors">
+                                                <i class="fas fa-eye text-primary-600 mb-2"></i>
+                                                <span class="text-xs text-gray-700">Preview</span>
+                                            </a>
+                                            <a href="#" @click.prevent="activeTab = 'qrcode'"
+                                               class="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200 hover:bg-primary-50 hover:border-primary-200 transition-colors">
+                                                <i class="fas fa-qrcode text-primary-600 mb-2"></i>
+                                                <span class="text-xs text-gray-700">QR Code</span>
+                                            </a>
+                                            <a href="{% url 'surveys:survey_edit' pk=questionnaire.pk|default:questionnaire.id %}"
+                                               class="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200 hover:bg-primary-50 hover:border-primary-200 transition-colors">
+                                                <i class="fas fa-edit text-primary-600 mb-2"></i>
+                                                <span class="text-xs text-gray-700">Edit</span>
+                                            </a>
+                                            <a href="{% url 'feedback:questionnaire_response_list' questionnaire_pk=questionnaire.pk|default:questionnaire.id %}"
+                                               class="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200 hover:bg-primary-50 hover:border-primary-200 transition-colors">
+                                                <i class="fas fa-chart-bar text-primary-600 mb-2"></i>
+                                                <span class="text-xs text-gray-700">Responses</span>
+                                            </a>
+                                        </div>
                                     </div>
-                                </dl>
+                                </div>
+
+                                <!-- Response Visualization -->
+                                <div class="mt-4 bg-white rounded-lg p-4 border border-gray-200">
+                                    <h4 class="text-sm font-medium text-gray-700 mb-3">Response Visualization</h4>
+                                    <div class="h-64">
+                                        <canvas id="responseChart"></canvas>
+                                    </div>
+                                </div>
+
+                                <!-- Share Section -->
+                                <div class="mt-4 bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg p-4 border border-primary-100">
+                                    <div class="flex flex-col md:flex-row md:items-center justify-between">
+                                        <div class="mb-3 md:mb-0">
+                                            <h4 class="text-sm font-medium text-primary-800 mb-1">Share Questionnaire</h4>
+                                            <p class="text-xs text-primary-600">Share this questionnaire with your audience</p>
+                                        </div>
+                                        <div class="flex flex-wrap gap-2">
+                                            <button type="button" onclick="navigator.clipboard.writeText('{{ request.scheme }}://{{ request.get_host }}/surveys/{{ questionnaire.slug }}/')"
+                                                    class="inline-flex items-center px-3 py-1.5 border border-primary-300 text-xs font-medium rounded-md text-primary-700 bg-white hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                                                <i class="fas fa-copy mr-1.5"></i> Copy Link
+                                            </button>
+                                            <a href="#" @click.prevent="activeTab = 'qrcode'"
+                                               class="inline-flex items-center px-3 py-1.5 border border-primary-300 text-xs font-medium rounded-md text-primary-700 bg-white hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                                                <i class="fas fa-qrcode mr-1.5"></i> QR Code
+                                            </a>
+                                            <button type="button"
+                                                    class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                                                <i class="fas fa-paper-plane mr-1.5"></i> Send by Email
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -410,6 +624,7 @@
 
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
+                        // QR Code functionality
                         const qrSizeSelect = document.getElementById('qr-size');
                         const qrColorInput = document.getElementById('qr-color');
                         const qrFormatSelect = document.getElementById('qr-format');
@@ -430,42 +645,175 @@
                         };
 
                         // Update color name when color input changes
-                        qrColorInput.addEventListener('input', function() {
-                            const color = this.value.toUpperCase();
-                            colorName.textContent = colorNames[color] || color;
-                        });
+                        if (qrColorInput) {
+                            qrColorInput.addEventListener('input', function() {
+                                const color = this.value.toUpperCase();
+                                colorName.textContent = colorNames[color] || color;
+                            });
+                        }
 
                         // Generate QR code with selected options
-                        generateQrBtn.addEventListener('click', function() {
-                            const size = qrSizeSelect.value;
-                            const color = qrColorInput.value;
-                            const format = qrFormatSelect.value;
+                        if (generateQrBtn) {
+                            generateQrBtn.addEventListener('click', function() {
+                                const size = qrSizeSelect.value;
+                                const color = qrColorInput.value;
+                                const format = qrFormatSelect.value;
 
-                            // Update image source for preview
-                            qrCodeImage.src = `{% url 'surveys:generate_qr_code' pk=questionnaire.pk|default:questionnaire.id %}?raw=true&size=${size}&color=${encodeURIComponent(color)}&format=png`;
+                                // Update image source for preview
+                                qrCodeImage.src = `{% url 'surveys:generate_qr_code' pk=questionnaire.pk|default:questionnaire.id %}?raw=true&size=${size}&color=${encodeURIComponent(color)}&format=png`;
 
-                            // Update download link
-                            downloadQrLink.href = `{% url 'surveys:download_qr_code' pk=questionnaire.pk|default:questionnaire.id %}?size=${size}&color=${encodeURIComponent(color)}&format=${format}`;
+                                // Update download link
+                                downloadQrLink.href = `{% url 'surveys:download_qr_code' pk=questionnaire.pk|default:questionnaire.id %}?size=${size}&color=${encodeURIComponent(color)}&format=${format}`;
 
-                            // Show success message
-                            const successMsg = document.createElement('div');
-                            successMsg.className = 'mt-2 text-sm text-green-600';
-                            successMsg.innerHTML = '<i class="fas fa-check-circle mr-1"></i> QR code updated successfully!';
+                                // Show success message
+                                const successMsg = document.createElement('div');
+                                successMsg.className = 'mt-2 text-sm text-green-600';
+                                successMsg.innerHTML = '<i class="fas fa-check-circle mr-1"></i> QR code updated successfully!';
 
-                            // Remove any existing success message
-                            const existingMsg = document.querySelector('.text-green-600');
-                            if (existingMsg) {
-                                existingMsg.remove();
+                                // Remove any existing success message
+                                const existingMsg = document.querySelector('.text-green-600');
+                                if (existingMsg) {
+                                    existingMsg.remove();
+                                }
+
+                                // Add the new success message
+                                generateQrBtn.parentNode.appendChild(successMsg);
+
+                                // Remove the success message after 3 seconds
+                                setTimeout(() => {
+                                    successMsg.remove();
+                                }, 3000);
+                            });
+                        }
+
+                        // Initialize Response Chart
+                        const responseChartCanvas = document.getElementById('responseChart');
+                        if (responseChartCanvas) {
+                            const ctx = responseChartCanvas.getContext('2d');
+
+                            // Sample data - in a real app, this would come from the backend
+                            const chartData = {
+                                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                                datasets: [
+                                    {
+                                        label: 'Responses',
+                                        data: [3, 7, 5, 12, 8, 3, 9],
+                                        backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                                        borderColor: 'rgba(79, 70, 229, 1)',
+                                        borderWidth: 2,
+                                        tension: 0.4,
+                                        fill: true
+                                    },
+                                    {
+                                        label: 'Completions',
+                                        data: [2, 5, 4, 10, 6, 2, 7],
+                                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                                        borderColor: 'rgba(16, 185, 129, 1)',
+                                        borderWidth: 2,
+                                        tension: 0.4,
+                                        fill: true
+                                    }
+                                ]
+                            };
+
+                            new Chart(ctx, {
+                                type: 'line',
+                                data: chartData,
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'top',
+                                            labels: {
+                                                usePointStyle: true,
+                                                padding: 15
+                                            }
+                                        },
+                                        tooltip: {
+                                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                            titleColor: '#111827',
+                                            bodyColor: '#4B5563',
+                                            borderColor: '#E5E7EB',
+                                            borderWidth: 1,
+                                            padding: 10,
+                                            boxPadding: 5,
+                                            usePointStyle: true,
+                                            callbacks: {
+                                                labelPointStyle: function(context) {
+                                                    return {
+                                                        pointStyle: 'circle',
+                                                        rotation: 0
+                                                    };
+                                                }
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            grid: {
+                                                drawBorder: false,
+                                                color: 'rgba(229, 231, 235, 0.5)'
+                                            },
+                                            ticks: {
+                                                precision: 0
+                                            }
+                                        },
+                                        x: {
+                                            grid: {
+                                                display: false
+                                            }
+                                        }
+                                    },
+                                    elements: {
+                                        point: {
+                                            radius: 4,
+                                            hoverRadius: 6
+                                        }
+                                    }
+                                }
+                            });
+                        }
+
+                        // Add animations to cards
+                        const animateCards = () => {
+                            const cards = document.querySelectorAll('.hover\\:shadow-md');
+                            cards.forEach((card, index) => {
+                                setTimeout(() => {
+                                    card.classList.add('animate-in');
+                                }, index * 100);
+                            });
+                        };
+
+                        // Add CSS for animations
+                        const style = document.createElement('style');
+                        style.textContent = `
+                            @keyframes fadeInUp {
+                                from {
+                                    opacity: 0;
+                                    transform: translateY(10px);
+                                }
+                                to {
+                                    opacity: 1;
+                                    transform: translateY(0);
+                                }
                             }
+                            .animate-in {
+                                animation: fadeInUp 0.5s ease-out forwards;
+                            }
+                        `;
+                        document.head.appendChild(style);
 
-                            // Add the new success message
-                            generateQrBtn.parentNode.appendChild(successMsg);
-
-                            // Remove the success message after 3 seconds
-                            setTimeout(() => {
-                                successMsg.remove();
-                            }, 3000);
+                        // Run animations when tab changes
+                        Alpine.effect(() => {
+                            if (Alpine.store('tab') === 'overview') {
+                                setTimeout(animateCards, 100);
+                            }
                         });
+
+                        // Initialize animations
+                        animateCards();
                     });
                 </script>
 

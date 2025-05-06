@@ -1,0 +1,5 @@
+convert username to uuid and only display uuid in the database
+complete the scoring system by connecting to the database and developing a ui to display these features
+form should have colored border and shadow effect
+display dashboard
+develop user/client/patient/respondent/member  detailed profile with report , analysis and recommendations 

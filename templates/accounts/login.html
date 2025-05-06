@@ -48,25 +48,7 @@
             </div>
         </div>
 
-        {% if messages %}
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show slide-in-right" role="alert">
-                <div class="d-flex align-items-center">
-                    {% if message.tags == 'success' %}
-                        <i class="fas fa-check-circle me-2"></i>
-                    {% elif message.tags == 'error' %}
-                        <i class="fas fa-exclamation-circle me-2"></i>
-                    {% elif message.tags == 'warning' %}
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                    {% else %}
-                        <i class="fas fa-info-circle me-2"></i>
-                    {% endif %}
-                    <div>{{ message }}</div>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endfor %}
-        {% endif %}
+        <!-- Messages are now handled by toast.js -->
 
         <div class="admin-login-form">
             <form method="post" class="needs-validation" novalidate>
@@ -150,6 +132,33 @@
 
             form.classList.add('was-validated');
         });
+
+        // Form errors will be displayed as toast notifications
     });
 </script>
+
+<!-- Display form errors as toast notifications -->
+{% if form.errors %}
+    <div id="form-errors" class="d-none">
+        {% for field in form %}
+            {% for error in field.errors %}
+                <div class="form-error" data-field="{{ field.label }}" data-message="{{ error }}"></div>
+            {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+            <div class="form-error" data-field="Login" data-message="{{ error }}"></div>
+        {% endfor %}
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const errors = document.querySelectorAll('#form-errors .form-error');
+            errors.forEach(function(error) {
+                const field = error.getAttribute('data-field');
+                const message = error.getAttribute('data-message');
+                toast.error(message, field + ' Error');
+            });
+        });
+    </script>
+{% endif %}
 {% endblock %}

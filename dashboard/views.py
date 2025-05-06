@@ -473,3 +473,139 @@ def scoring_management(request):
     }
 
     return render(request, 'admin_portal/scoring_management.html', context)
+
+
+@login_required
+def scoring_detail(request, system_id):
+    """
+    Scoring system detail page
+    """
+    # Check if user is staff
+    is_staff = request.user.is_staff
+
+    try:
+        # Import the ScoringSystem model
+        from surveys.models import ScoringSystem, ScoreRule, OptionScore, ScoreRange
+        from surveys.models.scoring import ResponseScore
+
+        # Get the scoring system
+        scoring_system = get_object_or_404(ScoringSystem, id=system_id)
+
+        # Check if user has access to this scoring system
+        if not is_staff and scoring_system.questionnaire.created_by != request.user:
+            # Check if user is in the organization
+            try:
+                if not scoring_system.questionnaire.organization.members.filter(user=request.user).exists():
+                    return redirect('dashboard:scoring_management')
+            except:
+                return redirect('dashboard:scoring_management')
+
+        # Get score rules
+        score_rules = ScoreRule.objects.filter(scoring_system=scoring_system)
+
+        # Get score ranges
+        score_ranges = ScoreRange.objects.filter(scoring_system=scoring_system)
+
+        # Get option scores
+        option_scores = OptionScore.objects.filter(score_rule__scoring_system=scoring_system)
+
+        # Get response scores
+        response_scores = ResponseScore.objects.filter(scoring_system=scoring_system).select_related('response', 'score_range').order_by('-calculated_at')[:10]
+
+        context = {
+            'scoring_system': scoring_system,
+            'score_rules': score_rules,
+            'score_ranges': score_ranges,
+            'option_scores': option_scores,
+            'response_scores': response_scores,
+            'is_staff': is_staff
+        }
+
+        return render(request, 'admin_portal/scoring_detail.html', context)
+
+    except Exception as e:
+        import traceback
+        print(f"Error in scoring_detail: {str(e)}")
+        print(traceback.format_exc())
+
+        # Create a dummy scoring system object for the template
+        class DummyScoringSystem:
+            def __init__(self):
+                self.id = None
+                self.name = "Error Loading Scoring System"
+                self.description = "There was an error loading the scoring system."
+                self.questionnaire = None
+                self.scoring_type = None
+                self.created_by = None
+                self.created_at = None
+
+            def get_scoring_type_display(self):
+                return None
+
+        context = {
+            'scoring_system': DummyScoringSystem(),
+            'error_message': str(e),
+            'is_staff': is_staff,
+            'score_rules': [],
+            'score_ranges': [],
+            'option_scores': [],
+            'response_scores': []
+        }
+
+        return render(request, 'admin_portal/scoring_detail.html', context)
+
+
+@login_required
+def scoring_create(request):
+    """
+    Create new scoring system
+    """
+    # Check if user is staff
+    if not request.user.is_staff:
+        return redirect('dashboard:scoring_management')
+
+    # Handle form submission
+    if request.method == 'POST':
+        # Import the ScoringSystem model
+        from surveys.models import ScoringSystem
+        from django.contrib import messages
+
+        # Get form data
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        questionnaire_id = request.POST.get('questionnaire')
+        scoring_type = request.POST.get('scoring_type')
+
+        # Validate form data
+        if not name or not questionnaire_id or not scoring_type:
+            messages.error(request, 'Please fill in all required fields.')
+            return redirect('dashboard:scoring_create')
+
+        try:
+            # Get the questionnaire
+            questionnaire = get_object_or_404(Questionnaire, id=questionnaire_id)
+
+            # Create the scoring system
+            scoring_system = ScoringSystem.objects.create(
+                name=name,
+                description=description,
+                questionnaire=questionnaire,
+                scoring_type=scoring_type,
+                created_by=request.user
+            )
+
+            messages.success(request, f'Scoring system "{name}" created successfully.')
+            return redirect('dashboard:scoring_detail', system_id=scoring_system.id)
+
+        except Exception as e:
+            messages.error(request, f'Error creating scoring system: {str(e)}')
+            return redirect('dashboard:scoring_create')
+
+    # Get all questionnaires
+    questionnaires = Questionnaire.objects.all().order_by('-created_at')
+
+    context = {
+        'questionnaires': questionnaires
+    }
+
+    return render(request, 'admin_portal/scoring_create.html', context)

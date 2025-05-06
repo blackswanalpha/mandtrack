@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ member.user.get_full_name }} - Comprehensive Report</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 2cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .header h1 {
+            color: #4f46e5;
+            margin-bottom: 5px;
+        }
+        .header p {
+            color: #666;
+            margin-top: 0;
+        }
+        .section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        .section h2 {
+            color: #4f46e5;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .section h3 {
+            color: #4338ca;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8fafc;
+        }
+        .stats-grid {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+        .stat-card {
+            flex: 1 1 calc(25% - 20px);
+            margin: 10px;
+            padding: 15px;
+            background-color: #f8fafc;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4f46e5;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+        .risk-assessment {
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .risk-low {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .risk-medium {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .risk-high {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            color: #666;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Comprehensive Member Report</h1>
+            <p>{{ organization.name }} - {{ report_date|date:"F j, Y" }}</p>
+        </div>
+        
+        <div class="section">
+            <h2>Member Information</h2>
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <td>{{ member.user.get_full_name }}</td>
+                </tr>
+                <tr>
+                    <th>Email</th>
+                    <td>{{ member.user.email }}</td>
+                </tr>
+                <tr>
+                    <th>Role</th>
+                    <td>{{ member.get_role_display }}</td>
+                </tr>
+                <tr>
+                    <th>Member Since</th>
+                    <td>{{ member.joined_at|date:"F j, Y" }}</td>
+                </tr>
+                <tr>
+                    <th>Department</th>
+                    <td>{{ member.department|default:"N/A" }}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2>Response Summary</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{{ total_responses }}</div>
+                    <div class="stat-label">Total Responses</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ completed_responses }}</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ average_score|floatformat:1 }}</div>
+                    <div class="stat-label">Average Score</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ risk_level|title }}</div>
+                    <div class="stat-label">Risk Level</div>
+                </div>
+            </div>
+            
+            <div class="risk-assessment risk-{{ risk_level }}">
+                <h3>Risk Assessment</h3>
+                <p>{{ risk_description }}</p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Questionnaire Responses</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Questionnaire</th>
+                        <th>Responses</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in response_counts %}
+                        <tr>
+                            <td>{{ item.questionnaire.title }}</td>
+                            <td>{{ item.count }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="2">No questionnaire responses found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="page-break"></div>
+        
+        <div class="section">
+            <h2>Recent Responses</h2>
+            {% for response in recent_responses %}
+                <div class="response-item">
+                    <h3>{{ response.survey.title }}</h3>
+                    <table>
+                        <tr>
+                            <th>Date</th>
+                            <td>{{ response.created_at|date:"F j, Y" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Score</th>
+                            <td>{{ response.score|floatformat:1 }}</td>
+                        </tr>
+                        <tr>
+                            <th>Risk Level</th>
+                            <td>{{ response.get_risk_level_display }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status</th>
+                            <td>{{ response.get_status_display }}</td>
+                        </tr>
+                    </table>
+                    
+                    {% if response.ai_analysis %}
+                        <h4>AI Analysis</h4>
+                        <p><strong>Summary:</strong> {{ response.ai_analysis.summary }}</p>
+                        {% if response.ai_analysis.recommendations %}
+                            <p><strong>Recommendations:</strong> {{ response.ai_analysis.recommendations }}</p>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                {% if not forloop.last %}
+                    <hr style="margin: 20px 0; border: none; border-top: 1px dashed #ddd;">
+                {% endif %}
+            {% empty %}
+                <p>No recent responses found.</p>
+            {% endfor %}
+        </div>
+        
+        {% if has_high_risk_responses %}
+            <div class="section">
+                <h2>High Risk Responses</h2>
+                <p>The following responses have been flagged as high risk and may require attention:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Questionnaire</th>
+                            <th>Date</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for response in high_risk_responses %}
+                            <tr>
+                                <td>{{ response.survey.title }}</td>
+                                <td>{{ response.created_at|date:"F j, Y" }}</td>
+                                <td>{{ response.score|floatformat:1 }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+        
+        <div class="footer">
+            <p>Generated on {{ report_date|date:"F j, Y" }} at {{ report_date|time:"H:i" }}</p>
+            <p>MindTrack - Comprehensive Member Report</p>
+        </div>
+    </div>
+</body>
+</html>

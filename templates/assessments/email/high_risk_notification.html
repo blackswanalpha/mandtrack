@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High Risk Assessment Notification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #dc2626;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f9fafb;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+        }
+        .button {
+            display: inline-block;
+            background-color: #2563eb;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .risk-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .risk-high {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        .risk-critical {
+            background-color: #7f1d1d;
+            color: #fee2e2;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .info-table th {
+            text-align: left;
+            padding: 8px;
+            background-color: #f3f4f6;
+            border: 1px solid #e5e7eb;
+        }
+        .info-table td {
+            padding: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .urgency {
+            font-weight: bold;
+            color: #b91c1c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚠️ HIGH RISK ASSESSMENT ALERT ⚠️</h1>
+        </div>
+        <div class="content">
+            <p>A patient assessment has been identified as <strong>high risk</strong> and requires immediate attention.</p>
+            
+            <div class="risk-badge risk-{{ risk_level }}">
+                {{ risk_level|title }} Risk
+            </div>
+            
+            <table class="info-table">
+                <tr>
+                    <th>Patient ID</th>
+                    <td>{{ patient_id }}</td>
+                </tr>
+                <tr>
+                    <th>Assessment Date</th>
+                    <td>{{ assessment_date }}</td>
+                </tr>
+                <tr>
+                    <th>Assessor</th>
+                    <td>{{ assessor }}</td>
+                </tr>
+                <tr>
+                    <th>Consultation</th>
+                    <td>{{ consultation_status }}</td>
+                </tr>
+                {% if consultation_urgency > 0 %}
+                <tr>
+                    <th>Urgency</th>
+                    <td class="urgency">{{ consultation_urgency }}/10</td>
+                </tr>
+                {% endif %}
+            </table>
+            
+            {% if assessment.concerns %}
+            <h3>Concerns</h3>
+            <p>{{ assessment.concerns }}</p>
+            {% endif %}
+            
+            <p>Please review this assessment as soon as possible and take appropriate action.</p>
+            
+            <a href="{{ assessment_url }}" class="button">View Assessment</a>
+        </div>
+        <div class="footer">
+            <p>This is an automated notification from MindTrack. Please do not reply to this email.</p>
+            <p>If you believe you received this message in error, please contact your system administrator.</p>
+        </div>
+    </div>
+</body>
+</html>

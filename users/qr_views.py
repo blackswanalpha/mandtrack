@@ -22,15 +22,17 @@ def qr_email_entry(request):
     if not qr_code_value:
         messages.error(request, "No QR code found. Please scan a QR code first.")
         return redirect('qr_scan')
-    
+
     # Handle form submission
     if request.method == 'POST':
         email = request.POST.get('email')
-        
+        age = request.POST.get('age')
+        gender = request.POST.get('gender')
+
         if not email:
             messages.error(request, "Please enter your email address.")
             return render(request, 'users/qr_email_entry.html')
-        
+
         # Check if QR code exists
         try:
             qr_code = QRCode.objects.get(id=qr_code_value)
@@ -41,26 +43,26 @@ def qr_email_entry(request):
             except QRCode.DoesNotExist:
                 messages.error(request, "Invalid QR code. Please try again.")
                 return redirect('qr_scan')
-        
+
         # Check if QR code is active
         if not qr_code.is_active:
             messages.error(request, "This QR code is no longer active.")
             return redirect('qr_scan')
-        
+
         # Check if QR code has expired
         if qr_code.expires_at and qr_code.expires_at < timezone.now():
             messages.error(request, "This QR code has expired.")
             return redirect('qr_scan')
-        
+
         # Check if questionnaire exists and is active
         questionnaire = qr_code.questionnaire
         if not questionnaire or not questionnaire.is_active:
             messages.error(request, "The questionnaire associated with this QR code is not available.")
             return redirect('qr_scan')
-        
+
         # Check if user exists
         user = User.objects.filter(email=email).first()
-        
+
         if not user:
             # Create a new user with the provided email
             username = f"user_{uuid.uuid4().hex[:8]}"
@@ -71,23 +73,37 @@ def qr_email_entry(request):
                 role='user',
                 email_verified=True
             )
-            
+
             # Create user profile
             UserProfile.objects.create(user=user)
-            
+
             messages.success(request, f"Account created with email {email}. You can now access the questionnaire.")
-        
+
         # Record access
         qr_code.access_count += 1
         qr_code.save()
-        
+
         # Store user ID and questionnaire ID in session
         request.session['qr_user_id'] = str(user.id)
         request.session['qr_questionnaire_id'] = str(questionnaire.id)
-        
+
+        # Store bio data in session for use in the questionnaire response
+        request.session['patient_email'] = email
+        if age and age.strip():
+            try:
+                request.session['patient_age'] = int(age)
+            except ValueError:
+                # If conversion fails, don't store age
+                pass
+        if gender:
+            request.session['patient_gender'] = gender
+
+        # Set flag to indicate bio data has been collected
+        request.session['bio_data_collected'] = True
+
         # Redirect to questionnaire
-        return redirect('survey_respond', pk=questionnaire.id)
-    
+        return redirect('feedback:respond_to_questionnaire', questionnaire_pk=questionnaire.id)
+
     return render(request, 'users/qr_email_entry.html', {
         'qr_code': qr_code_value
     })

@@ -1,0 +1,280 @@
+{% extends 'admin_portal/modern_base.html' %}
+
+{% block title %}Advanced Visualizations - {{ organization.name }} - MindTrack{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+<style>
+    .select2-container--default .select2-selection--single {
+        border-color: #d1d5db;
+        border-radius: 0.375rem;
+        height: 2.5rem;
+        padding-top: 0.25rem;
+    }
+    .viz-card {
+        transition: all 0.3s ease;
+    }
+    .viz-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    .viz-type-btn {
+        transition: all 0.2s ease;
+    }
+    .viz-type-btn.active {
+        background-color: #4f46e5;
+        color: white;
+    }
+    .viz-type-btn:not(.active):hover {
+        background-color: #e0e7ff;
+    }
+    .chart-container {
+        position: relative;
+        height: 500px;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% url 'groups:organization_detail' pk=organization.id %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Advanced Visualizations</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                Explore advanced data visualizations for {{ organization.name }}
+            </p>
+        </div>
+
+        <!-- Visualization Type Selection -->
+        <div class="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Select Visualization Type</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <a href="?viz_type=radar{% if selected_member %}&member={{ selected_member.id }}{% endif %}{% if selected_questionnaire %}&questionnaire={{ selected_questionnaire.id }}{% endif %}" class="viz-type-btn flex flex-col items-center justify-center p-4 border rounded-lg text-center {% if viz_type == 'radar' %}active{% endif %}">
+                    <i class="fas fa-chart-pie text-2xl mb-2"></i>
+                    <span class="text-sm font-medium">Radar Chart</span>
+                </a>
+                <a href="?viz_type=heatmap{% if selected_questionnaire %}&questionnaire={{ selected_questionnaire.id }}{% endif %}&time_period={{ time_period }}" class="viz-type-btn flex flex-col items-center justify-center p-4 border rounded-lg text-center {% if viz_type == 'heatmap' %}active{% endif %}">
+                    <i class="fas fa-th text-2xl mb-2"></i>
+                    <span class="text-sm font-medium">Heatmap</span>
+                </a>
+                <a href="?viz_type=bubble{% if selected_questionnaire %}&questionnaire={{ selected_questionnaire.id }}{% endif %}" class="viz-type-btn flex flex-col items-center justify-center p-4 border rounded-lg text-center {% if viz_type == 'bubble' %}active{% endif %}">
+                    <i class="fas fa-circle text-2xl mb-2"></i>
+                    <span class="text-sm font-medium">Bubble Chart</span>
+                </a>
+                <a href="?viz_type=timeline{% if selected_member %}&member={{ selected_member.id }}{% endif %}&time_period={{ time_period }}" class="viz-type-btn flex flex-col items-center justify-center p-4 border rounded-lg text-center {% if viz_type == 'timeline' %}active{% endif %}">
+                    <i class="fas fa-chart-line text-2xl mb-2"></i>
+                    <span class="text-sm font-medium">Timeline</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Filter Form -->
+        <div class="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Filter Data</h2>
+            <form method="get" action="{% url 'analytics:advanced_visualizations' org_pk=organization.id %}" class="space-y-4">
+                <input type="hidden" name="viz_type" value="{{ viz_type }}">
+                
+                {% if viz_type == 'radar' or viz_type == 'timeline' %}
+                <div>
+                    <label for="member" class="block text-sm font-medium text-gray-700 mb-1">Member</label>
+                    <select name="member" id="member" class="select2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" required>
+                        <option value="">Select a Member</option>
+                        {% for member in members %}
+                            <option value="{{ member.id }}" {% if selected_member and selected_member.id == member.id %}selected{% endif %}>
+                                {{ member.user.get_full_name|default:member.user.email }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                
+                {% if viz_type != 'timeline' %}
+                <div>
+                    <label for="questionnaire" class="block text-sm font-medium text-gray-700 mb-1">Questionnaire (Optional)</label>
+                    <select name="questionnaire" id="questionnaire" class="select2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                        <option value="">All Questionnaires</option>
+                        {% for questionnaire in questionnaires %}
+                            <option value="{{ questionnaire.id }}" {% if selected_questionnaire and selected_questionnaire.id == questionnaire.id %}selected{% endif %}>
+                                {{ questionnaire.title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                
+                {% if viz_type == 'heatmap' or viz_type == 'timeline' %}
+                <div>
+                    <label for="time_period" class="block text-sm font-medium text-gray-700 mb-1">Time Period (Days)</label>
+                    <select name="time_period" id="time_period" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                        <option value="7" {% if time_period == '7' %}selected{% endif %}>Last 7 Days</option>
+                        <option value="30" {% if time_period == '30' %}selected{% endif %}>Last 30 Days</option>
+                        <option value="90" {% if time_period == '90' %}selected{% endif %}>Last 90 Days</option>
+                        <option value="180" {% if time_period == '180' %}selected{% endif %}>Last 180 Days</option>
+                        <option value="365" {% if time_period == '365' %}selected{% endif %}>Last 365 Days</option>
+                    </select>
+                </div>
+                {% endif %}
+                
+                <div>
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        Generate Visualization
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Visualization Display -->
+        {% if visualization_data %}
+            <div class="bg-white shadow rounded-lg p-6 mb-8">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">
+                    {% if viz_type == 'radar' %}
+                        Radar Chart: Category Scores for {{ selected_member.user.get_full_name|default:selected_member.user.email }}
+                    {% elif viz_type == 'heatmap' %}
+                        Heatmap: Response Counts by Member and Questionnaire
+                    {% elif viz_type == 'bubble' %}
+                        Bubble Chart: Score vs. Completion Time by Risk Level
+                    {% elif viz_type == 'timeline' %}
+                        Timeline: Score Progression for {{ selected_member.user.get_full_name|default:selected_member.user.email }}
+                    {% endif %}
+                </h2>
+                
+                {% if visualization_data.success %}
+                    <div class="chart-container">
+                        <img src="data:image/png;base64,{{ visualization_data.chart_image }}" alt="Visualization" class="mx-auto max-w-full max-h-full">
+                    </div>
+                    
+                    <div class="mt-6 bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-md font-medium text-gray-800 mb-2">Interpretation</h3>
+                        <p class="text-sm text-gray-600">
+                            {% if viz_type == 'radar' %}
+                                This radar chart shows the average scores across different categories for the selected member. 
+                                Higher values (closer to the outer edge) indicate better performance in that category.
+                            {% elif viz_type == 'heatmap' %}
+                                This heatmap shows the number of responses each member has submitted for each questionnaire.
+                                Darker colors indicate more responses, which can help identify patterns of engagement.
+                            {% elif viz_type == 'bubble' %}
+                                This bubble chart plots score against completion time, with colors indicating risk level.
+                                It can help identify if there's a relationship between how quickly someone completes a questionnaire and their score or risk level.
+                            {% elif viz_type == 'timeline' %}
+                                This timeline shows how the member's scores have changed over time.
+                                Look for trends, improvements, or areas of concern in their progression.
+                            {% endif %}
+                        </p>
+                    </div>
+                {% else %}
+                    <div class="bg-yellow-50 p-4 rounded-lg">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle text-yellow-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-yellow-800">No Data Available</h3>
+                                <div class="mt-2 text-sm text-yellow-700">
+                                    <p>{{ visualization_data.message }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="bg-white shadow rounded-lg p-6 mb-8 text-center">
+                <div class="py-12">
+                    <i class="fas fa-chart-bar text-gray-300 text-5xl mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No Visualization Generated</h3>
+                    <p class="text-gray-500 mb-4">Select a visualization type and apply filters to generate a visualization.</p>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Visualization Descriptions -->
+        <div class="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">About Advanced Visualizations</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="viz-card bg-white border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="p-2 rounded-full bg-blue-100 mr-3">
+                            <i class="fas fa-chart-pie text-blue-600"></i>
+                        </div>
+                        <h3 class="text-md font-medium text-gray-900">Radar Chart</h3>
+                    </div>
+                    <p class="text-sm text-gray-600">
+                        Radar charts display multivariate data in the form of a two-dimensional chart with three or more quantitative variables.
+                        They're useful for seeing which variables have similar values or if there are any outliers amongst each variable.
+                    </p>
+                    <p class="text-sm text-gray-600 mt-2">
+                        <strong>Best for:</strong> Comparing performance across multiple categories for a single member.
+                    </p>
+                </div>
+                
+                <div class="viz-card bg-white border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="p-2 rounded-full bg-green-100 mr-3">
+                            <i class="fas fa-th text-green-600"></i>
+                        </div>
+                        <h3 class="text-md font-medium text-gray-900">Heatmap</h3>
+                    </div>
+                    <p class="text-sm text-gray-600">
+                        Heatmaps use color-coding to represent different values in a matrix format.
+                        They're excellent for visualizing complex data patterns and identifying correlations or clusters.
+                    </p>
+                    <p class="text-sm text-gray-600 mt-2">
+                        <strong>Best for:</strong> Identifying patterns of engagement across members and questionnaires.
+                    </p>
+                </div>
+                
+                <div class="viz-card bg-white border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="p-2 rounded-full bg-purple-100 mr-3">
+                            <i class="fas fa-circle text-purple-600"></i>
+                        </div>
+                        <h3 class="text-md font-medium text-gray-900">Bubble Chart</h3>
+                    </div>
+                    <p class="text-sm text-gray-600">
+                        Bubble charts display three dimensions of data: x-position, y-position, and bubble size.
+                        They can also use color as a fourth dimension, making them powerful for multivariate analysis.
+                    </p>
+                    <p class="text-sm text-gray-600 mt-2">
+                        <strong>Best for:</strong> Analyzing relationships between score, completion time, and risk level.
+                    </p>
+                </div>
+                
+                <div class="viz-card bg-white border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="p-2 rounded-full bg-red-100 mr-3">
+                            <i class="fas fa-chart-line text-red-600"></i>
+                        </div>
+                        <h3 class="text-md font-medium text-gray-900">Timeline</h3>
+                    </div>
+                    <p class="text-sm text-gray-600">
+                        Timeline charts show data points plotted along a time axis, making it easy to see changes, trends, and patterns over time.
+                        They're essential for tracking progress and identifying long-term trends.
+                    </p>
+                    <p class="text-sm text-gray-600 mt-2">
+                        <strong>Best for:</strong> Tracking a member's score progression over time to identify improvements or concerns.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Select2
+        $('.select2').select2({
+            width: '100%'
+        });
+    });
+</script>
+{% endblock %}

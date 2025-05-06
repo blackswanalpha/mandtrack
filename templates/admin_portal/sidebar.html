@@ -123,7 +123,7 @@
                                 <a href="{% url 'dashboard:scoring_management' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
                                     <i class="fas fa-chart-bar mr-2"></i> Response Scores
                                 </a>
-                                <a href="{% url 'surveys:survey_list' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
                                     <i class="fas fa-plus-circle mr-2"></i> Create New Questionnaire
                                 </a>
                             </div>
@@ -170,19 +170,19 @@
                                 <i x-show="!collapsed || mobileOpen" :class="analysisOpen ? 'transform rotate-180' : ''" class="fas fa-chevron-down transition-transform duration-300"></i>
                             </div>
                             <div x-show="analysisOpen && (!collapsed || mobileOpen)" x-collapse class="pl-10 pr-4 py-1 space-y-1">
-                                <a href="{% url 'analytics:dashboard' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
                                     <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
                                 </a>
-                                <a href="{% url 'analytics:report_dashboard' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
                                     <i class="fas fa-chart-line mr-2"></i> Reports
                                 </a>
-                                <a href="{% url 'analytics:gemini_analysis_dashboard' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
                                     <i class="fas fa-brain mr-2"></i> AI Analysis
                                 </a>
-                                <a href="{% url 'analytics:ai_model_list' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
                                     <i class="fas fa-robot mr-2"></i> AI Models
                                 </a>
-                                <a href="{% url 'analytics:response_analytics' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
                                     <i class="fas fa-history mr-2"></i> Response History
                                 </a>
                             </div>
@@ -226,16 +226,16 @@
                                 <i x-show="!collapsed || mobileOpen" :class="userMetricsOpen ? 'transform rotate-180' : ''" class="fas fa-chevron-down transition-transform duration-300"></i>
                             </div>
                             <div x-show="userMetricsOpen && (!collapsed || mobileOpen)" x-collapse class="pl-10 pr-4 py-1 space-y-1">
-                                <a href="{% url 'analytics:user_analytics' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
                                     <i class="fas fa-chart-line mr-2"></i> Activity Dashboard
                                 </a>
-                                <a href="{% url 'analytics:user_analytics' %}?view=engagement" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
                                     <i class="fas fa-user-clock mr-2"></i> Engagement
                                 </a>
-                                <a href="{% url 'analytics:user_analytics' %}?view=demographics" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
                                     <i class="fas fa-users mr-2"></i> Demographics
                                 </a>
-                                <a href="{% url 'analytics:report_demographic_analysis' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
                                     <i class="fas fa-file-alt mr-2"></i> Demographic Reports
                                 </a>
                             </div>
@@ -254,17 +254,20 @@
                                 <i x-show="!collapsed || mobileOpen" :class="emailOpen ? 'transform rotate-180' : ''" class="fas fa-chevron-down transition-transform duration-300"></i>
                             </div>
                             <div x-show="emailOpen && (!collapsed || mobileOpen)" x-collapse class="pl-10 pr-4 py-1 space-y-1">
-                                <a href="{% url 'surveys:email_template_list' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-chart-line mr-2"></i> Analytics
+                                </a>
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
                                     <i class="fas fa-file-alt mr-2"></i> Templates
                                 </a>
-                                <a href="{% url 'surveys:email_template_create' %}" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
                                     <i class="fas fa-paper-plane mr-2"></i> Create Template
                                 </a>
-                                <a href="{% url 'surveys:email_template_list' %}?view=history" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
-                                    <i class="fas fa-history mr-2"></i> Email History
-                                </a>
-                                <a href="{% url 'surveys:email_template_list' %}?view=scheduled" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
                                     <i class="fas fa-clock mr-2"></i> Scheduled Emails
+                                </a>
+                                <a href="#" class="block py-2 px-3 text-xs rounded-md text-gray-600 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-history mr-2"></i> Email History
                                 </a>
                             </div>
                         </li>

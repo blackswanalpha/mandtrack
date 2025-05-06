@@ -1,0 +1,247 @@
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
+
+{% block title %}Preview: {{ template.name }} - MindTrack{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-6">
+            <div class="flex items-center">
+                <a href="{% url 'email_system:template_detail' pk=template.pk %}" class="mr-2 text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Preview: {{ template.name }}</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                Preview how this email template will appear to recipients.
+            </p>
+        </div>
+
+        <!-- Preview Actions -->
+        <div class="mb-6 flex flex-wrap gap-3">
+            <a href="{% url 'email_system:template_edit' pk=template.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                <i class="fas fa-edit mr-2"></i> Edit Template
+            </a>
+            <a href="{% url 'email_system:send_email' %}?template={{ template.pk }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                <i class="fas fa-paper-plane mr-2"></i> Send Email
+            </a>
+        </div>
+
+        <!-- Email Preview -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Email Preview</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    This is how the email will appear to recipients.
+                </p>
+            </div>
+
+            <div class="border-t border-gray-200">
+                <div class="px-4 py-5 sm:p-6">
+                    <!-- Email Header -->
+                    <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-500">From:</p>
+                                <p class="text-sm font-medium">{{ settings.DEFAULT_FROM_EMAIL }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">To:</p>
+                                <p class="text-sm font-medium">recipient@example.com</p>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <p class="text-sm text-gray-500">Subject:</p>
+                            <p class="text-sm font-medium">{{ template.subject }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Email Content Tabs -->
+                    <div class="border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                            <button type="button" class="email-tab-btn active border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-target="html-content">
+                                HTML Version
+                            </button>
+                            <button type="button" class="email-tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-target="text-content">
+                                Plain Text Version
+                            </button>
+                            <button type="button" class="email-tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-target="variables-content">
+                                Template Variables
+                            </button>
+                        </nav>
+                    </div>
+
+                    <!-- Email Content -->
+                    <div class="py-4">
+                        <div id="html-content" class="email-tab-content">
+                            {% if template.html_content %}
+                                <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                    <iframe id="html-preview" class="w-full min-h-[500px]" frameborder="0"></iframe>
+                                </div>
+                            {% else %}
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <h3 class="text-sm font-medium text-yellow-800">No HTML Content</h3>
+                                            <div class="mt-2 text-sm text-yellow-700">
+                                                <p>This template does not have HTML content. Add HTML content to see a preview here.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div id="text-content" class="email-tab-content hidden">
+                            <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                <pre class="whitespace-pre-wrap font-mono text-sm text-gray-800">{{ rendered_message }}</pre>
+                            </div>
+                        </div>
+
+                        <div id="variables-content" class="email-tab-content hidden">
+                            <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-600 mb-2">
+                                        Use these variables in your email templates. Variables are replaced with actual values when the email is sent.
+                                    </p>
+                                    <p class="text-sm text-gray-600">
+                                        To use a variable, include it in your template like this: <code class="bg-gray-100 px-2 py-1 rounded">{{ "{{variable.name}}" }}</code>
+                                    </p>
+                                </div>
+
+                                <div class="space-y-6">
+                                    {% for category, variables in available_variables.items %}
+                                        <div>
+                                            <h3 class="text-lg font-medium text-gray-900 mb-2">{{ category }}</h3>
+                                            <div class="bg-gray-50 rounded-lg overflow-hidden">
+                                                <table class="min-w-full divide-y divide-gray-200">
+                                                    <thead class="bg-gray-100">
+                                                        <tr>
+                                                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Variable
+                                                            </th>
+                                                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Description
+                                                            </th>
+                                                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Example
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="bg-white divide-y divide-gray-200">
+                                                        {% for variable in variables %}
+                                                            <tr class="hover:bg-gray-50">
+                                                                <td class="px-4 py-3 whitespace-nowrap">
+                                                                    <div class="flex items-center">
+                                                                        <button type="button" class="copy-variable text-indigo-600 hover:text-indigo-900 mr-2" data-variable="{{ variable.name }}">
+                                                                            <i class="fas fa-copy"></i>
+                                                                        </button>
+                                                                        <code class="text-sm font-mono">{{ "{{" }}{{ variable.name }}{{ "}}" }}</code>
+                                                                    </div>
+                                                                </td>
+                                                                <td class="px-4 py-3">
+                                                                    <div class="text-sm text-gray-900">{{ variable.description }}</div>
+                                                                </td>
+                                                                <td class="px-4 py-3">
+                                                                    <div class="text-sm text-gray-500">{{ variable.example }}</div>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab switching
+        const tabButtons = document.querySelectorAll('.email-tab-btn');
+        const tabContents = document.querySelectorAll('.email-tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Deactivate all tabs
+                tabButtons.forEach(btn => {
+                    btn.classList.remove('active', 'border-indigo-500', 'text-indigo-600');
+                    btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                });
+
+                // Hide all content
+                tabContents.forEach(content => {
+                    content.classList.add('hidden');
+                });
+
+                // Activate clicked tab
+                button.classList.add('active', 'border-indigo-500', 'text-indigo-600');
+                button.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+
+                // Show corresponding content
+                const targetId = button.getAttribute('data-target');
+                document.getElementById(targetId).classList.remove('hidden');
+            });
+        });
+
+        // Initialize HTML preview iframe
+        const htmlPreview = document.getElementById('html-preview');
+        if (htmlPreview) {
+            const htmlContent = `{% if rendered_html %}{{ rendered_html|escapejs }}{% endif %}`;
+            const doc = htmlPreview.contentWindow.document;
+            doc.open();
+            doc.write(htmlContent);
+            doc.close();
+        }
+
+        // Copy variable to clipboard
+        const copyButtons = document.querySelectorAll('.copy-variable');
+        copyButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const variable = button.getAttribute('data-variable');
+                const variableText = `{{${variable}}}`;
+
+                // Create a temporary textarea element to copy from
+                const textarea = document.createElement('textarea');
+                textarea.value = variableText;
+                textarea.setAttribute('readonly', '');
+                textarea.style.position = 'absolute';
+                textarea.style.left = '-9999px';
+                document.body.appendChild(textarea);
+
+                // Select and copy the text
+                textarea.select();
+                document.execCommand('copy');
+
+                // Remove the textarea
+                document.body.removeChild(textarea);
+
+                // Show a toast notification
+                if (window.toast) {
+                    window.toast.success(`Variable "${variableText}" copied to clipboard`, 'Copied!');
+                } else {
+                    // Fallback if toast is not available
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '<i class="fas fa-check"></i>';
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                    }, 1000);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

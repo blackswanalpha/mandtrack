@@ -1,5 +1,19 @@
-{% extends 'admin_portal/modern_base.html' %}
+{% extends 'base/base.html' %}
 {% load static %}
+
+{% block extra_head %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<!-- Hidden data for charts -->
+<script id="trend-data" type="application/json">{{ trend_data|safe }}</script>
+<script id="gender-distribution" type="application/json">{{ gender_distribution|safe }}</script>
+<script id="age-distribution" type="application/json">{{ age_distribution|safe }}</script>
+<script id="device-data" type="application/json">{{ device_data|safe }}</script>
+<script id="risk-data" type="application/json">{{ risk_data|safe }}</script>
+<script id="top-questionnaires-data" type="application/json">{{ top_questionnaires_data|safe }}</script>
+<script id="category-comparison-data" type="application/json">{{ category_comparison_data|default:"{}" }}</script>
+<script id="response-time-heatmap-data" type="application/json">{{ response_time_heatmap_data|default:"{}" }}</script>
+{% endblock %}
 
 {% block title %}Admin Dashboard{% endblock %}
 
@@ -11,7 +25,7 @@
         <i class="fas fa-plus-circle me-1"></i> Create New
     </button>
     <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 animated--fade-in" aria-labelledby="createDropdown">
-        <li><a class="dropdown-item" href="{% url 'surveys:survey_create' %}"><i class="fas fa-clipboard-list me-2 text-primary"></i> Questionnaire</a></li>
+        <li><a class="dropdown-item" href="#"><i class="fas fa-clipboard-list me-2 text-primary"></i> Questionnaire</a></li>
         <li><a class="dropdown-item" href="#"><i class="fas fa-users me-2 text-info"></i> User</a></li>
         <li><a class="dropdown-item" href="#"><i class="fas fa-building me-2 text-warning"></i> Organization</a></li>
         <li><hr class="dropdown-divider"></li>
@@ -38,6 +52,29 @@
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 {% endif %}
+
+<!-- Dashboard Alert -->
+<div id="dashboard-alert" class="alert alert-danger alert-dismissible fade show d-none" role="alert">
+    <strong>Error:</strong> <span id="dashboard-alert-message"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+
+<!-- Dashboard Loader -->
+<div id="dashboard-loader" class="position-fixed top-50 start-50 translate-middle d-none" style="z-index: 1050;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<!-- Dashboard Filters -->
+{% include 'dashboard/components/dashboard_filters.html' %}
+
+<!-- Cache Information -->
+<div class="d-flex justify-content-end mb-2">
+    <small class="text-muted">
+        <i class="fas fa-clock me-1"></i> Last updated: <span id="cache-timestamp">{% now "F j, Y, g:i a" %}</span>
+    </small>
+</div>
 
 <!-- Dashboard Overview Section -->
 <div class="row mb-4">
@@ -116,8 +153,8 @@
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="questionnairesDropdown">
-                                <li><a class="dropdown-item" href="{% url 'surveys:survey_list' %}"><i class="fas fa-list me-2 text-primary"></i> View All</a></li>
-                                <li><a class="dropdown-item" href="{% url 'surveys:survey_create' %}"><i class="fas fa-plus me-2 text-success"></i> Create New</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-list me-2 text-primary"></i> View All</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-plus me-2 text-success"></i> Create New</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="#"><i class="fas fa-chart-pie me-2 text-info"></i> View Analytics</a></li>
                             </ul>
@@ -162,7 +199,7 @@
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="responsesDropdown">
-                                <li><a class="dropdown-item" href="{% url 'feedback:response_list' %}"><i class="fas fa-list me-2 text-success"></i> View All</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-list me-2 text-success"></i> View All</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="#"><i class="fas fa-chart-line me-2 text-info"></i> View Analytics</a></li>
                                 <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2 text-primary"></i> Export Data</a></li>
@@ -258,7 +295,7 @@
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="orgsDropdown">
-                                <li><a class="dropdown-item" href="{% url 'groups:organization_list' %}"><i class="fas fa-list me-2 text-warning"></i> View All</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-list me-2 text-warning"></i> View All</a></li>
                                 <li><a class="dropdown-item" href="#"><i class="fas fa-plus me-2 text-success"></i> Add Organization</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="#"><i class="fas fa-chart-pie me-2 text-info"></i> View Analytics</a></li>
@@ -407,6 +444,69 @@
     </div>
 </div>
 
+<!-- Advanced Analytics Section -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <h5 class="text-dark mb-3 fw-bold">Advanced Analytics</h5>
+    </div>
+
+    <!-- Category Comparison Chart -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-primary">Category Comparison</h6>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-link text-muted" type="button" id="categoryComparisonDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="categoryComparisonDropdown">
+                        <li><a class="dropdown-item" href="#" id="downloadCategoryChart"><i class="fas fa-download me-2 text-success"></i> Download Chart</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" id="showAllCategories"><i class="fas fa-list me-2 text-primary"></i> Show All Categories</a></li>
+                        <li><a class="dropdown-item" href="#" id="showTopCategories"><i class="fas fa-trophy me-2 text-warning"></i> Show Top 5 Categories</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="categoryComparisonChart"></canvas>
+                </div>
+                <div class="text-center mt-3">
+                    <small class="text-muted">Comparing key metrics across questionnaire categories</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Response Time Heatmap -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-primary">Response Time Heatmap</h6>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-link text-muted" type="button" id="heatmapDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="heatmapDropdown">
+                        <li><a class="dropdown-item" href="#" id="downloadHeatmapChart"><i class="fas fa-download me-2 text-success"></i> Download Chart</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" id="showWeekdaysOnly"><i class="fas fa-calendar-week me-2 text-primary"></i> Show Weekdays Only</a></li>
+                        <li><a class="dropdown-item" href="#" id="showAllDays"><i class="fas fa-calendar-alt me-2 text-info"></i> Show All Days</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="responseTimeHeatmap"></canvas>
+                </div>
+                <div class="text-center mt-3">
+                    <small class="text-muted">Shows when responses are most frequently submitted</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Completion Time Stats -->
 <div class="row g-3 mb-4">
     <div class="col-12">
@@ -451,7 +551,7 @@
         <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-primary">Recent Responses</h6>
-                <a href="{% url 'feedback:response_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -490,10 +590,10 @@
                                 <td>{{ response.score|default:"-" }}</td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
-                                        <a href="{% url 'feedback:response_detail' pk=response.pk %}" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="View">
+                                        <a href="#" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="View">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{% url 'feedback:response_analyze' pk=response.pk %}" class="btn btn-outline-info" data-bs-toggle="tooltip" title="Analyze">
+                                        <a href="#" class="btn btn-outline-info" data-bs-toggle="tooltip" title="Analyze">
                                             <i class="fas fa-chart-bar"></i>
                                         </a>
                                     </div>
@@ -559,7 +659,7 @@
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-3 col-sm-6">
-                        <a href="{% url 'surveys:survey_create' %}" class="d-flex align-items-center p-3 rounded bg-light text-decoration-none transition-all hover:bg-primary hover:text-white">
+                        <a href="#" class="d-flex align-items-center p-3 rounded bg-light text-decoration-none transition-all hover:bg-primary hover:text-white">
                             <div class="flex-shrink-0">
                                 <i class="fas fa-clipboard-list fa-lg"></i>
                             </div>
@@ -570,7 +670,7 @@
                         </a>
                     </div>
                     <div class="col-md-3 col-sm-6">
-                        <a href="{% url 'surveys:qr_code_list' %}" class="d-flex align-items-center p-3 rounded bg-light text-decoration-none transition-all hover:bg-success hover:text-white">
+                        <a href="#" class="d-flex align-items-center p-3 rounded bg-light text-decoration-none transition-all hover:bg-success hover:text-white">
                             <div class="flex-shrink-0">
                                 <i class="fas fa-qrcode fa-lg"></i>
                             </div>
@@ -767,7 +867,17 @@
 
 {% block extra_js %}
 {{ block.super }}
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Moment.js and DateRangePicker (for date filtering) -->
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.css">
+
+<!-- Dashboard Scripts -->
+<script src="{% static 'js/dashboard-charts.js' %}"></script>
+<script src="{% static 'js/dashboard-filters.js' %}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Overview Response Trend Chart

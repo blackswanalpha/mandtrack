@@ -1,0 +1,251 @@
+/* Base styles for PDF documents */
+
+@page {
+    margin: 2.5cm 1.5cm;
+    @top-center {
+        content: "MindTrack";
+        font-size: 9pt;
+        color: #666;
+    }
+    @bottom-center {
+        content: "Page " counter(page) " of " counter(pages);
+        font-size: 9pt;
+        color: #666;
+    }
+}
+
+@page :first {
+    @top-center { content: normal; }
+}
+
+html {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.5;
+    color: #333;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    page-break-after: avoid;
+    page-break-inside: avoid;
+}
+
+h1 {
+    font-size: 24pt;
+    color: #1a56db;
+    margin-top: 0;
+    padding-bottom: 0.5em;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+h2 {
+    font-size: 18pt;
+    color: #1e429f;
+    padding-bottom: 0.25em;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+h3 {
+    font-size: 14pt;
+    color: #233876;
+}
+
+h4 {
+    font-size: 12pt;
+    color: #374151;
+}
+
+p {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+a {
+    color: #1a56db;
+    text-decoration: none;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    page-break-inside: auto;
+}
+
+tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+}
+
+th {
+    background-color: #f3f4f6;
+    padding: 0.5em;
+    text-align: left;
+    font-weight: bold;
+    border-bottom: 1px solid #d1d5db;
+}
+
+td {
+    padding: 0.5em;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.header {
+    margin-bottom: 2em;
+    padding-bottom: 1em;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.header h1 {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.header h2 {
+    margin: 0.5em 0 0 0;
+    padding: 0;
+    border: none;
+    color: #6b7280;
+    font-size: 16pt;
+    font-weight: normal;
+}
+
+.footer {
+    margin-top: 2em;
+    padding-top: 1em;
+    border-top: 1px solid #e5e7eb;
+    font-size: 9pt;
+    color: #6b7280;
+}
+
+.page-break {
+    page-break-before: always;
+}
+
+.info-box {
+    background-color: #f3f4f6;
+    border-left: 4px solid #9ca3af;
+    padding: 1em;
+    margin: 1em 0;
+}
+
+.answers-container {
+    margin: 1em 0;
+}
+
+.answer-item {
+    margin-bottom: 1em;
+    padding-bottom: 1em;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.question-text {
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+
+.answer-text {
+    margin-left: 1em;
+}
+
+ul, ol {
+    margin: 0.5em 0;
+    padding-left: 2em;
+}
+
+li {
+    margin-bottom: 0.25em;
+}
+
+/* Charts and visualizations */
+.chart-container {
+    margin: 1em 0;
+    page-break-inside: avoid;
+}
+
+.chart-title {
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 0.5em;
+}
+
+/* Utility classes */
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.font-bold {
+    font-weight: bold;
+}
+
+.text-sm {
+    font-size: 9pt;
+}
+
+.text-lg {
+    font-size: 14pt;
+}
+
+.mt-4 {
+    margin-top: 1em;
+}
+
+.mb-4 {
+    margin-bottom: 1em;
+}
+
+.p-4 {
+    padding: 1em;
+}
+
+.bg-gray-100 {
+    background-color: #f3f4f6;
+}
+
+.border {
+    border: 1px solid #e5e7eb;
+}
+
+.rounded {
+    border-radius: 0.25em;
+}
+
+/* Progress bars */
+.progress-container {
+    width: 100%;
+    height: 20px;
+    background-color: #e5e7eb;
+    border-radius: 10px;
+    margin: 0.5em 0;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 10px;
+    background-color: #1a56db;
+}
+
+/* Risk levels */
+.risk-high {
+    color: #b91c1c;
+}
+
+.risk-medium {
+    color: #d97706;
+}
+
+.risk-low {
+    color: #047857;
+}

@@ -4,7 +4,6 @@ This file is used to break circular imports.
 """
 from django.db import models
 from django.conf import settings
-from surveys.models import Questionnaire, Question, QuestionChoice
 import uuid
 
 class Response(models.Model):
@@ -34,7 +33,8 @@ class Response(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    survey = models.ForeignKey(Questionnaire, on_delete=models.CASCADE, related_name='responses', null=True)
+    # Use the correct model reference with the actual model name
+    survey = models.ForeignKey('surveys.SurveysQuestionnaire', on_delete=models.CASCADE, related_name='responses', null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='questionnaire_responses')
     patient_identifier = models.CharField(max_length=50, blank=True, null=True)
     patient_name = models.CharField(max_length=255, blank=True, null=True)
@@ -60,14 +60,14 @@ class Response(models.Model):
         verbose_name = 'Response'
         verbose_name_plural = 'Responses'
         indexes = [
-            models.Index(fields=['survey']),
-            models.Index(fields=['user']),
-            models.Index(fields=['organization']),
-            models.Index(fields=['patient_identifier']),
-            models.Index(fields=['patient_email']),
-            models.Index(fields=['risk_level']),
-            models.Index(fields=['completed_at']),
-            models.Index(fields=['created_at']),
+            models.Index(fields=['survey'], name='fb_resp_survey_idx1'),
+            models.Index(fields=['user'], name='fb_resp_user_idx1'),
+            models.Index(fields=['organization'], name='fb_resp_org_idx1'),
+            models.Index(fields=['patient_identifier'], name='fb_resp_patient_id_idx1'),
+            models.Index(fields=['patient_email'], name='fb_resp_patient_email_idx1'),
+            models.Index(fields=['risk_level'], name='fb_resp_risk_level_idx1'),
+            models.Index(fields=['completed_at'], name='fb_resp_completed_at_idx1'),
+            models.Index(fields=['created_at'], name='fb_resp_created_at_idx1'),
         ]
 
     def __str__(self):
@@ -80,11 +80,14 @@ class Answer(models.Model):
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     response = models.ForeignKey(Response, on_delete=models.CASCADE, related_name='answers', null=True)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers', null=True)
+    # Use the correct model reference with the actual model name
+    question = models.ForeignKey('surveys.SurveysQuestion', on_delete=models.CASCADE, related_name='answers', null=True)
     value = models.JSONField(blank=True, null=True)  # Store any type of answer in JSON format
     text_answer = models.TextField(blank=True, null=True)
-    selected_choice = models.ForeignKey(QuestionChoice, on_delete=models.SET_NULL, null=True, blank=True, related_name='answers')
-    multiple_choices = models.ManyToManyField(QuestionChoice, blank=True, related_name='multiple_answers')
+    # Use the correct model reference with the actual model name
+    selected_choice = models.ForeignKey('surveys.SurveysQuestionchoice', on_delete=models.SET_NULL, null=True, blank=True, related_name='answers')
+    # Use the correct model reference with the actual model name
+    multiple_choices = models.ManyToManyField('surveys.SurveysQuestionchoice', blank=True, related_name='multiple_answers')
     numeric_value = models.FloatField(blank=True, null=True)
     date_value = models.DateField(blank=True, null=True)
     time_value = models.TimeField(blank=True, null=True)
@@ -94,13 +97,14 @@ class Answer(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['question__order']
+        # Fix the ordering issue by removing the reference to question__order
+        ordering = ['created_at']
         verbose_name = 'Answer'
         verbose_name_plural = 'Answers'
         unique_together = ['response', 'question']
         indexes = [
-            models.Index(fields=['response']),
-            models.Index(fields=['question']),
+            models.Index(fields=['response'], name='fb_ans_response_idx1'),
+            models.Index(fields=['question'], name='fb_ans_question_idx1'),
         ]
 
     def __str__(self):
@@ -120,6 +124,13 @@ class AIAnalysis(models.Model):
     raw_data = models.JSONField(default=dict)
     model_used = models.CharField(max_length=100, blank=True, null=True)
     confidence_score = models.FloatField(blank=True, null=True)
+
+    # Advanced analysis fields
+    risk_level = models.CharField(max_length=20, choices=Response.RISK_LEVEL_CHOICES, default='unknown')
+    risk_justification = models.TextField(blank=True)
+    trends = models.TextField(blank=True)
+    follow_up_areas = models.TextField(blank=True)
+
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_analyses')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -129,9 +140,9 @@ class AIAnalysis(models.Model):
         verbose_name = 'AI Analysis'
         verbose_name_plural = 'AI Analyses'
         indexes = [
-            models.Index(fields=['response']),
-            models.Index(fields=['created_by']),
-            models.Index(fields=['created_at']),
+            models.Index(fields=['response'], name='fb_ai_response_idx1'),
+            models.Index(fields=['created_by'], name='fb_ai_created_by_idx1'),
+            models.Index(fields=['created_at'], name='fb_ai_created_at_idx1'),
         ]
 
     def __str__(self):

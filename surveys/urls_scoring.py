@@ -21,5 +21,6 @@ urlpatterns = [
 
     # Response Scoring URLs
     path('<int:questionnaire_id>/responses/<int:response_id>/calculate-score/', scoring_views.calculate_response_score, name='calculate_response_score'),
+    path('<int:questionnaire_id>/responses/<int:response_id>/enhanced-score/', scoring_views.enhanced_calculate_score, name='enhanced_calculate_score'),
     path('<int:questionnaire_id>/response-scores/', scoring_views.response_scores, name='response_scores'),
 ]

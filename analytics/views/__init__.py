@@ -11,3 +11,9 @@ from analytics.views.dashboard_views import (
     export_csv,
     export_pdf,
 )
+
+# Import views from the advanced_ai_views.py file
+from analytics.views.advanced_ai_views import (
+    analyze_response,
+    analyze_member_responses,
+)

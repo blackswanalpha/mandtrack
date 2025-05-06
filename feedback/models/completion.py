@@ -2,7 +2,6 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
-from surveys.models import Questionnaire
 # Import directly from base to avoid circular imports
 from feedback.models.base import Response
 
@@ -85,7 +84,8 @@ class CompletionEvent(models.Model):
     tracker = models.ForeignKey(CompletionTracker, on_delete=models.CASCADE, related_name='events')
     event_type = models.CharField(max_length=20, choices=EVENT_TYPE_CHOICES)
     timestamp = models.DateTimeField(auto_now_add=True)
-    question = models.ForeignKey('surveys.Question', on_delete=models.SET_NULL, null=True, blank=True, related_name='completion_events')
+    # Use the correct model reference with the actual database model name
+    question = models.ForeignKey('surveys.SurveysQuestion', on_delete=models.SET_NULL, null=True, blank=True, related_name='completion_events')
     answer = models.ForeignKey('feedback.Answer', on_delete=models.SET_NULL, null=True, blank=True, related_name='completion_events')
     metadata = models.JSONField(default=dict, blank=True)
 

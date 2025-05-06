@@ -1,0 +1,75 @@
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
+
+{% block title %}Delete Email Template{% endblock %}
+
+{% block page_title %}Delete Email Template{% endblock %}
+
+{% block breadcrumbs %}
+<li>
+    <div class="flex items-center">
+        <i class="fas fa-chevron-right text-gray-400 text-xs mx-1"></i>
+        <a href="{% url 'surveys:email_template_list' %}" class="text-sm text-gray-500 hover:text-gray-700">
+            Email Templates
+        </a>
+    </div>
+</li>
+<li>
+    <div class="flex items-center">
+        <i class="fas fa-chevron-right text-gray-400 text-xs mx-1"></i>
+        <a href="{% url 'surveys:email_template_detail' pk=template.pk %}" class="text-sm text-gray-500 hover:text-gray-700">
+            {{ template.name }}
+        </a>
+    </div>
+</li>
+<li aria-current="page">
+    <div class="flex items-center">
+        <i class="fas fa-chevron-right text-gray-400 text-xs mx-1"></i>
+        <span class="text-sm text-gray-500">Delete</span>
+    </div>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+    <div class="text-center">
+        <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-red-100 text-red-600 mb-6">
+            <i class="fas fa-exclamation-triangle text-2xl"></i>
+        </div>
+        
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Delete Email Template
+        </h2>
+        
+        <p class="text-gray-600 dark:text-gray-300 mb-6">
+            Are you sure you want to delete the email template <strong>"{{ template.name }}"</strong>?<br>
+            This action cannot be undone.
+        </p>
+        
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6 max-w-lg mx-auto text-left">
+            <h3 class="font-medium text-gray-900 dark:text-white mb-2">Template Information:</h3>
+            <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                <li><strong>Name:</strong> {{ template.name }}</li>
+                <li><strong>Type:</strong> {{ template.get_template_type_display }}</li>
+                <li><strong>Subject:</strong> {{ template.subject }}</li>
+                <li><strong>Created:</strong> {{ template.created_at|date:"F j, Y" }}</li>
+                {% if template.is_default %}
+                <li class="text-red-600 dark:text-red-400">
+                    <strong>Warning:</strong> This is set as a default template. Deleting it may affect system functionality.
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+        
+        <form method="post" class="flex justify-center space-x-4">
+            {% csrf_token %}
+            <a href="{% url 'surveys:email_template_detail' pk=template.pk %}" class="btn-secondary">
+                <i class="fas fa-times mr-1"></i> Cancel
+            </a>
+            <button type="submit" class="btn-danger">
+                <i class="fas fa-trash-alt mr-1"></i> Delete Template
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

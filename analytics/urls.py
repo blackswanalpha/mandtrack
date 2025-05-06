@@ -41,4 +41,13 @@ urlpatterns = [
 
     # Include Email Reports URLs
     path('', include('analytics.urls_email')),
+
+    # Include Advanced AI Analysis URLs
+    path('', include('analytics.urls_advanced_ai')),
+
+    # Include Advanced Visualization URLs
+    path('', include('analytics.urls_advanced_viz')),
+
+    # Include Trend Analysis URLs
+    path('', include('analytics.urls_trend')),
 ]

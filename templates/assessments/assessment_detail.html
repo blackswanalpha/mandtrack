@@ -1,0 +1,511 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Assessment Details - MindTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .risk-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .risk-low {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+
+    .risk-medium {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+
+    .risk-high {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .risk-critical {
+        background-color: #7f1d1d;
+        color: #fee2e2;
+    }
+
+    .consultation-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .consultation-not_required {
+        background-color: #e5e7eb;
+        color: #374151;
+    }
+
+    .consultation-recommended {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+
+    .consultation-required {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+
+    .consultation-scheduled {
+        background-color: #e0e7ff;
+        color: #3730a3;
+    }
+
+    .consultation-completed {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+
+    .info-card {
+        height: 100%;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .info-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .consultation-card {
+        transition: all 0.2s ease-in-out;
+    }
+
+    .consultation-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .nav-pills .nav-link.active {
+        background-color: #4e73df;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'assessments:assessment_list' %}" class="btn btn-outline-primary mb-2">
+                <i class="fas fa-arrow-left me-2"></i> Back to List
+            </a>
+            <h1 class="h3 mb-0 text-gray-800">Assessment Details</h1>
+        </div>
+        <div>
+            <a href="{% url 'assessments:assessment_update' pk=assessment.pk %}" class="btn btn-primary">
+                <i class="fas fa-edit me-2"></i> Edit Assessment
+            </a>
+            <a href="{% url 'assessments:export_assessment_pdf' pk=assessment.pk %}" class="btn btn-success ms-2" target="_blank">
+                <i class="fas fa-file-pdf me-2"></i> Export PDF
+            </a>
+            <a href="{% url 'assessments:patient_progress' %}?patient_identifier={{ assessment.response.patient_identifier }}" class="btn btn-info ms-2">
+                <i class="fas fa-chart-line me-2"></i> View Progress
+            </a>
+            {% if assessment.consultation_recommended != 'scheduled' and assessment.consultation_recommended != 'completed' %}
+            <a href="{% url 'assessments:consultation_create' assessment_id=assessment.pk %}" class="btn btn-warning ms-2">
+                <i class="fas fa-user-md me-2"></i> Schedule Consultation
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Assessment Overview -->
+    <div class="row mb-4">
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2 info-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Patient Information</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ assessment.response.patient_identifier|default:"Anonymous" }}
+                            </div>
+                            {% if assessment.response.patient_email %}
+                            <div class="text-gray-600 mt-2">
+                                <i class="fas fa-envelope me-1"></i> {{ assessment.response.patient_email }}
+                            </div>
+                            {% endif %}
+                            {% if assessment.response.patient_age %}
+                            <div class="text-gray-600">
+                                <i class="fas fa-birthday-cake me-1"></i> Age: {{ assessment.response.patient_age }}
+                            </div>
+                            {% endif %}
+                            {% if assessment.response.patient_gender %}
+                            <div class="text-gray-600">
+                                <i class="fas fa-venus-mars me-1"></i> {{ assessment.response.get_patient_gender_display }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2 info-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Assessment Status</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ assessment.get_status_display }}
+                            </div>
+                            <div class="text-gray-600 mt-2">
+                                <i class="fas fa-calendar me-1"></i> {{ assessment.assessment_date|date:"F d, Y" }}
+                            </div>
+                            <div class="text-gray-600">
+                                <i class="fas fa-user-md me-1"></i> Assessor: {{ assessment.assessor.get_full_name|default:assessment.assessor.username }}
+                            </div>
+                            {% if assessment.follow_up_date %}
+                            <div class="text-gray-600">
+                                <i class="fas fa-calendar-check me-1"></i> Follow-up: {{ assessment.follow_up_date|date:"F d, Y" }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2 info-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Risk Assessment</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                <span class="risk-badge risk-{{ assessment.get_risk_level }}">
+                                    {{ assessment.get_risk_level|title }} Risk
+                                </span>
+                            </div>
+                            <div class="text-gray-600 mt-2">
+                                <i class="fas fa-stethoscope me-1"></i> Consultation:
+                                <span class="consultation-badge consultation-{{ assessment.consultation_recommended }}">
+                                    {{ assessment.get_consultation_recommended_display }}
+                                </span>
+                            </div>
+                            {% if assessment.consultation_urgency > 0 %}
+                            <div class="text-gray-600">
+                                <i class="fas fa-exclamation-triangle me-1"></i> Urgency: {{ assessment.consultation_urgency }}/10
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-heartbeat fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assessment Details Tabs -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <ul class="nav nav-pills card-header-pills" id="assessmentTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="true">
+                        Assessment Details
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="responses-tab" data-bs-toggle="tab" data-bs-target="#responses" type="button" role="tab" aria-controls="responses" aria-selected="false">
+                        Questionnaire Responses
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="consultations-tab" data-bs-toggle="tab" data-bs-target="#consultations" type="button" role="tab" aria-controls="consultations" aria-selected="false">
+                        Consultations
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="assessmentTabsContent">
+                <!-- Assessment Details Tab -->
+                <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6 class="m-0 font-weight-bold text-primary">Assessment Notes</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if assessment.notes %}
+                                    <p>{{ assessment.notes|linebreaks }}</p>
+                                    {% else %}
+                                    <p class="text-muted">No assessment notes provided.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6 class="m-0 font-weight-bold text-primary">Strengths</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if assessment.strengths %}
+                                    <p>{{ assessment.strengths|linebreaks }}</p>
+                                    {% else %}
+                                    <p class="text-muted">No strengths identified.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6 class="m-0 font-weight-bold text-primary">Risk Factors</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if assessment.risk_factors %}
+                                    <ul class="list-group list-group-flush">
+                                        {% for factor, details in assessment.risk_factors.items %}
+                                        <li class="list-group-item">
+                                            <strong>{{ factor }}</strong>
+                                            <p class="mb-0 text-muted">{{ details }}</p>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% else %}
+                                    <p class="text-muted">No risk factors identified.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6 class="m-0 font-weight-bold text-primary">Concerns</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if assessment.concerns %}
+                                    <p>{{ assessment.concerns|linebreaks }}</p>
+                                    {% else %}
+                                    <p class="text-muted">No concerns identified.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6 class="m-0 font-weight-bold text-primary">Consultation Recommendation</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <span class="consultation-badge consultation-{{ assessment.consultation_recommended }} me-3">
+                                            {{ assessment.get_consultation_recommended_display }}
+                                        </span>
+                                        {% if assessment.consultation_urgency > 0 %}
+                                        <span class="text-gray-600">
+                                            <i class="fas fa-exclamation-triangle me-1"></i> Urgency: {{ assessment.consultation_urgency }}/10
+                                        </span>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if assessment.consultation_notes %}
+                                    <p>{{ assessment.consultation_notes|linebreaks }}</p>
+                                    {% else %}
+                                    <p class="text-muted">No consultation notes provided.</p>
+                                    {% endif %}
+
+                                    {% if assessment.follow_up_date %}
+                                    <div class="alert alert-info mt-3">
+                                        <i class="fas fa-calendar-check me-2"></i> Follow-up scheduled for {{ assessment.follow_up_date|date:"F d, Y" }}
+                                        {% if assessment.follow_up_notes %}
+                                        <p class="mb-0 mt-2">{{ assessment.follow_up_notes }}</p>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Questionnaire Responses Tab -->
+                <div class="tab-pane fade" id="responses" role="tabpanel" aria-labelledby="responses-tab">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="m-0 font-weight-bold text-primary">Questionnaire Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Questionnaire:</strong> {{ assessment.response.survey.title }}</p>
+                                    <p><strong>Category:</strong> {{ assessment.response.survey.get_category_display }}</p>
+                                    <p><strong>Response Date:</strong> {{ assessment.response.created_at|date:"F d, Y H:i" }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Score:</strong> {{ assessment.response.score|default:"N/A" }}</p>
+                                    <p><strong>Completion Time:</strong>
+                                        {% if assessment.response.completion_time %}
+                                        {{ assessment.response.completion_time|floatformat:0 }} seconds
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </p>
+                                    <p><strong>Status:</strong> {{ assessment.response.get_status_display }}</p>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <a href="{% url 'feedback:response_detail' pk=assessment.response.pk %}" class="btn btn-primary" target="_blank">
+                                    <i class="fas fa-external-link-alt me-2"></i> View Full Response
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="m-0 font-weight-bold text-primary">Response Summary</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if assessment.response.answers.exists %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Question</th>
+                                            <th>Answer</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for answer in assessment.response.answers.all %}
+                                        <tr>
+                                            <td>{{ answer.question.text }}</td>
+                                            <td>
+                                                {% if answer.selected_choice %}
+                                                {{ answer.selected_choice.text }}
+                                                {% elif answer.text_answer %}
+                                                {{ answer.text_answer }}
+                                                {% elif answer.numeric_value is not None %}
+                                                {{ answer.numeric_value }}
+                                                {% else %}
+                                                <em>No answer provided</em>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No answers found for this response.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Consultations Tab -->
+                <div class="tab-pane fade" id="consultations" role="tabpanel" aria-labelledby="consultations-tab">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Consultation History</h5>
+                        {% if assessment.consultation_recommended != 'completed' %}
+                        <a href="{% url 'assessments:consultation_create' assessment_id=assessment.pk %}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i> Schedule New Consultation
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    {% if consultations %}
+                    <div class="row">
+                        {% for consultation in consultations %}
+                        <div class="col-lg-6 mb-4">
+                            <div class="card consultation-card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">{{ consultation.scheduled_date|date:"F d, Y H:i" }}</h6>
+                                    <span class="badge {% if consultation.status == 'completed' %}bg-success{% elif consultation.status == 'scheduled' %}bg-primary{% elif consultation.status == 'cancelled' %}bg-danger{% else %}bg-warning{% endif %}">
+                                        {{ consultation.get_status_display }}
+                                    </span>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Consultant:</strong> {{ consultation.consultant.get_full_name|default:consultation.consultant.username }}</p>
+
+                                    {% if consultation.notes %}
+                                    <div class="mb-3">
+                                        <strong>Notes:</strong>
+                                        <p class="mb-0">{{ consultation.notes|linebreaks }}</p>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if consultation.status == 'completed' and consultation.outcome %}
+                                    <div class="mb-3">
+                                        <strong>Outcome:</strong>
+                                        <p class="mb-0">{{ consultation.outcome|linebreaks }}</p>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if consultation.follow_up_required %}
+                                    <div class="alert alert-info mb-0">
+                                        <i class="fas fa-calendar-check me-2"></i> Follow-up required
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <a href="{% url 'assessments:consultation_update' pk=consultation.pk %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit me-1"></i> Update
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-times fa-3x text-gray-300 mb-3"></i>
+                        <p class="mb-0">No consultations have been scheduled yet.</p>
+                        {% if assessment.consultation_recommended != 'not_required' %}
+                        <p class="mt-3">
+                            <a href="{% url 'assessments:consultation_create' assessment_id=assessment.pk %}" class="btn btn-primary">
+                                <i class="fas fa-calendar-plus me-2"></i> Schedule Consultation
+                            </a>
+                        </p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Bootstrap tabs
+        var triggerTabList = [].slice.call(document.querySelectorAll('#assessmentTabs button'))
+        triggerTabList.forEach(function (triggerEl) {
+            var tabTrigger = new bootstrap.Tab(triggerEl)
+            triggerEl.addEventListener('click', function (event) {
+                event.preventDefault()
+                tabTrigger.show()
+            })
+        })
+    });
+</script>
+{% endblock %}

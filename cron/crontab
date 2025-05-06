@@ -1,0 +1,9 @@
+# Crontab file for MindTrack application
+# Run scheduled email processing every 15 minutes
+*/15 * * * * cd /path/to/mindtrack && /path/to/mindtrack/.venv/bin/python manage.py process_scheduled_emails >> /path/to/mindtrack/logs/cron.log 2>&1
+
+# Run a daily backup at 2 AM
+0 2 * * * cd /path/to/mindtrack && /path/to/mindtrack/.venv/bin/python manage.py dbbackup >> /path/to/mindtrack/logs/backup.log 2>&1
+
+# Run weekly cleanup of old logs and temporary files at 3 AM on Sundays
+0 3 * * 0 cd /path/to/mindtrack && /path/to/mindtrack/.venv/bin/python manage.py cleanup_old_files >> /path/to/mindtrack/logs/cleanup.log 2>&1

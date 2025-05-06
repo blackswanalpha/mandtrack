@@ -32,45 +32,70 @@
         <form method="post" class="space-y-8" id="questionnaireForm">
             {% csrf_token %}
 
-            <!-- Respondent Information -->
-            <div class="bg-white shadow overflow-hidden sm:rounded-lg transform transition-all duration-500 hover:shadow-md">
+            <!-- Bio Data Section - Always shown when bio data hasn't been collected yet -->
+            {% if not bio_data_collected and not request.session.bio_data_collected %}
+            <div id="bio-data-section" class="bg-white shadow overflow-hidden sm:rounded-lg transform transition-all duration-500 hover:shadow-md animate-fade-in">
                 <div class="px-4 py-5 sm:px-6">
-                    <h2 class="text-lg font-medium text-gray-900">Your Information</h2>
-                    <p class="mt-1 text-sm text-gray-500">Please provide your contact details.</p>
+                    <h2 class="text-lg font-medium text-gray-900">Patient Information</h2>
+                    <p class="mt-1 text-sm text-gray-500">Please provide your information before proceeding with the assessment.</p>
                 </div>
                 <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                    <!-- Bio Data Form -->
                     <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                         <div class="sm:col-span-6">
                             <label for="patient_email" class="block text-sm font-medium text-gray-700">Email <span class="text-red-500">*</span></label>
                             <div class="mt-1">
                                 <input type="email" name="patient_email" id="patient_email" required
-                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-300">
+                                       value="{{ bio_data_values.email|default:'' }}"
+                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-300 {% if bio_data_error and not bio_data_values.email %}border-red-500{% endif %}">
                             </div>
+                            {% if bio_data_error and not bio_data_values.email %}
+                            <p class="mt-1 text-sm text-red-600">Email is required</p>
+                            {% endif %}
                         </div>
                         <div class="sm:col-span-3">
                             <label for="patient_age" class="block text-sm font-medium text-gray-700">Age <span class="text-red-500">*</span></label>
                             <div class="mt-1">
                                 <input type="number" name="patient_age" id="patient_age" min="1" max="120" required
-                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-300">
+                                       value="{{ bio_data_values.age|default:'' }}"
+                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-300 {% if bio_data_error and not bio_data_values.age %}border-red-500{% endif %}">
                             </div>
+                            {% if bio_data_error and not bio_data_values.age %}
+                            <p class="mt-1 text-sm text-red-600">Age is required</p>
+                            {% endif %}
                         </div>
                         <div class="sm:col-span-3">
                             <label for="patient_gender" class="block text-sm font-medium text-gray-700">Gender <span class="text-red-500">*</span></label>
                             <div class="mt-1">
                                 <select name="patient_gender" id="patient_gender" required
-                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-300">
+                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-300 {% if bio_data_error and not bio_data_values.gender %}border-red-500{% endif %}">
                                     <option value="">Select gender</option>
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
-                                    <option value="non-binary">Non-Binary</option>
-                                    <option value="prefer_not_to_say">Prefer Not to Say</option>
-                                    <option value="other">Other</option>
+                                    <option value="male" {% if bio_data_values.gender == 'male' %}selected{% endif %}>Male</option>
+                                    <option value="female" {% if bio_data_values.gender == 'female' %}selected{% endif %}>Female</option>
+                                    <option value="non-binary" {% if bio_data_values.gender == 'non-binary' %}selected{% endif %}>Non-Binary</option>
+                                    <option value="prefer_not_to_say" {% if bio_data_values.gender == 'prefer_not_to_say' %}selected{% endif %}>Prefer Not to Say</option>
+                                    <option value="other" {% if bio_data_values.gender == 'other' %}selected{% endif %}>Other</option>
                                 </select>
                             </div>
+                            {% if bio_data_error and not bio_data_values.gender %}
+                            <p class="mt-1 text-sm text-red-600">Gender is required</p>
+                            {% endif %}
                         </div>
+                    </div>
+
+                    <!-- Bio Data Submit Button -->
+                    <div class="mt-6 flex justify-end">
+                        <button type="submit" name="submit_bio_data" value="1"
+                                class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300 transform hover:scale-105">
+                            <i class="fas fa-arrow-right mr-2"></i> Continue to Assessment
+                        </button>
                     </div>
                 </div>
             </div>
+            {% endif %}
+
+            <!-- Questions Section - Only shown after bio data has been collected -->
+            <div id="questions-section" class="{% if not bio_data_collected and not request.session.bio_data_collected %}hidden{% endif %}">
 
             <!-- Progress Bar -->
             <div class="mb-8">
@@ -99,6 +124,7 @@
                     <div class="bg-white shadow overflow-hidden sm:rounded-lg question-container transform transition-all duration-500 hover:shadow-md"
                          id="question-{{ question.id }}"
                          data-question-index="{{ forloop.counter0 }}"
+                         data-question-type="{{ question.question_type }}"
                          style="display: {% if forloop.first %}block{% else %}none{% endif %};"
                          x-data="{ focused: false }"
                          x-on:focusin="focused = true"
@@ -133,6 +159,13 @@
                                 <input type="number" name="question_{{ question.id }}" id="question_{{ question.id }}"
                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-300"
                                        {% if question.required %}required{% endif %}>
+                                {% if messages %}
+                                    {% for message in messages %}
+                                        {% if 'question_{{ question.id }}' in message.tags %}
+                                            <p class="mt-1 text-sm text-red-600 error-message">{{ message }}</p>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
 
                             {% elif question.question_type == 'single_choice' %}
                                 <fieldset>
@@ -149,6 +182,14 @@
                                             </div>
                                         {% endfor %}
                                     </div>
+                                    {% if messages %}
+                                        {% for message in messages %}
+                                            {% if 'question_{{ question.id }}' in message.tags %}
+                                                <p class="mt-1 text-sm text-red-600 error-message">{{ message }}</p>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                    <div class="single-choice-error mt-1 text-sm text-red-600 error-message" style="display: none;">Please select an option</div>
                                 </fieldset>
 
                             {% elif question.question_type == 'multiple_choice' %}
@@ -165,6 +206,14 @@
                                             </div>
                                         {% endfor %}
                                     </div>
+                                    {% if messages %}
+                                        {% for message in messages %}
+                                            {% if 'question_{{ question.id }}' in message.tags %}
+                                                <p class="mt-1 text-sm text-red-600 error-message">{{ message }}</p>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                    <div class="multiple-choice-error mt-1 text-sm text-red-600 error-message" style="display: none;">Please select at least one option</div>
                                 </fieldset>
 
                             {% elif question.question_type == 'scale' %}
@@ -180,17 +229,57 @@
                                     <div class="mt-2 text-center">
                                         <span class="text-sm font-medium text-gray-700" id="scale_value_{{ question.id }}">5</span>
                                     </div>
+                                    {% if messages %}
+                                        {% for message in messages %}
+                                            {% if 'question_{{ question.id }}' in message.tags %}
+                                                <p class="mt-1 text-sm text-red-600 error-message">{{ message }}</p>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
                                 </div>
+
+                            {% elif question.question_type == 'country' %}
+                                <select name="question_{{ question.id }}" id="question_{{ question.id }}"
+                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-300"
+                                       {% if question.required %}required{% endif %}>
+                                    <option value="">Select a country</option>
+                                    {% load countries %}
+                                    {% get_countries as countries %}
+                                    {% for country in countries %}
+                                        <option value="{{ country.code }}">{{ country.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                {% if messages %}
+                                    {% for message in messages %}
+                                        {% if 'question_{{ question.id }}' in message.tags %}
+                                            <p class="mt-1 text-sm text-red-600 error-message">{{ message }}</p>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
 
                             {% elif question.question_type == 'date' %}
                                 <input type="date" name="question_{{ question.id }}" id="question_{{ question.id }}"
                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-300"
                                        {% if question.required %}required{% endif %}>
+                                {% if messages %}
+                                    {% for message in messages %}
+                                        {% if 'question_{{ question.id }}' in message.tags %}
+                                            <p class="mt-1 text-sm text-red-600 error-message">{{ message }}</p>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
 
                             {% elif question.question_type == 'time' %}
                                 <input type="time" name="question_{{ question.id }}" id="question_{{ question.id }}"
                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-300"
                                        {% if question.required %}required{% endif %}>
+                                {% if messages %}
+                                    {% for message in messages %}
+                                        {% if 'question_{{ question.id }}' in message.tags %}
+                                            <p class="mt-1 text-sm text-red-600 error-message">{{ message }}</p>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
 
                             {% elif question.question_type == 'file' %}
                                 <input type="file" name="question_{{ question.id }}" id="question_{{ question.id }}"
@@ -202,8 +291,8 @@
                 {% endfor %}
             </div>
 
-            <!-- Navigation Buttons -->
-            <div class="flex justify-between mt-8">
+            <!-- Navigation Buttons - Only shown after bio data has been collected -->
+            <div class="flex justify-between mt-8 {% if not bio_data_collected and not request.session.bio_data_collected %}hidden{% endif %}">
                 <button type="button" id="prev-button" class="inline-flex items-center px-5 py-2.5 border border-gray-300 shadow-sm text-sm font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300" style="display: none;">
                     <i class="fas fa-arrow-left mr-2"></i> Previous
                 </button>
@@ -233,7 +322,15 @@
         const nextButton = document.getElementById('next-button');
         const submitButton = document.getElementById('submit-button');
         const form = document.getElementById('questionnaireForm');
+        const bioDataSection = document.getElementById('bio-data-section');
+        const questionsSection = document.getElementById('questions-section');
         let currentQuestionIndex = 0;
+
+        // Check if bio data has been collected
+        const bioDataCollected = {% if bio_data_collected or request.session.bio_data_collected %}true{% else %}false{% endif %};
+
+        // Check if this is a patient questionnaire
+        const isPatientQuestionnaire = {% if is_patient_questionnaire %}true{% else %}false{% endif %};
 
         console.log(`Found ${totalQuestions} questions`);
 
@@ -270,6 +367,8 @@
 
                 inputs.forEach(input => {
                     const dataRequired = input.getAttribute('data-required') === 'true';
+
+                    // Check if required field is empty
                     if ((input.required || dataRequired) && !input.value) {
                         isValid = false;
                         input.classList.add('border-red-500');
@@ -277,8 +376,131 @@
                         setTimeout(() => {
                             input.classList.remove('animate-shake');
                         }, 500);
+
+                        // Add error message if it doesn't exist
+                        let errorMsg = input.nextElementSibling;
+                        if (!errorMsg || !errorMsg.classList.contains('error-message')) {
+                            errorMsg = document.createElement('p');
+                            errorMsg.className = 'mt-1 text-sm text-red-600 error-message';
+                            errorMsg.textContent = 'This field is required';
+                            input.parentNode.insertBefore(errorMsg, input.nextSibling);
+                        }
                     } else {
                         input.classList.remove('border-red-500');
+
+                        // Remove error message if it exists
+                        const errorMsg = input.nextElementSibling;
+                        if (errorMsg && errorMsg.classList.contains('error-message')) {
+                            errorMsg.remove();
+                        }
+
+                        // Validate input type against question type
+                        const questionType = currentQuestion.getAttribute('data-question-type');
+                        const inputType = input.type;
+
+                        // Type validation
+                        let typeError = false;
+                        let errorMessage = '';
+
+                        if (input.value) {
+                            if (questionType === 'number' && inputType === 'number') {
+                                if (isNaN(parseFloat(input.value))) {
+                                    typeError = true;
+                                    errorMessage = 'Please enter a valid number';
+                                }
+                            } else if (questionType === 'scale' && inputType === 'range') {
+                                if (isNaN(parseFloat(input.value))) {
+                                    typeError = true;
+                                    errorMessage = 'Please select a value on the scale';
+                                }
+                            } else if (questionType === 'date' && inputType === 'date') {
+                                if (!/^\d{4}-\d{2}-\d{2}$/.test(input.value)) {
+                                    typeError = true;
+                                    errorMessage = 'Please enter a valid date (YYYY-MM-DD)';
+                                }
+                            } else if (questionType === 'time' && inputType === 'time') {
+                                if (!/^\d{2}:\d{2}$/.test(input.value)) {
+                                    typeError = true;
+                                    errorMessage = 'Please enter a valid time (HH:MM)';
+                                }
+                            } else if (questionType === 'email' && inputType === 'email') {
+                                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value)) {
+                                    typeError = true;
+                                    errorMessage = 'Please enter a valid email address';
+                                }
+                            } else if (questionType === 'country' && inputType === 'select-one') {
+                                if (!input.value) {
+                                    typeError = true;
+                                    errorMessage = 'Please select a country';
+                                }
+                            }
+                        }
+
+                        // Special validation for radio buttons and checkboxes
+                        if ((questionType === 'single_choice' || questionType === 'radio' || questionType === 'multiple_choice') &&
+                            (inputType === 'radio' || inputType === 'checkbox')) {
+                            // Check if any option in the group is selected
+                            const name = input.getAttribute('name');
+                            const checkedInputs = currentQuestion.querySelectorAll(`input[name="${name}"]:checked`);
+
+                            if (checkedInputs.length === 0 && (input.hasAttribute('data-required') || input.required)) {
+                                typeError = true;
+                                errorMessage = 'Please select an option';
+
+                                // Only show error on the first input of the group
+                                const allInputsInGroup = currentQuestion.querySelectorAll(`input[name="${name}"]`);
+                                if (input !== allInputsInGroup[0]) {
+                                    typeError = false;
+                                } else {
+                                    // Show the error message in the dedicated error div
+                                    let errorDiv;
+                                    if (questionType === 'single_choice') {
+                                        errorDiv = currentQuestion.querySelector('.single-choice-error');
+                                    } else if (questionType === 'multiple_choice') {
+                                        errorDiv = currentQuestion.querySelector('.multiple-choice-error');
+                                    }
+
+                                    if (errorDiv) {
+                                        errorDiv.style.display = 'block';
+                                        errorDiv.textContent = errorMessage;
+                                        // Don't add another error message
+                                        typeError = false;
+                                    }
+                                }
+                            } else {
+                                // Hide the error message if an option is selected
+                                let errorDiv;
+                                if (questionType === 'single_choice') {
+                                    errorDiv = currentQuestion.querySelector('.single-choice-error');
+                                } else if (questionType === 'multiple_choice') {
+                                    errorDiv = currentQuestion.querySelector('.multiple-choice-error');
+                                }
+
+                                if (errorDiv) {
+                                    errorDiv.style.display = 'none';
+                                }
+                            }
+                        }
+
+                        if (typeError) {
+                            isValid = false;
+                            input.classList.add('border-red-500');
+                            input.classList.add('animate-shake');
+                            setTimeout(() => {
+                                input.classList.remove('animate-shake');
+                            }, 500);
+
+                            // Add type error message
+                            let errorMsg = input.nextElementSibling;
+                            if (!errorMsg || !errorMsg.classList.contains('error-message')) {
+                                errorMsg = document.createElement('p');
+                                errorMsg.className = 'mt-1 text-sm text-red-600 error-message';
+                                errorMsg.textContent = errorMessage;
+                                input.parentNode.insertBefore(errorMsg, input.nextSibling);
+                            } else {
+                                errorMsg.textContent = errorMessage;
+                            }
+                        }
                     }
                 });
 
@@ -355,40 +577,72 @@
             form.addEventListener('submit', function(event) {
                 console.log('Form submitted');
 
-                // Validate email field
-                const emailField = document.getElementById('patient_email');
-                if (emailField && emailField.value.trim() === '') {
-                    event.preventDefault();
-                    emailField.classList.add('border-red-500');
-                    emailField.classList.add('animate-shake');
-                    setTimeout(() => {
-                        emailField.classList.remove('animate-shake');
-                    }, 500);
+                // Check if this is a patient questionnaire
+                const isPatientQuestionnaire = {% if is_patient_questionnaire %}true{% else %}false{% endif %};
 
-                    // Scroll to the email field
-                    emailField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    return false;
-                }
+                // Validate patient information fields if this is a patient questionnaire
+                if (isPatientQuestionnaire) {
+                    // Validate email field
+                    const emailField = document.getElementById('patient_email');
+                    if (emailField && emailField.value.trim() === '') {
+                        event.preventDefault();
+                        emailField.classList.add('border-red-500');
+                        emailField.classList.add('animate-shake');
+                        setTimeout(() => {
+                            emailField.classList.remove('animate-shake');
+                        }, 500);
 
-                // Re-enable required attributes for final validation
-                document.querySelectorAll('[data-required="true"]').forEach(el => {
-                    el.setAttribute('required', 'required');
-                });
+                        // Scroll to the email field
+                        emailField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return false;
+                    }
 
-                // Make sure age is a number or empty
-                const ageField = document.getElementById('patient_age');
-                if (ageField && ageField.value.trim() !== '') {
-                    const ageValue = parseInt(ageField.value);
-                    if (isNaN(ageValue)) {
+                    // Validate age field
+                    const ageField = document.getElementById('patient_age');
+                    if (ageField && ageField.value.trim() === '') {
                         event.preventDefault();
                         ageField.classList.add('border-red-500');
                         ageField.classList.add('animate-shake');
                         setTimeout(() => {
                             ageField.classList.remove('animate-shake');
                         }, 500);
+
+                        // Scroll to the age field
+                        ageField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return false;
+                    } else if (ageField && ageField.value.trim() !== '') {
+                        const ageValue = parseInt(ageField.value);
+                        if (isNaN(ageValue) || ageValue < 1 || ageValue > 120) {
+                            event.preventDefault();
+                            ageField.classList.add('border-red-500');
+                            ageField.classList.add('animate-shake');
+                            setTimeout(() => {
+                                ageField.classList.remove('animate-shake');
+                            }, 500);
+                            return false;
+                        }
+                    }
+
+                    // Validate gender field
+                    const genderField = document.getElementById('patient_gender');
+                    if (genderField && genderField.value.trim() === '') {
+                        event.preventDefault();
+                        genderField.classList.add('border-red-500');
+                        genderField.classList.add('animate-shake');
+                        setTimeout(() => {
+                            genderField.classList.remove('animate-shake');
+                        }, 500);
+
+                        // Scroll to the gender field
+                        genderField.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         return false;
                     }
                 }
+
+                // Re-enable required attributes for final validation
+                document.querySelectorAll('[data-required="true"]').forEach(el => {
+                    el.setAttribute('required', 'required');
+                });
             });
         }
 
@@ -446,6 +700,16 @@
     input:focus, textarea:focus, select:focus {
         border-color: #4f46e5;
         box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+    }
+
+    /* Bio data section animation */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.8s ease-out forwards;
     }
 
     /* Error state */

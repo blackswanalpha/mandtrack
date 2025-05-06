@@ -45,20 +45,20 @@
             <div class="nav-section-title">Main Navigation</div>
             <ul class="nav-items">
                 <li class="nav-item">
-                    <a href="{% if request.user.is_staff %}{% url 'dashboard:admin_dashboard' %}{% else %}{% url 'dashboard:user_dashboard' %}{% endif %}" 
+                    <a href="{% if request.user.is_staff %}{% url 'dashboard:admin_dashboard' %}{% else %}{% url 'dashboard:user_dashboard' %}{% endif %}"
                        class="nav-link {% if request.resolver_match.url_name == 'user_dashboard' or request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
                         <i class="fas fa-tachometer-alt nav-icon"></i>
                         <span class="nav-text">Dashboard</span>
                     </a>
                 </li>
-                
+
                 <!-- Questionnaires -->
                 <li class="nav-item">
-                    <a href="#submenu-questionnaires" 
+                    <a href="#submenu-questionnaires"
                        class="nav-link submenu-toggle {% if request.resolver_match.namespace == 'surveys' %}active{% endif %}"
-                       data-bs-toggle="collapse" 
-                       role="button" 
-                       aria-expanded="{% if request.resolver_match.namespace == 'surveys' %}true{% else %}false{% endif %}" 
+                       data-bs-toggle="collapse"
+                       role="button"
+                       aria-expanded="{% if request.resolver_match.namespace == 'surveys' %}true{% else %}false{% endif %}"
                        aria-controls="submenu-questionnaires">
                         <i class="fas fa-clipboard-list nav-icon"></i>
                         <span class="nav-text">Questionnaires</span>
@@ -66,33 +66,33 @@
                     </a>
                     <ul class="submenu collapse {% if request.resolver_match.namespace == 'surveys' %}show{% endif %}" id="submenu-questionnaires">
                         <li class="submenu-item">
-                            <a href="{% url 'surveys:survey_list' %}" class="submenu-link {% if request.resolver_match.url_name == 'survey_list' %}active{% endif %}">
+                            <a href="#" class="submenu-link {% if request.resolver_match.url_name == 'survey_list' %}active{% endif %}">
                                 <i class="fas fa-list submenu-icon"></i>
                                 <span>All Questionnaires</span>
                             </a>
                         </li>
                         <li class="submenu-item">
-                            <a href="{% url 'surveys:survey_create' %}" class="submenu-link {% if request.resolver_match.url_name == 'survey_create' %}active{% endif %}">
+                            <a href="#" class="submenu-link {% if request.resolver_match.url_name == 'survey_create' %}active{% endif %}">
                                 <i class="fas fa-plus-circle submenu-icon"></i>
                                 <span>Create New</span>
                             </a>
                         </li>
                         <li class="submenu-item">
-                            <a href="{% url 'surveys:qr_code_list' %}" class="submenu-link {% if request.resolver_match.url_name == 'qr_code_list' %}active{% endif %}">
+                            <a href="#" class="submenu-link {% if request.resolver_match.url_name == 'qr_code_list' %}active{% endif %}">
                                 <i class="fas fa-qrcode submenu-icon"></i>
                                 <span>QR Codes</span>
                             </a>
                         </li>
                     </ul>
                 </li>
-                
+
                 <!-- Organizations -->
                 <li class="nav-item">
-                    <a href="#submenu-organizations" 
+                    <a href="#submenu-organizations"
                        class="nav-link submenu-toggle {% if request.resolver_match.namespace == 'groups' %}active{% endif %}"
-                       data-bs-toggle="collapse" 
-                       role="button" 
-                       aria-expanded="{% if request.resolver_match.namespace == 'groups' %}true{% else %}false{% endif %}" 
+                       data-bs-toggle="collapse"
+                       role="button"
+                       aria-expanded="{% if request.resolver_match.namespace == 'groups' %}true{% else %}false{% endif %}"
                        aria-controls="submenu-organizations">
                         <i class="fas fa-building nav-icon"></i>
                         <span class="nav-text">Organizations</span>
@@ -121,17 +121,17 @@
                 </li>
             </ul>
         </div>
-        
+
         <!-- Analytics Section -->
         <div class="nav-section">
             <div class="nav-section-title">Analytics</div>
             <ul class="nav-items">
                 <li class="nav-item">
-                    <a href="#submenu-analytics" 
+                    <a href="#submenu-analytics"
                        class="nav-link submenu-toggle {% if request.resolver_match.namespace == 'analytics' %}active{% endif %}"
-                       data-bs-toggle="collapse" 
-                       role="button" 
-                       aria-expanded="{% if request.resolver_match.namespace == 'analytics' %}true{% else %}false{% endif %}" 
+                       data-bs-toggle="collapse"
+                       role="button"
+                       aria-expanded="{% if request.resolver_match.namespace == 'analytics' %}true{% else %}false{% endif %}"
                        aria-controls="submenu-analytics">
                         <i class="fas fa-chart-bar nav-icon"></i>
                         <span class="nav-text">Analysis</span>
@@ -139,7 +139,7 @@
                     </a>
                     <ul class="submenu collapse {% if request.resolver_match.namespace == 'analytics' %}show{% endif %}" id="submenu-analytics">
                         <li class="submenu-item">
-                            <a href="{% url 'analytics:dashboard' %}" class="submenu-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                            <a href="#" class="submenu-link">
                                 <i class="fas fa-tachometer-alt submenu-icon"></i>
                                 <span>Dashboard</span>
                             </a>
@@ -158,27 +158,72 @@
                         </li>
                     </ul>
                 </li>
-                
+
+                <li class="nav-item">
+                    <a href="#submenu-assessments"
+                       class="nav-link submenu-toggle {% if request.resolver_match.namespace == 'assessments' %}active{% endif %}"
+                       data-bs-toggle="collapse"
+                       role="button"
+                       aria-expanded="{% if request.resolver_match.namespace == 'assessments' %}true{% else %}false{% endif %}"
+                       aria-controls="submenu-assessments">
+                        <i class="fas fa-heartbeat nav-icon"></i>
+                        <span class="nav-text">Patient Assessments</span>
+                        <i class="fas fa-chevron-down nav-arrow"></i>
+                        <span class="nav-badge">New</span>
+                    </a>
+                    <ul class="submenu collapse {% if request.resolver_match.namespace == 'assessments' %}show{% endif %}" id="submenu-assessments">
+                        <li class="submenu-item">
+                            <a href="#" class="submenu-link {% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == 'assessments' %}active{% endif %}">
+                                <i class="fas fa-tachometer-alt submenu-icon"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="#" class="submenu-link {% if request.resolver_match.url_name == 'assessment_list' %}active{% endif %}">
+                                <i class="fas fa-list submenu-icon"></i>
+                                <span>All Assessments</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="#" class="submenu-link {% if request.resolver_match.url_name == 'assessment_create' %}active{% endif %}">
+                                <i class="fas fa-plus-circle submenu-icon"></i>
+                                <span>New Assessment</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="#" class="submenu-link {% if request.resolver_match.url_name == 'consultation_calendar' %}active{% endif %}">
+                                <i class="fas fa-calendar-alt submenu-icon"></i>
+                                <span>Consultation Calendar</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="#" class="submenu-link {% if request.resolver_match.url_name == 'patient_progress' %}active{% endif %}">
+                                <i class="fas fa-chart-line submenu-icon"></i>
+                                <span>Patient Progress</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
                 <li class="nav-item">
                     <a href="#" class="nav-link">
                         <i class="fas fa-file-export nav-icon"></i>
                         <span class="nav-text">Export Data</span>
-                        <span class="nav-badge">New</span>
                     </a>
                 </li>
             </ul>
         </div>
-        
+
         <!-- User Management Section -->
         <div class="nav-section">
             <div class="nav-section-title">User Management</div>
             <ul class="nav-items">
                 <li class="nav-item">
-                    <a href="#submenu-users" 
+                    <a href="#submenu-users"
                        class="nav-link submenu-toggle {% if request.resolver_match.namespace == 'users' %}active{% endif %}"
-                       data-bs-toggle="collapse" 
-                       role="button" 
-                       aria-expanded="{% if request.resolver_match.namespace == 'users' %}true{% else %}false{% endif %}" 
+                       data-bs-toggle="collapse"
+                       role="button"
+                       aria-expanded="{% if request.resolver_match.namespace == 'users' %}true{% else %}false{% endif %}"
                        aria-controls="submenu-users">
                         <i class="fas fa-users nav-icon"></i>
                         <span class="nav-text">Users</span>
@@ -205,13 +250,13 @@
                         </li>
                     </ul>
                 </li>
-                
+
                 <li class="nav-item">
-                    <a href="#submenu-metrics" 
+                    <a href="#submenu-metrics"
                        class="nav-link submenu-toggle"
-                       data-bs-toggle="collapse" 
-                       role="button" 
-                       aria-expanded="false" 
+                       data-bs-toggle="collapse"
+                       role="button"
+                       aria-expanded="false"
                        aria-controls="submenu-metrics">
                         <i class="fas fa-chart-pie nav-icon"></i>
                         <span class="nav-text">User Metrics</span>
@@ -234,17 +279,17 @@
                 </li>
             </ul>
         </div>
-        
+
         <!-- Communication Section -->
         <div class="nav-section">
             <div class="nav-section-title">Communication</div>
             <ul class="nav-items">
                 <li class="nav-item">
-                    <a href="#submenu-email" 
+                    <a href="#submenu-email"
                        class="nav-link submenu-toggle"
-                       data-bs-toggle="collapse" 
-                       role="button" 
-                       aria-expanded="false" 
+                       data-bs-toggle="collapse"
+                       role="button"
+                       aria-expanded="false"
                        aria-controls="submenu-email">
                         <i class="fas fa-envelope nav-icon"></i>
                         <span class="nav-text">Email</span>
@@ -271,13 +316,13 @@
                         </li>
                     </ul>
                 </li>
-                
+
                 <li class="nav-item">
-                    <a href="#submenu-google" 
+                    <a href="#submenu-google"
                        class="nav-link submenu-toggle"
-                       data-bs-toggle="collapse" 
-                       role="button" 
-                       aria-expanded="false" 
+                       data-bs-toggle="collapse"
+                       role="button"
+                       aria-expanded="false"
                        aria-controls="submenu-google">
                         <i class="fab fa-google nav-icon"></i>
                         <span class="nav-text">Google Forms</span>
@@ -300,18 +345,18 @@
                 </li>
             </ul>
         </div>
-        
+
         <!-- Admin Section (only for staff users) -->
         {% if request.user.is_staff %}
         <div class="nav-section">
             <div class="nav-section-title">Administration</div>
             <ul class="nav-items">
                 <li class="nav-item">
-                    <a href="#submenu-admin" 
+                    <a href="#submenu-admin"
                        class="nav-link submenu-toggle {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"
-                       data-bs-toggle="collapse" 
-                       role="button" 
-                       aria-expanded="{% if request.resolver_match.url_name == 'admin_dashboard' %}true{% else %}false{% endif %}" 
+                       data-bs-toggle="collapse"
+                       role="button"
+                       aria-expanded="{% if request.resolver_match.url_name == 'admin_dashboard' %}true{% else %}false{% endif %}"
                        aria-controls="submenu-admin">
                         <i class="fas fa-user-shield nav-icon"></i>
                         <span class="nav-text">Admin Tools</span>
@@ -348,7 +393,7 @@
         </div>
         {% endif %}
     </div>
-    
+
     <!-- Settings Section -->
     <div class="sidebar-settings">
         <div class="settings-item">
@@ -362,7 +407,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Footer -->
     <div class="sidebar-footer">
         <p>MindTrack v1.0.0</p>

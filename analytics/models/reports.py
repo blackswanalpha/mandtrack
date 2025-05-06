@@ -2,7 +2,6 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
-from surveys.models import Questionnaire
 from groups.models import Organization
 
 class Report(models.Model):
@@ -42,7 +41,8 @@ class Report(models.Model):
     pdf_file = models.FileField(upload_to='reports/pdf/', null=True, blank=True, help_text="PDF version of the report")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     error_message = models.TextField(blank=True)
-    questionnaire = models.ForeignKey(Questionnaire, on_delete=models.SET_NULL, null=True, blank=True, related_name='reports')
+    # Use the correct model reference with the actual database model name
+    questionnaire = models.ForeignKey('surveys.SurveysQuestionnaire', on_delete=models.SET_NULL, null=True, blank=True, related_name='reports')
     organization = models.ForeignKey(Organization, on_delete=models.SET_NULL, null=True, blank=True, related_name='reports')
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_reports')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -104,7 +104,8 @@ class ReportSchedule(models.Model):
     frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES)
     next_run = models.DateTimeField()
     is_active = models.BooleanField(default=True)
-    questionnaire = models.ForeignKey(Questionnaire, on_delete=models.SET_NULL, null=True, blank=True, related_name='report_schedules')
+    # Use the correct model reference with the actual database model name
+    questionnaire = models.ForeignKey('surveys.SurveysQuestionnaire', on_delete=models.SET_NULL, null=True, blank=True, related_name='report_schedules')
     organization = models.ForeignKey(Organization, on_delete=models.SET_NULL, null=True, blank=True, related_name='report_schedules')
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_report_schedules')
     created_at = models.DateTimeField(auto_now_add=True)

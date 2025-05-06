@@ -10,6 +10,7 @@ import json
 
 from .models import Response, Answer
 from .models.base import AIAnalysis
+# Import models from surveys app
 from surveys.models import Questionnaire, Question, QuestionChoice
 
 @login_required
@@ -352,23 +353,45 @@ def respond_to_questionnaire(request, questionnaire_pk):
     is_creator = request.user.is_authenticated and request.user == questionnaire.created_by
     is_admin = request.user.is_authenticated and request.user.is_staff
 
+    # Flag to indicate if this is a patient questionnaire (requires bio data)
+    # For now, we'll treat all questionnaires as patient questionnaires to ensure bio data is collected
+    is_patient_questionnaire = True  # Force bio data collection for all questionnaires
+
     # Check if the questionnaire is active (skip check for preview mode or if user is creator/admin)
     if questionnaire.status != 'active' and not (is_preview or is_creator or is_admin):
         messages.error(request, "This questionnaire is not currently active.")
         return redirect('surveys:survey_list')
 
-    # Check if authentication is required (skip for preview mode or if user is creator/admin)
-    if questionnaire.requires_auth and not request.user.is_authenticated and not (is_preview or is_creator or is_admin):
-        messages.error(request, "You need to be logged in to respond to this questionnaire.")
-        return redirect('account_login')
+    # For patient flow, we want to allow anonymous access regardless of settings
+    # Check if this is a direct access from QR code or URL
+    is_direct_access = request.GET.get('direct') == 'true' or 'direct' in request.session
 
-    # Check if anonymous responses are allowed
-    if not questionnaire.allow_anonymous and not request.user.is_authenticated:
-        messages.error(request, "Anonymous responses are not allowed for this questionnaire.")
-        return redirect('account_login')
+    # If this is not direct access, apply normal authentication rules
+    if not is_direct_access:
+        # Check if authentication is required (skip for preview mode or if user is creator/admin)
+        if questionnaire.requires_auth and not request.user.is_authenticated and not (is_preview or is_creator or is_admin):
+            messages.error(request, "You need to be logged in to respond to this questionnaire.")
+            return redirect('account_login')
+
+        # Check if anonymous responses are allowed
+        if not questionnaire.allow_anonymous and not request.user.is_authenticated:
+            messages.error(request, "Anonymous responses are not allowed for this questionnaire.")
+            return redirect('account_login')
+
+    # Check if this is an organization-specific questionnaire
+    if questionnaire.organization and not (is_preview or is_creator or is_admin):
+        # If user is authenticated, check if they are a member of the organization
+        if request.user.is_authenticated:
+            user_is_member = questionnaire.organization.members.filter(user=request.user, is_active=True).exists()
+            if not user_is_member:
+                messages.error(request, "You don't have permission to access this questionnaire.")
+                return render(request, 'errors/organization_access_denied.html')
 
     # Get all questions for this questionnaire
     questions = Question.objects.filter(survey=questionnaire).order_by('order').prefetch_related('choices')
+
+    # Check if bio data has been collected from the QR code flow
+    bio_data_collected = request.session.get('bio_data_collected', False)
 
     # Create a new response if this is a GET request
     if request.method == 'GET':
@@ -380,19 +403,130 @@ def respond_to_questionnaire(request, questionnaire_pk):
             ip_address=request.META.get('REMOTE_ADDR'),
             user_agent=request.META.get('HTTP_USER_AGENT')
         )
+
+        # If bio data was collected in the QR code flow, add it to the response
+        if bio_data_collected:
+            response.patient_email = request.session.get('patient_email', '')
+            response.patient_age = request.session.get('patient_age')
+            response.patient_gender = request.session.get('patient_gender', '')
+
         response.save()
 
         # Store the response ID in the session
         request.session['current_response_id'] = str(response.id)
 
+        # Only record the start time if bio data has been collected
+        # This ensures we don't start timing until the patient actually starts answering questions
+        if bio_data_collected:
+            from django.utils import timezone
+            request.session['response_start_time'] = timezone.now().timestamp()
+
         return render(request, 'feedback/respond_to_questionnaire.html', {
             'questionnaire': questionnaire,
             'questions': questions,
-            'response': response
+            'response': response,
+            'is_patient_questionnaire': is_patient_questionnaire,
+            'bio_data_collected': bio_data_collected
         })
 
     # Process the form submission if this is a POST request
     elif request.method == 'POST':
+        # Check if this is a bio data submission
+        if 'submit_bio_data' in request.POST and is_patient_questionnaire:
+            # Get the response ID from the session
+            response_id = request.session.get('current_response_id')
+            if not response_id:
+                messages.error(request, "Your session has expired. Please start again.")
+                return redirect('feedback:respond_to_questionnaire', questionnaire_pk=questionnaire_pk)
+
+            # Get the response
+            response = get_object_or_404(Response, pk=response_id)
+
+            # Validate required bio data fields
+            patient_email = request.POST.get('patient_email', '').strip()
+            patient_age = request.POST.get('patient_age', '').strip()
+            patient_gender = request.POST.get('patient_gender', '').strip()
+
+            # Check if all required fields are provided
+            bio_data_error = False
+            bio_data_values = {
+                'email': patient_email,
+                'age': patient_age,
+                'gender': patient_gender
+            }
+
+            if not patient_email:
+                bio_data_error = True
+                messages.error(request, "Email is required.")
+
+            if not patient_age:
+                bio_data_error = True
+                messages.error(request, "Age is required.")
+
+            if not patient_gender:
+                bio_data_error = True
+                messages.error(request, "Gender is required.")
+
+            # If validation fails, return to the form with errors
+            if bio_data_error:
+                return render(request, 'feedback/respond_to_questionnaire.html', {
+                    'questionnaire': questionnaire,
+                    'questions': questions,
+                    'response': response,
+                    'is_patient_questionnaire': is_patient_questionnaire,
+                    'bio_data_collected': False,
+                    'bio_data_error': True,
+                    'bio_data_values': bio_data_values
+                })
+
+            # Update bio data
+            response.patient_email = patient_email
+
+            # Handle patient age
+            try:
+                response.patient_age = int(patient_age)
+                if response.patient_age < 1 or response.patient_age > 120:
+                    messages.error(request, "Age must be between 1 and 120.")
+                    return render(request, 'feedback/respond_to_questionnaire.html', {
+                        'questionnaire': questionnaire,
+                        'questions': questions,
+                        'response': response,
+                        'is_patient_questionnaire': is_patient_questionnaire,
+                        'bio_data_collected': False,
+                        'bio_data_error': True,
+                        'bio_data_values': bio_data_values
+                    })
+            except ValueError:
+                messages.error(request, "Age must be a valid number.")
+                return render(request, 'feedback/respond_to_questionnaire.html', {
+                    'questionnaire': questionnaire,
+                    'questions': questions,
+                    'response': response,
+                    'is_patient_questionnaire': is_patient_questionnaire,
+                    'bio_data_collected': False,
+                    'bio_data_error': True,
+                    'bio_data_values': bio_data_values
+                })
+
+            response.patient_gender = patient_gender
+            response.save()
+
+            # Set flag to indicate bio data has been collected
+            request.session['bio_data_collected'] = True
+
+            # Store bio data in session
+            request.session['patient_email'] = response.patient_email
+            request.session['patient_age'] = response.patient_age
+            request.session['patient_gender'] = response.patient_gender
+
+            # Start the timer now that bio data has been collected
+            from django.utils import timezone
+            request.session['response_start_time'] = timezone.now().timestamp()
+
+            # Redirect back to the same page to show questions
+            messages.success(request, "Patient information saved. Please complete the questionnaire.")
+            return redirect('feedback:respond_to_questionnaire', questionnaire_pk=questionnaire_pk)
+
         # Get the response ID from the session
         response_id = request.session.get('current_response_id')
         if not response_id:
@@ -402,22 +536,23 @@ def respond_to_questionnaire(request, questionnaire_pk):
         # Get the response
         response = get_object_or_404(Response, pk=response_id)
 
-        # Update demographic information
-        response.patient_name = request.POST.get('patient_name', '')
-        response.patient_email = request.POST.get('patient_email', '')
+        # Update demographic information if not already set
+        if not response.patient_email:
+            response.patient_email = request.POST.get('patient_email', '')
 
-        # Handle patient age - convert to integer if provided, otherwise set to None
-        patient_age = request.POST.get('patient_age', '')
-        if patient_age and patient_age.strip():
-            try:
-                response.patient_age = int(patient_age)
-            except ValueError:
-                # If conversion fails, set to None
-                response.patient_age = None
-        else:
-            response.patient_age = None
+        if response.patient_age is None:
+            # Handle patient age - convert to integer if provided, otherwise set to None
+            patient_age = request.POST.get('patient_age', '')
+            if patient_age and patient_age.strip():
+                try:
+                    response.patient_age = int(patient_age)
+                except ValueError:
+                    # If conversion fails, set to None
+                    response.patient_age = None
 
-        response.patient_gender = request.POST.get('patient_gender', '')
+        if not response.patient_gender:
+            response.patient_gender = request.POST.get('patient_gender', '')
+
         response.save()
 
         # Process each question
@@ -439,33 +574,92 @@ def respond_to_questionnaire(request, questionnaire_pk):
                 answer = Answer(response=response, question=question)
 
             # Process the answer based on question type
-            if question.question_type == 'text' or question.question_type == 'textarea':
+            try:
+                if question.question_type == 'text' or question.question_type == 'textarea':
+                    answer.text_answer = request.POST.get(answer_key, '')
+                    answer.save()  # Save before adding many-to-many relationships
+
+                elif question.question_type == 'single_choice':
+                    choice_id = request.POST.get(answer_key)
+                    if choice_id:
+                        try:
+                            answer.selected_choice = get_object_or_404(QuestionChoice, pk=choice_id)
+                        except:
+                            messages.error(request, f"Invalid choice selected for question: {question.text}", extra_tags=f"question_{question.id}")
+                    elif question.required:
+                        messages.error(request, f"Please select an option for question: {question.text}", extra_tags=f"question_{question.id}")
+                    answer.save()  # Save before adding many-to-many relationships
+
+                elif question.question_type == 'multiple_choice':
+                    # Save first to get an ID for the many-to-many relationship
+                    answer.save()
+
+                    # Clear existing choices if updating
+                    if existing_answer:
+                        answer.multiple_choices.clear()
+
+                    # Add new choices
+                    choice_ids = request.POST.getlist(answer_key)
+
+                    # Check if required and no choices selected
+                    if not choice_ids and question.required:
+                        messages.error(request, f"Please select at least one option for question: {question.text}", extra_tags=f"question_{question.id}")
+
+                    for choice_id in choice_ids:
+                        try:
+                            choice = get_object_or_404(QuestionChoice, pk=choice_id)
+                            answer.multiple_choices.add(choice)
+                        except:
+                            messages.error(request, f"Invalid choice selected for question: {question.text}", extra_tags=f"question_{question.id}")
+
+                elif question.question_type == 'number' or question.question_type == 'scale':
+                    try:
+                        answer.numeric_value = float(request.POST.get(answer_key, 0))
+                    except ValueError:
+                        # Handle invalid number input
+                        messages.error(request, f"Invalid number format for question: {question.text}", extra_tags=f"question_{question.id}")
+                        # Set a default value
+                        answer.numeric_value = 0
+                    answer.save()  # Save before adding many-to-many relationships
+
+                elif question.question_type == 'date':
+                    try:
+                        date_str = request.POST.get(answer_key, '')
+                        if date_str:
+                            from datetime import datetime
+                            answer.date_value = datetime.strptime(date_str, '%Y-%m-%d').date()
+                        answer.save()
+                    except ValueError:
+                        messages.error(request, f"Invalid date format for question: {question.text}", extra_tags=f"question_{question.id}")
+                        answer.save()
+
+                elif question.question_type == 'time':
+                    try:
+                        time_str = request.POST.get(answer_key, '')
+                        if time_str:
+                            from datetime import datetime
+                            answer.time_value = datetime.strptime(time_str, '%H:%M').time()
+                        answer.save()
+                    except ValueError:
+                        messages.error(request, f"Invalid time format for question: {question.text}", extra_tags=f"question_{question.id}")
+                        answer.save()
+
+                elif question.question_type == 'country':
+                    answer.text_answer = request.POST.get(answer_key, '')
+                    answer.save()
+
+                else:
+                    # Default fallback for any other question type
+                    answer.text_answer = request.POST.get(answer_key, '')
+                    answer.save()
+
+            except Exception as e:
+                # Log the error but continue processing
+                print(f"Error processing answer for question {question.id}: {str(e)}")
+                messages.error(request, f"Error processing answer for question: {question.text}", extra_tags=f"question_{question.id}")
+                # Create a basic answer to avoid data loss
                 answer.text_answer = request.POST.get(answer_key, '')
-                answer.save()  # Save before adding many-to-many relationships
-
-            elif question.question_type == 'single_choice':
-                choice_id = request.POST.get(answer_key)
-                if choice_id:
-                    answer.selected_choice = get_object_or_404(QuestionChoice, pk=choice_id)
-                answer.save()  # Save before adding many-to-many relationships
-
-            elif question.question_type == 'multiple_choice':
-                # Save first to get an ID for the many-to-many relationship
                 answer.save()
-
-                # Clear existing choices if updating
-                if existing_answer:
-                    answer.multiple_choices.clear()
-
-                # Add new choices
-                choice_ids = request.POST.getlist(answer_key)
-                for choice_id in choice_ids:
-                    choice = get_object_or_404(QuestionChoice, pk=choice_id)
-                    answer.multiple_choices.add(choice)
-
-            elif question.question_type == 'number' or question.question_type == 'scale':
-                answer.numeric_value = float(request.POST.get(answer_key, 0))
-                answer.save()  # Save before adding many-to-many relationships
 
             # Calculate the score for this answer
             try:
@@ -557,13 +751,24 @@ def respond_to_questionnaire(request, questionnaire_pk):
         except Exception as e:
             print(f"Error determining risk level: {str(e)}")
 
-        # Clear the session
-        if 'current_response_id' in request.session:
-            del request.session['current_response_id']
+        # Calculate completion time if we have a start time in session
+        if request.session.get('response_start_time'):
+            from django.utils import timezone
+            start_time = request.session.get('response_start_time')
+            end_time = timezone.now().timestamp()
+            completion_time_seconds = int(end_time - start_time)
+
+            # Update the response with the completion time
+            response.completion_time = completion_time_seconds
+            response.save(update_fields=['completion_time'])
+
+        # Keep the response ID in session for the completion page
+        # It will be cleared after showing the completion page
 
         # Show success message
         messages.success(request, 'Thank you for your response!')
-        return redirect('feedback:response_complete')
+        # Use the full URL pattern to avoid namespace issues
+        return redirect('/responses/complete/')
 
     return render(request, 'feedback/respond_to_questionnaire.html', {'questionnaire': questionnaire, 'questions': questions})
 
@@ -574,8 +779,16 @@ def response_complete(request):
     # Get the most recent completed response for this user/session
     response = None
 
-    # Try to find by user if authenticated
-    if request.user.is_authenticated:
+    # Get the response ID from the session if available
+    response_id = request.session.get('current_response_id')
+    if response_id:
+        try:
+            response = Response.objects.get(pk=response_id)
+        except Response.DoesNotExist:
+            response = None
+
+    # If no response found from session, try to find by user if authenticated
+    if not response and request.user.is_authenticated:
         response = Response.objects.filter(
             user=request.user,
             status='completed'
@@ -588,6 +801,24 @@ def response_complete(request):
             status='completed'
         ).order_by('-completed_at').first()
 
+    # Calculate completion time if we have a response and start time in session
+    if response and request.session.get('response_start_time'):
+        from django.utils import timezone
+        start_time = request.session.get('response_start_time')
+        end_time = timezone.now().timestamp()
+        completion_time_seconds = int(end_time - start_time)
+
+        # Update the response with the completion time if not already set
+        if not response.completion_time:
+            response.completion_time = completion_time_seconds
+            response.save(update_fields=['completion_time'])
+
+    # Clear session data related to the response
+    for key in ['current_response_id', 'response_start_time', 'bio_data_collected',
+                'patient_email', 'patient_age', 'patient_gender']:
+        if key in request.session:
+            del request.session[key]
+
     return render(request, 'feedback/response_complete.html', {'response': response})
 
 
@@ -595,6 +826,7 @@ def direct_questionnaire_access(request, pk=None, slug=None):
     """
     Direct access to a questionnaire via QR code or URL
     Can be accessed by UUID or slug
+    For patient flow, we bypass all authentication checks
     """
     # Get the questionnaire by UUID or slug
     if pk:
@@ -605,20 +837,11 @@ def direct_questionnaire_access(request, pk=None, slug=None):
         messages.error(request, "Invalid questionnaire link.")
         return redirect('core:home')
 
-    # Check if this is a preview request (from admin/creator)
-    is_preview = request.GET.get('preview') == 'true' or request.GET.get('mode') == 'preview'
-    is_creator = request.user.is_authenticated and request.user == questionnaire.created_by
-    is_admin = request.user.is_authenticated and request.user.is_staff
-
-    # Check if questionnaire is active (skip check for preview mode or if user is creator/admin)
-    if questionnaire.status != 'active' and not (is_preview or is_creator or is_admin):
+    # For patient flow, we only check if the questionnaire is active
+    # We bypass all other authentication checks
+    if questionnaire.status != 'active':
         messages.error(request, "This questionnaire is not currently active.")
         return redirect('core:home')
-
-    # Check if authentication is required (skip for preview mode or if user is creator/admin)
-    if questionnaire.requires_auth and not request.user.is_authenticated and not (is_preview or is_creator or is_admin):
-        messages.error(request, "You need to be logged in to respond to this questionnaire.")
-        return redirect('account_login')
 
     # Track QR code access if accessed via QR code
     qr_code_id = request.GET.get('qr')
@@ -630,8 +853,12 @@ def direct_questionnaire_access(request, pk=None, slug=None):
             # If QR code doesn't exist or isn't active, just continue
             pass
 
-    # Redirect to the questionnaire response page
-    return redirect('feedback:respond_to_questionnaire', questionnaire_pk=questionnaire.pk)
+    # Set direct access flag in session
+    request.session['direct'] = True
+
+    # Redirect to the questionnaire response page with direct flag
+    # Use the full URL pattern to avoid namespace issues
+    return redirect(f'/responses/questionnaire/{questionnaire.pk}/respond/')
 
 @login_required
 def update_notes(request, pk):

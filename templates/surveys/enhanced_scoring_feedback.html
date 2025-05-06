@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Enhanced Scoring Feedback{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <h1 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Enhanced Scoring Feedback</h1>
+        
+        <div class="mb-8">
+            <p class="text-gray-600 dark:text-gray-300 mb-4">
+                Thank you for using our enhanced scoring system. Your feedback helps us improve our scoring algorithms and provide more accurate results.
+            </p>
+            
+            <div class="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg mb-6">
+                <h2 class="text-lg font-semibold text-blue-700 dark:text-blue-300 mb-2">About Enhanced Scoring</h2>
+                <p class="text-blue-600 dark:text-blue-400">
+                    Our enhanced scoring system provides more detailed analysis of your responses, including:
+                </p>
+                <ul class="list-disc list-inside mt-2 text-blue-600 dark:text-blue-400">
+                    <li>Z-scores for standardized comparison</li>
+                    <li>Percentile rankings</li>
+                    <li>Category and subscale scores</li>
+                    <li>Conditional scoring based on answer patterns</li>
+                </ul>
+            </div>
+        </div>
+        
+        <form method="post" action="{% url 'surveys:enhanced_scoring_feedback' %}" class="space-y-6">
+            {% csrf_token %}
+            
+            <input type="hidden" name="response_id" value="{{ response_id }}">
+            <input type="hidden" name="scoring_system_id" value="{{ scoring_system_id }}">
+            
+            <div class="mb-4">
+                <label for="accuracy_rating" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    How accurate do you think the enhanced scoring results are?
+                </label>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <input type="radio" id="accuracy_1" name="accuracy_rating" value="1" class="h-4 w-4 text-blue-600">
+                        <label for="accuracy_1" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Not accurate</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="accuracy_2" name="accuracy_rating" value="2" class="h-4 w-4 text-blue-600">
+                        <label for="accuracy_2" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Somewhat accurate</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="accuracy_3" name="accuracy_rating" value="3" class="h-4 w-4 text-blue-600">
+                        <label for="accuracy_3" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Moderately accurate</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="accuracy_4" name="accuracy_rating" value="4" class="h-4 w-4 text-blue-600">
+                        <label for="accuracy_4" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Very accurate</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="accuracy_5" name="accuracy_rating" value="5" class="h-4 w-4 text-blue-600">
+                        <label for="accuracy_5" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Extremely accurate</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label for="usefulness_rating" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    How useful do you find the enhanced scoring information?
+                </label>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <input type="radio" id="usefulness_1" name="usefulness_rating" value="1" class="h-4 w-4 text-blue-600">
+                        <label for="usefulness_1" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Not useful</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="usefulness_2" name="usefulness_rating" value="2" class="h-4 w-4 text-blue-600">
+                        <label for="usefulness_2" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Somewhat useful</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="usefulness_3" name="usefulness_rating" value="3" class="h-4 w-4 text-blue-600">
+                        <label for="usefulness_3" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Moderately useful</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="usefulness_4" name="usefulness_rating" value="4" class="h-4 w-4 text-blue-600">
+                        <label for="usefulness_4" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Very useful</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="usefulness_5" name="usefulness_rating" value="5" class="h-4 w-4 text-blue-600">
+                        <label for="usefulness_5" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Extremely useful</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label for="preferred_features" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Which enhanced scoring features do you find most valuable? (Select all that apply)
+                </label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="feature_zscore" name="preferred_features" value="zscore" class="h-4 w-4 text-blue-600">
+                        <label for="feature_zscore" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Z-scores</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="feature_percentile" name="preferred_features" value="percentile" class="h-4 w-4 text-blue-600">
+                        <label for="feature_percentile" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Percentile rankings</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="feature_category" name="preferred_features" value="category" class="h-4 w-4 text-blue-600">
+                        <label for="feature_category" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Category scores</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="feature_subscale" name="preferred_features" value="subscale" class="h-4 w-4 text-blue-600">
+                        <label for="feature_subscale" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Subscale scores</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="feature_conditional" name="preferred_features" value="conditional" class="h-4 w-4 text-blue-600">
+                        <label for="feature_conditional" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Conditional scoring</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="feature_interpretation" name="preferred_features" value="interpretation" class="h-4 w-4 text-blue-600">
+                        <label for="feature_interpretation" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Score interpretations</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label for="feedback_text" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Do you have any additional feedback or suggestions for improving our enhanced scoring system?
+                </label>
+                <textarea id="feedback_text" name="feedback_text" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+            </div>
+            
+            <div class="flex justify-end">
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Submit Feedback
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

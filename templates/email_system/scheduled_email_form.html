@@ -1,0 +1,263 @@
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - MindTrack{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-6">
+            <div class="flex items-center">
+                <a href="{% url 'email_system:scheduled_email_list' %}" class="mr-2 text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">{{ title }}</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                {% if scheduled_email %}
+                    Update the scheduled email details below.
+                {% else %}
+                    Schedule a new email by filling out the form below.
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <div class="px-4 py-5 sm:p-6 space-y-6">
+                    <!-- Basic Information -->
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Basic Information</h3>
+                        <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                            <div class="sm:col-span-4">
+                                <label for="name" class="block text-sm font-medium text-gray-700">Name <span class="text-red-500">*</span></label>
+                                <div class="mt-1">
+                                    <input type="text" name="name" id="name" value="{{ scheduled_email.name|default:'' }}" required class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                <p class="mt-2 text-sm text-gray-500">A descriptive name for this scheduled email.</p>
+                            </div>
+                            
+                            <div class="sm:col-span-6">
+                                <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                                <div class="mt-1">
+                                    <textarea id="description" name="description" rows="3" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">{{ scheduled_email.description|default:'' }}</textarea>
+                                </div>
+                                <p class="mt-2 text-sm text-gray-500">Optional description of the purpose of this scheduled email.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Email Content -->
+                    <div class="pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Email Content</h3>
+                        <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                            <div class="sm:col-span-6">
+                                <label for="template" class="block text-sm font-medium text-gray-700">Email Template <span class="text-red-500">*</span></label>
+                                <div class="mt-1">
+                                    <select id="template" name="template" required class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                        <option value="">-- Select a Template --</option>
+                                        {% for template_option in templates %}
+                                            <option value="{{ template_option.pk }}" {% if selected_template and selected_template.pk == template_option.pk %}selected{% endif %}>
+                                                {{ template_option.name }} ({{ template_option.category|title }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <p class="mt-2 text-sm text-gray-500">
+                                    Select the email template to use for this scheduled email.
+                                    <a href="{% url 'email_system:template_list' %}" target="_blank" class="text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                                        Manage templates <i class="fas fa-external-link-alt ml-1 text-xs"></i>
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recipient Information -->
+                    <div class="pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Recipient Information</h3>
+                        <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                            <div class="sm:col-span-4">
+                                <label for="to_email" class="block text-sm font-medium text-gray-700">To Email <span class="text-red-500">*</span></label>
+                                <div class="mt-1">
+                                    <input type="email" name="to_email" id="to_email" value="{{ scheduled_email.to_email|default:recipient_email }}" required class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                            </div>
+                            
+                            <div class="sm:col-span-6">
+                                <label for="cc_emails" class="block text-sm font-medium text-gray-700">CC</label>
+                                <div class="mt-1">
+                                    <input type="text" name="cc_emails" id="cc_emails" value="{{ scheduled_email.cc_emails|default:'' }}" placeholder="email1@example.com, email2@example.com" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                <p class="mt-2 text-sm text-gray-500">Separate multiple email addresses with commas.</p>
+                            </div>
+                            
+                            <div class="sm:col-span-6">
+                                <label for="bcc_emails" class="block text-sm font-medium text-gray-700">BCC</label>
+                                <div class="mt-1">
+                                    <input type="text" name="bcc_emails" id="bcc_emails" value="{{ scheduled_email.bcc_emails|default:'' }}" placeholder="email1@example.com, email2@example.com" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                <p class="mt-2 text-sm text-gray-500">Separate multiple email addresses with commas.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Scheduling -->
+                    <div class="pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Scheduling</h3>
+                        <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                            <div class="sm:col-span-3">
+                                <label for="frequency" class="block text-sm font-medium text-gray-700">Frequency <span class="text-red-500">*</span></label>
+                                <div class="mt-1">
+                                    <select id="frequency" name="frequency" required class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                        <option value="once" {% if scheduled_email.frequency == 'once' %}selected{% endif %}>One Time</option>
+                                        <option value="daily" {% if scheduled_email.frequency == 'daily' %}selected{% endif %}>Daily</option>
+                                        <option value="weekly" {% if scheduled_email.frequency == 'weekly' %}selected{% endif %}>Weekly</option>
+                                        <option value="monthly" {% if scheduled_email.frequency == 'monthly' %}selected{% endif %}>Monthly</option>
+                                        <option value="quarterly" {% if scheduled_email.frequency == 'quarterly' %}selected{% endif %}>Quarterly</option>
+                                        <option value="yearly" {% if scheduled_email.frequency == 'yearly' %}selected{% endif %}>Yearly</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="sm:col-span-3">
+                                <label for="scheduled_time" class="block text-sm font-medium text-gray-700">Scheduled Time <span class="text-red-500">*</span></label>
+                                <div class="mt-1">
+                                    <input type="datetime-local" name="scheduled_time" id="scheduled_time" value="{{ scheduled_email.scheduled_time|date:'Y-m-d\TH:i'|default:'' }}" required class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                            </div>
+                            
+                            <div id="weekday-container" class="sm:col-span-3 {% if scheduled_email.frequency != 'weekly' %}hidden{% endif %}">
+                                <label for="weekday" class="block text-sm font-medium text-gray-700">Day of Week</label>
+                                <div class="mt-1">
+                                    <select id="weekday" name="weekday" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                        <option value="0" {% if scheduled_email.weekday == 0 %}selected{% endif %}>Monday</option>
+                                        <option value="1" {% if scheduled_email.weekday == 1 %}selected{% endif %}>Tuesday</option>
+                                        <option value="2" {% if scheduled_email.weekday == 2 %}selected{% endif %}>Wednesday</option>
+                                        <option value="3" {% if scheduled_email.weekday == 3 %}selected{% endif %}>Thursday</option>
+                                        <option value="4" {% if scheduled_email.weekday == 4 %}selected{% endif %}>Friday</option>
+                                        <option value="5" {% if scheduled_email.weekday == 5 %}selected{% endif %}>Saturday</option>
+                                        <option value="6" {% if scheduled_email.weekday == 6 %}selected{% endif %}>Sunday</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div id="day-of-month-container" class="sm:col-span-3 {% if scheduled_email.frequency != 'monthly' and scheduled_email.frequency != 'quarterly' and scheduled_email.frequency != 'yearly' %}hidden{% endif %}">
+                                <label for="day_of_month" class="block text-sm font-medium text-gray-700">Day of Month</label>
+                                <div class="mt-1">
+                                    <select id="day_of_month" name="day_of_month" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                        {% for i in "123456789"|add:"0123456789"|add:"0123456789"|add:"012" %}
+                                            <option value="{{ forloop.counter }}" {% if scheduled_email.day_of_month == forloop.counter %}selected{% endif %}>{{ forloop.counter }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div id="end-date-container" class="sm:col-span-3 {% if scheduled_email.frequency == 'once' %}hidden{% endif %}">
+                                <label for="end_date" class="block text-sm font-medium text-gray-700">End Date (Optional)</label>
+                                <div class="mt-1">
+                                    <input type="date" name="end_date" id="end_date" value="{{ scheduled_email.end_date|date:'Y-m-d'|default:'' }}" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                <p class="mt-2 text-sm text-gray-500">Leave blank for no end date.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Information -->
+                    <div class="pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Additional Information</h3>
+                        <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                            {% if selected_response %}
+                                <div class="sm:col-span-6">
+                                    <label for="response" class="block text-sm font-medium text-gray-700">Related Response</label>
+                                    <div class="mt-1">
+                                        <input type="hidden" name="response" value="{{ selected_response.id }}">
+                                        <div class="bg-gray-50 p-3 rounded-md">
+                                            <p class="text-sm text-gray-700">
+                                                <span class="font-medium">Questionnaire:</span> {{ selected_response.survey.title }}
+                                            </p>
+                                            <p class="text-sm text-gray-700">
+                                                <span class="font-medium">Submitted:</span> {{ selected_response.created_at|date:"F j, Y, g:i a" }}
+                                            </p>
+                                            <p class="text-sm text-gray-700">
+                                                <span class="font-medium">Email:</span> {{ selected_response.email|default:"Not provided" }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="px-4 py-3 bg-gray-50 text-right sm:px-6 flex justify-end space-x-3">
+                    <a href="{% url 'email_system:scheduled_email_list' %}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                        Cancel
+                    </a>
+                    <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                        {% if scheduled_email %}Update{% else %}Schedule{% endif %} Email
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize datetime picker
+        flatpickr("#scheduled_time", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            minDate: "today",
+            time_24hr: true
+        });
+        
+        // Initialize date picker for end date
+        flatpickr("#end_date", {
+            dateFormat: "Y-m-d",
+            minDate: "today"
+        });
+        
+        // Show/hide fields based on frequency
+        const frequencySelect = document.getElementById('frequency');
+        const weekdayContainer = document.getElementById('weekday-container');
+        const dayOfMonthContainer = document.getElementById('day-of-month-container');
+        const endDateContainer = document.getElementById('end-date-container');
+        
+        frequencySelect.addEventListener('change', function() {
+            const frequency = this.value;
+            
+            // Show/hide weekday field
+            if (frequency === 'weekly') {
+                weekdayContainer.classList.remove('hidden');
+            } else {
+                weekdayContainer.classList.add('hidden');
+            }
+            
+            // Show/hide day of month field
+            if (frequency === 'monthly' || frequency === 'quarterly' || frequency === 'yearly') {
+                dayOfMonthContainer.classList.remove('hidden');
+            } else {
+                dayOfMonthContainer.classList.add('hidden');
+            }
+            
+            // Show/hide end date field
+            if (frequency === 'once') {
+                endDateContainer.classList.add('hidden');
+            } else {
+                endDateContainer.classList.remove('hidden');
+            }
+        });
+    });
+</script>
+{% endblock %}

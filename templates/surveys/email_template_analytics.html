@@ -1,0 +1,414 @@
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
+
+{% block title %}{{ template.name }} Analytics{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<!-- DateRangePicker -->
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">{{ template.name }} Analytics</h1>
+            <p class="text-muted">{{ template.get_template_type_display }} Template</p>
+        </div>
+        
+        <!-- Date Range Filter -->
+        <div class="d-flex align-items-center">
+            <form id="date-range-form" class="d-flex align-items-center" method="get">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="date-range" name="date_range" placeholder="Select date range" readonly>
+                    <input type="hidden" id="start_date" name="start_date" value="{{ start_date }}">
+                    <input type="hidden" id="end_date" name="end_date" value="{{ end_date }}">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-filter"></i> Apply
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Emails Sent
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_sent }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-envelope fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Open Rate
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ open_rate }}%</div>
+                            <div class="text-xs text-gray-600">{{ total_opened }} opens</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-envelope-open fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Click Rate
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ click_rate }}%</div>
+                            <div class="text-xs text-gray-600">{{ total_clicked }} clicks</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-mouse-pointer fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Click-to-Open Rate
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ click_to_open_rate }}%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Email Performance Chart -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Email Performance Over Time</h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                            <div class="dropdown-header">Chart Options:</div>
+                            <a class="dropdown-item chart-type" data-type="line" href="#">Line Chart</a>
+                            <a class="dropdown-item chart-type" data-type="bar" href="#">Bar Chart</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#" id="download-chart">Download Chart</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="emailPerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Template Preview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Template Preview</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6 class="m-0 font-weight-bold">Template Details</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Name:</strong> {{ template.name }}</p>
+                                    <p><strong>Type:</strong> {{ template.get_template_type_display }}</p>
+                                    <p><strong>Subject:</strong> {{ template.subject }}</p>
+                                    <p><strong>Active:</strong> {% if template.is_active %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-danger">No</span>{% endif %}</p>
+                                    <p><strong>Default:</strong> {% if template.is_default %}<span class="badge bg-primary">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</p>
+                                    <p><strong>Created:</strong> {{ template.created_at|date:"F j, Y" }}</p>
+                                    <p><strong>Last Updated:</strong> {{ template.updated_at|date:"F j, Y" }}</p>
+                                    
+                                    <div class="mt-3">
+                                        <a href="{% url 'surveys:email_template_edit' template.id %}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-edit"></i> Edit Template
+                                        </a>
+                                        <a href="{% url 'surveys:email_template_detail' template.id %}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-eye"></i> View Details
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="m-0 font-weight-bold">Email Content</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="border p-3" style="max-height: 500px; overflow-y: auto;">
+                                        {{ template.content|safe }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Emails -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Emails</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="recentEmailsTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Recipient</th>
+                                    <th>Sent At</th>
+                                    <th>Opened</th>
+                                    <th>Opened At</th>
+                                    <th>Clicked</th>
+                                    <th>Clicked At</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in recent_logs %}
+                                <tr>
+                                    <td>{{ log.recipient_email }}</td>
+                                    <td>{{ log.sent_at }}</td>
+                                    <td>{% if log.opened %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</td>
+                                    <td>{{ log.opened_at|default:"N/A" }}</td>
+                                    <td>{% if log.clicked %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</td>
+                                    <td>{{ log.clicked_at|default:"N/A" }}</td>
+                                    <td>
+                                        {% if log.status == 'sent' %}
+                                        <span class="badge bg-primary">Sent</span>
+                                        {% elif log.status == 'delivered' %}
+                                        <span class="badge bg-success">Delivered</span>
+                                        {% elif log.status == 'failed' %}
+                                        <span class="badge bg-danger">Failed</span>
+                                        {% elif log.status == 'bounced' %}
+                                        <span class="badge bg-warning text-dark">Bounced</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">No emails found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize date range picker
+        $('#date-range').daterangepicker({
+            startDate: moment('{{ start_date }}'),
+            endDate: moment('{{ end_date }}'),
+            ranges: {
+                'Today': [moment(), moment()],
+                'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            }
+        }, function(start, end, label) {
+            $('#start_date').val(start.format('YYYY-MM-DD'));
+            $('#end_date').val(end.format('YYYY-MM-DD'));
+        });
+        
+        // Initialize email performance chart
+        const ctx = document.getElementById('emailPerformanceChart').getContext('2d');
+        const chartData = {{ chart_data|safe }};
+        
+        const emailChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartData.labels,
+                datasets: [
+                    {
+                        label: 'Sent',
+                        data: chartData.sent,
+                        backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                        borderColor: 'rgba(78, 115, 223, 1)',
+                        pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                        borderWidth: 2,
+                        fill: false
+                    },
+                    {
+                        label: 'Opened',
+                        data: chartData.opened,
+                        backgroundColor: 'rgba(28, 200, 138, 0.05)',
+                        borderColor: 'rgba(28, 200, 138, 1)',
+                        pointBackgroundColor: 'rgba(28, 200, 138, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(28, 200, 138, 1)',
+                        borderWidth: 2,
+                        fill: false
+                    },
+                    {
+                        label: 'Clicked',
+                        data: chartData.clicked,
+                        backgroundColor: 'rgba(54, 185, 204, 0.05)',
+                        borderColor: 'rgba(54, 185, 204, 1)',
+                        pointBackgroundColor: 'rgba(54, 185, 204, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(54, 185, 204, 1)',
+                        borderWidth: 2,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 25,
+                        top: 25,
+                        bottom: 0
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            maxTicksLimit: 7
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            maxTicksLimit: 5,
+                            padding: 10,
+                            precision: 0
+                        },
+                        grid: {
+                            color: "rgb(234, 236, 244)",
+                            zeroLineColor: "rgb(234, 236, 244)",
+                            drawBorder: false,
+                            borderDash: [2],
+                            zeroLineBorderDash: [2]
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        backgroundColor: "rgb(255,255,255)",
+                        bodyColor: "#858796",
+                        titleMarginBottom: 10,
+                        titleColor: '#6e707e',
+                        titleFontSize: 14,
+                        borderColor: '#dddfeb',
+                        borderWidth: 1,
+                        xPadding: 15,
+                        yPadding: 15,
+                        displayColors: false,
+                        intersect: false,
+                        mode: 'index',
+                        caretPadding: 10,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.y;
+                                return `${label}: ${value}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Handle chart type change
+        document.querySelectorAll('.chart-type').forEach(item => {
+            item.addEventListener('click', event => {
+                event.preventDefault();
+                const chartType = event.target.getAttribute('data-type');
+                emailChart.config.type = chartType;
+                emailChart.update();
+            });
+        });
+        
+        // Handle chart download
+        document.getElementById('download-chart').addEventListener('click', event => {
+            event.preventDefault();
+            const canvas = document.getElementById('emailPerformanceChart');
+            const image = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = 'email-template-analytics.png';
+            link.href = image;
+            link.click();
+        });
+        
+        // Initialize DataTables
+        if ($.fn.DataTable) {
+            $('#recentEmailsTable').DataTable({
+                order: [[1, 'desc']]
+            });
+        }
+    });
+</script>
+{% endblock %}

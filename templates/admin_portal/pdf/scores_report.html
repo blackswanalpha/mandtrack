@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ scoring_system.name }} - Scores Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 24px;
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        .header p {
+            font-size: 14px;
+            margin: 0;
+            color: #7f8c8d;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            font-size: 18px;
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+            margin: 5px 0;
+        }
+        .stat-card .label {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .ranges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .range-card {
+            flex: 1;
+            min-width: 150px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .range-card .name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .range-card .score {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 10px;
+            color: #7f8c8d;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ scoring_system.name }} - Scores Report</h1>
+            <p>Questionnaire: {{ scoring_system.questionnaire.title }}</p>
+            <p>Generated on: {{ generated_at }} by {{ generated_by }}</p>
+        </div>
+        
+        <div class="section">
+            <h2>Summary Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="label">Total Responses</div>
+                    <div class="value">{{ stats.count }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Average Score</div>
+                    <div class="value">{{ stats.avg|floatformat:2 }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Standard Deviation</div>
+                    <div class="value">{{ stats.stddev|floatformat:2 }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Minimum Score</div>
+                    <div class="value">{{ stats.min|floatformat:2 }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Maximum Score</div>
+                    <div class="value">{{ stats.max|floatformat:2 }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Scoring Type</div>
+                    <div class="value" style="font-size: 16px;">{{ scoring_system.get_scoring_type_display }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Score Ranges</h2>
+            <div class="ranges">
+                {% for range in score_ranges %}
+                <div class="range-card" style="background-color: {{ range.color }}20; border: 2px solid {{ range.color }};">
+                    <div class="name">{{ range.name }}</div>
+                    <div class="score">{{ range.min_score }} - {{ range.max_score }}</div>
+                    <div class="description">{{ range.description }}</div>
+                </div>
+                {% empty %}
+                <p>No score ranges defined for this scoring system.</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Score Distribution</h2>
+            <p>This section would typically contain a histogram or chart showing the distribution of scores. Since this is a static PDF, we're providing a tabular summary instead.</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Score Range</th>
+                        <th>Count</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for range in score_ranges %}
+                    {% with range_count=scores|filter_by_range:range.id|length %}
+                    <tr>
+                        <td>{{ range.name }} ({{ range.min_score }} - {{ range.max_score }})</td>
+                        <td>{{ range_count }}</td>
+                        <td>{% if stats.count > 0 %}{{ range_count|percentage:stats.count }}%{% else %}0%{% endif %}</td>
+                    </tr>
+                    {% endwith %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="3">No score ranges defined.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="page-break"></div>
+        
+        <div class="section">
+            <h2>Recent Scores</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Raw Score</th>
+                        <th>Range</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for score in scores|slice:":50" %}
+                    <tr>
+                        <td>{{ score.response.patient_email }}</td>
+                        <td>{{ score.raw_score|floatformat:2 }}</td>
+                        <td>{{ score.score_range.name|default:"-" }}</td>
+                        <td>{{ score.calculated_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4">No scores available.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if scores.count > 50 %}
+            <p>Showing 50 of {{ scores.count }} total scores.</p>
+            {% endif %}
+        </div>
+        
+        <div class="footer">
+            <p>This report was generated by MindTrack Scoring Management System.</p>
+            <p>© {% now "Y" %} MindTrack. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

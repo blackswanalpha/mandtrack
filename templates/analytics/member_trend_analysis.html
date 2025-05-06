@@ -1,0 +1,216 @@
+{% extends 'admin_portal/modern_base.html' %}
+
+{% block title %}Trend Analysis - {{ member.user.get_full_name|default:member.user.email }} - MindTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+    .trend-card {
+        transition: all 0.3s ease;
+    }
+    .trend-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% url 'groups:view_member_dashboard' org_pk=organization.id member_pk=member.id %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Trend Analysis</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                Detailed trend analysis for {{ member.user.get_full_name|default:member.user.email }}
+            </p>
+        </div>
+
+        <!-- Time Period Selector -->
+        <div class="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Select Time Period</h2>
+            <form method="get" action="{% url 'analytics:member_trend_analysis' org_pk=organization.id member_pk=member.id %}" class="flex items-center space-x-4">
+                <div class="flex-grow">
+                    <select name="time_period" id="time_period" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                        <option value="30" {% if time_period == 30 %}selected{% endif %}>Last 30 Days</option>
+                        <option value="90" {% if time_period == 90 %}selected{% endif %}>Last 90 Days</option>
+                        <option value="180" {% if time_period == 180 %}selected{% endif %}>Last 180 Days</option>
+                        <option value="365" {% if time_period == 365 %}selected{% endif %}>Last 365 Days</option>
+                    </select>
+                </div>
+                <div>
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        Apply
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {% if analysis.success %}
+            <!-- Identified Trends -->
+            {% if analysis.trends %}
+                <div class="bg-white shadow rounded-lg p-6 mb-8">
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">Identified Trends</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {% for trend in analysis.trends %}
+                            <div class="trend-card bg-white border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center mb-3">
+                                    <div class="p-2 rounded-full 
+                                        {% if trend.type == 'score' %}bg-blue-100
+                                        {% elif trend.type == 'risk_level' %}bg-red-100
+                                        {% elif trend.type == 'completion_time' %}bg-green-100
+                                        {% else %}bg-purple-100{% endif %} mr-3">
+                                        <i class="fas 
+                                            {% if trend.type == 'score' %}fa-chart-line text-blue-600
+                                            {% elif trend.type == 'risk_level' %}fa-exclamation-triangle text-red-600
+                                            {% elif trend.type == 'completion_time' %}fa-clock text-green-600
+                                            {% else %}fa-chart-bar text-purple-600{% endif %}"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-sm font-medium text-gray-900">{{ trend.description }}</h3>
+                                        <p class="text-xs text-gray-500">
+                                            Strength: 
+                                            {% if trend.strength < 0.1 %}Very Weak
+                                            {% elif trend.strength < 0.3 %}Weak
+                                            {% elif trend.strength < 0.6 %}Moderate
+                                            {% elif trend.strength < 1.0 %}Strong
+                                            {% else %}Very Strong{% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-600">{{ trend.details }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Charts -->
+            <div class="bg-white shadow rounded-lg p-6 mb-8">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Trend Visualizations</h2>
+                
+                {% if analysis.charts %}
+                    <div class="space-y-8">
+                        {% if analysis.charts.score_trend %}
+                            <div>
+                                <h3 class="text-md font-medium text-gray-800 mb-2">Score Trend Over Time</h3>
+                                <div class="chart-container">
+                                    <img src="data:image/png;base64,{{ analysis.charts.score_trend }}" alt="Score Trend" class="mx-auto max-w-full max-h-full">
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if analysis.charts.risk_trend %}
+                            <div>
+                                <h3 class="text-md font-medium text-gray-800 mb-2">Risk Level Trend Over Time</h3>
+                                <div class="chart-container">
+                                    <img src="data:image/png;base64,{{ analysis.charts.risk_trend }}" alt="Risk Level Trend" class="mx-auto max-w-full max-h-full">
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if analysis.charts.risk_distribution %}
+                            <div>
+                                <h3 class="text-md font-medium text-gray-800 mb-2">Risk Level Distribution</h3>
+                                <div class="chart-container">
+                                    <img src="data:image/png;base64,{{ analysis.charts.risk_distribution }}" alt="Risk Level Distribution" class="mx-auto max-w-full max-h-full">
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if analysis.charts.time_trend %}
+                            <div>
+                                <h3 class="text-md font-medium text-gray-800 mb-2">Completion Time Trend</h3>
+                                <div class="chart-container">
+                                    <img src="data:image/png;base64,{{ analysis.charts.time_trend }}" alt="Completion Time Trend" class="mx-auto max-w-full max-h-full">
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if analysis.charts.category_scores %}
+                            <div>
+                                <h3 class="text-md font-medium text-gray-800 mb-2">Average Score by Category</h3>
+                                <div class="chart-container">
+                                    <img src="data:image/png;base64,{{ analysis.charts.category_scores }}" alt="Category Scores" class="mx-auto max-w-full max-h-full">
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="bg-yellow-50 p-4 rounded-lg">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle text-yellow-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-yellow-800">No Charts Available</h3>
+                                <div class="mt-2 text-sm text-yellow-700">
+                                    <p>There are not enough data points to generate meaningful charts.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Interpretation -->
+            <div class="bg-white shadow rounded-lg p-6 mb-8">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Interpretation Guide</h2>
+                
+                <div class="space-y-4">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-md font-medium text-gray-800 mb-2">Score Trends</h3>
+                        <p class="text-sm text-gray-600">
+                            Score trends show how a member's scores have changed over time. An upward trend indicates improvement,
+                            while a downward trend may indicate areas of concern. Look for sudden changes that might require attention.
+                        </p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-md font-medium text-gray-800 mb-2">Risk Level Trends</h3>
+                        <p class="text-sm text-gray-600">
+                            Risk level trends show how a member's risk assessment has changed over time. An upward trend indicates
+                            increasing risk, which may require intervention. A downward trend suggests improvement in risk factors.
+                        </p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-md font-medium text-gray-800 mb-2">Completion Time Trends</h3>
+                        <p class="text-sm text-gray-600">
+                            Completion time trends can indicate changes in engagement or focus. Decreasing completion times might
+                            indicate increased familiarity or decreased engagement. Increasing times might indicate more thoughtful
+                            responses or difficulty with questions.
+                        </p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-md font-medium text-gray-800 mb-2">Category Analysis</h3>
+                        <p class="text-sm text-gray-600">
+                            Category analysis shows how a member performs across different types of questionnaires. This can help
+                            identify specific areas of strength or concern that may require targeted intervention.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="bg-white shadow rounded-lg p-6 mb-8 text-center">
+                <div class="py-12">
+                    <i class="fas fa-chart-line text-gray-300 text-5xl mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No Data Available</h3>
+                    <p class="text-gray-500 mb-4">{{ analysis.message }}</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

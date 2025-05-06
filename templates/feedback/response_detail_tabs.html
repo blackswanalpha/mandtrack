@@ -1,6 +1,7 @@
 {% extends 'admin_portal/modern_base.html' %}
 {% load static %}
 {% load feedback_extras %}
+{% load custom_filters %}
 
 {% block title %}Response Details - MindTrack{% endblock %}
 
@@ -494,9 +495,10 @@
                                             <dd class="mt-1">
                                                 <div class="text-3xl font-semibold text-gray-700">
                                                     {% if response.completion_time %}
-                                                        {% with minutes=response.completion_time|floatformat:0|divisibleby:60 seconds=response.completion_time|floatformat:0|modulo:60 %}
+                                                        {% with seconds=response.completion_time|floatformat:0 %}
+                                                            {% with minutes=seconds|divisibleby:60 remaining_seconds=seconds|modulo:60 %}
                                                             {% if minutes > 0 %}
-                                                                {{ minutes }}m {{ seconds }}s
+                                                                {{ minutes }}m {{ remaining_seconds }}s
                                                             {% else %}
                                                                 {{ seconds }}s
                                                             {% endif %}

@@ -1,0 +1,209 @@
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - MindTrack{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.3/lib/codemirror.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.3/theme/monokai.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-6">
+            <div class="flex items-center">
+                <a href="{% url 'email_system:template_list' %}" class="mr-2 text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">{{ title }}</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                {% if template %}
+                    Update the template details below.
+                {% else %}
+                    Create a new email template by filling out the form below.
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+
+                <div class="px-4 py-5 sm:p-6 space-y-6">
+                    <!-- Basic Information -->
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Basic Information</h3>
+                        <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                            <div class="sm:col-span-4">
+                                <label for="name" class="block text-sm font-medium text-gray-700">Template Name <span class="text-red-500">*</span></label>
+                                <div class="mt-1">
+                                    <input type="text" name="name" id="name" value="{{ template.name|default:'' }}" required class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <label for="category" class="block text-sm font-medium text-gray-700">Category <span class="text-red-500">*</span></label>
+                                <div class="mt-1">
+                                    <select id="category" name="category" required class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                        <option value="notification" {% if template.category == 'notification' %}selected{% endif %}>Notification</option>
+                                        <option value="report" {% if template.category == 'report' %}selected{% endif %}>Report</option>
+                                        <option value="reminder" {% if template.category == 'reminder' %}selected{% endif %}>Reminder</option>
+                                        <option value="welcome" {% if template.category == 'welcome' %}selected{% endif %}>Welcome</option>
+                                        <option value="feedback" {% if template.category == 'feedback' %}selected{% endif %}>Feedback</option>
+                                        <option value="other" {% if template.category == 'other' %}selected{% endif %}>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="sm:col-span-6">
+                                <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                                <div class="mt-1">
+                                    <textarea id="description" name="description" rows="3" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">{{ template.description|default:'' }}</textarea>
+                                </div>
+                                <p class="mt-2 text-sm text-gray-500">Brief description of the template's purpose.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Email Content -->
+                    <div class="pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Email Content</h3>
+                        <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                            <div class="sm:col-span-6">
+                                <label for="subject" class="block text-sm font-medium text-gray-700">Subject Line <span class="text-red-500">*</span></label>
+                                <div class="mt-1">
+                                    <input type="text" name="subject" id="subject" value="{{ template.subject|default:'' }}" required class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                <p class="mt-2 text-sm text-gray-500">
+                                    You can use template variables like <code class="bg-gray-100 px-1 py-0.5 rounded">{{ "{{user.email}}" }}</code> in the subject line.
+                                </p>
+                            </div>
+
+                            <div class="sm:col-span-6">
+                                <label for="message" class="block text-sm font-medium text-gray-700">Plain Text Message <span class="text-red-500">*</span></label>
+                                <div class="mt-1">
+                                    <textarea id="message" name="message" rows="6" required class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">{{ template.message|default:'' }}</textarea>
+                                </div>
+                                <p class="mt-2 text-sm text-gray-500">
+                                    Plain text version of the email. You can use template variables like <code class="bg-gray-100 px-1 py-0.5 rounded">{{ "{{user.name}}" }}</code>.
+                                </p>
+                            </div>
+
+                            <div class="sm:col-span-6">
+                                <label for="html_content" class="block text-sm font-medium text-gray-700">HTML Content</label>
+                                <div class="mt-1">
+                                    <textarea id="html_content" name="html_content" rows="10" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">{{ template.html_content|default:'' }}</textarea>
+                                </div>
+                                <p class="mt-2 text-sm text-gray-500">
+                                    HTML version of the email (optional). You can use template variables like <code class="bg-gray-100 px-1 py-0.5 rounded">{{ "{{user.email}}" }}</code>.
+                                </p>
+                            </div>
+
+                            <div class="sm:col-span-6">
+                                <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-info-circle text-blue-400"></i>
+                                        </div>
+                                        <div class="ml-3">
+                                            <h3 class="text-sm font-medium text-blue-800">Template Variables</h3>
+                                            <div class="mt-2 text-sm text-blue-700">
+                                                <p>You can use template variables in your email content. Variables will be replaced with actual values when the email is sent.</p>
+                                                <p class="mt-2">Common variables include:</p>
+                                                <ul class="list-disc list-inside mt-1">
+                                                    <li><code class="bg-gray-100 px-1 py-0.5 rounded">{{ "{{user.email}}" }}</code> - Recipient's email address</li>
+                                                    <li><code class="bg-gray-100 px-1 py-0.5 rounded">{{ "{{user.name}}" }}</code> - Recipient's name</li>
+                                                    <li><code class="bg-gray-100 px-1 py-0.5 rounded">{{ "{{date.today}}" }}</code> - Current date</li>
+                                                    <li><code class="bg-gray-100 px-1 py-0.5 rounded">{{ "{{site.name}}" }}</code> - Site name</li>
+                                                </ul>
+                                                <p class="mt-2">For response-related emails, you can also use:</p>
+                                                <ul class="list-disc list-inside mt-1">
+                                                    <li><code class="bg-gray-100 px-1 py-0.5 rounded">{{ "{{response.score}}" }}</code> - Response score</li>
+                                                    <li><code class="bg-gray-100 px-1 py-0.5 rounded">{{ "{{questionnaire.title}}" }}</code> - Questionnaire title</li>
+                                                </ul>
+                                                <p class="mt-2">
+                                                    <a href="{% url 'email_system:template_preview' pk=template.pk %}" target="_blank" class="text-blue-600 hover:text-blue-800 transition-colors duration-200">
+                                                        View all available variables <i class="fas fa-external-link-alt ml-1"></i>
+                                                    </a>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings -->
+                    <div class="pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Settings</h3>
+                        <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                            <div class="sm:col-span-3">
+                                <div class="flex items-start">
+                                    <div class="flex items-center h-5">
+                                        <input id="is_active" name="is_active" type="checkbox" {% if template.is_active|default:True %}checked{% endif %} class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                    </div>
+                                    <div class="ml-3 text-sm">
+                                        <label for="is_active" class="font-medium text-gray-700">Active</label>
+                                        <p class="text-gray-500">Make this template available for use.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sm:col-span-3">
+                                <div class="flex items-start">
+                                    <div class="flex items-center h-5">
+                                        <input id="is_default" name="is_default" type="checkbox" {% if template.is_default %}checked{% endif %} class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                    </div>
+                                    <div class="ml-3 text-sm">
+                                        <label for="is_default" class="font-medium text-gray-700">Default Template</label>
+                                        <p class="text-gray-500">Set as default for this category.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-4 py-3 bg-gray-50 text-right sm:px-6 flex justify-end space-x-3">
+                    <a href="{% url 'email_system:template_list' %}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                        Cancel
+                    </a>
+                    <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                        {% if template %}Update{% else %}Create{% endif %} Template
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.3/lib/codemirror.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.3/mode/htmlmixed/htmlmixed.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.3/mode/xml/xml.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.3/mode/javascript/javascript.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.3/mode/css/css.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize CodeMirror for HTML content
+        var htmlEditor = CodeMirror.fromTextArea(document.getElementById('html_content'), {
+            mode: 'htmlmixed',
+            theme: 'monokai',
+            lineNumbers: true,
+            lineWrapping: true,
+            autoCloseTags: true,
+            autoCloseBrackets: true,
+            matchBrackets: true,
+            indentUnit: 2,
+            tabSize: 2,
+        });
+
+        // Adjust height
+        htmlEditor.setSize(null, 300);
+    });
+</script>
+{% endblock %}

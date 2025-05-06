@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HIGH RISK ALERT</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #ff4444;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+            border: 1px solid #ddd;
+            border-top: none;
+        }
+        .alert-box {
+            background-color: #ffebee;
+            border-left: 4px solid #ff4444;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .button {
+            display: inline-block;
+            background-color: #ff4444;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .response-details {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .detail-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>HIGH RISK ALERT</h1>
+        </div>
+        <div class="content">
+            <div class="alert-box">
+                <h2>Urgent Attention Required</h2>
+                <p>A response to the questionnaire <strong>{{ questionnaire.title }}</strong> has been flagged as <strong>{{ risk_level|upper }}</strong> risk.</p>
+            </div>
+            
+            <p>This response requires immediate attention and follow-up according to your organization's protocols.</p>
+            
+            <div class="response-details">
+                <h3>Response Details</h3>
+                
+                <div class="detail-item">
+                    <span>Questionnaire:</span>
+                    <span>{{ questionnaire.title }}</span>
+                </div>
+                
+                <div class="detail-item">
+                    <span>Risk Level:</span>
+                    <span style="color: {% if risk_level == 'critical' %}#ff0000{% else %}#ff6600{% endif %}; font-weight: bold;">{{ risk_level|upper }}</span>
+                </div>
+                
+                <div class="detail-item">
+                    <span>Respondent Email:</span>
+                    <span>{{ response.patient_email|default:"Anonymous" }}</span>
+                </div>
+                
+                {% if response.patient_age %}
+                <div class="detail-item">
+                    <span>Respondent Age:</span>
+                    <span>{{ response.patient_age }}</span>
+                </div>
+                {% endif %}
+                
+                {% if response.patient_gender %}
+                <div class="detail-item">
+                    <span>Respondent Gender:</span>
+                    <span>{{ response.patient_gender }}</span>
+                </div>
+                {% endif %}
+                
+                {% if response.score is not None %}
+                <div class="detail-item">
+                    <span>Score:</span>
+                    <span>{{ response.score }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="detail-item">
+                    <span>Submitted On:</span>
+                    <span>{{ response.created_at|date:"F j, Y H:i" }}</span>
+                </div>
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="{{ response_url }}" class="button">View Response Details</a>
+            </div>
+            
+            <p>Please take appropriate action based on your organization's protocols for high-risk responses.</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated alert. Please do not reply to this message.</p>
+            <p>© {% now "Y" %} MindTrack. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

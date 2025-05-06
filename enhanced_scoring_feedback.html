@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Scoring Feedback</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .form-card {
+            transition: all 0.3s ease;
+        }
+        .form-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .rating-item {
+            transition: all 0.2s ease;
+        }
+        .rating-item:hover {
+            transform: scale(1.05);
+        }
+        .rating-item.selected {
+            background-color: #3b82f6;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-lg p-6 form-card">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-gray-800">Enhanced Scoring Feedback</h1>
+                
+                <a href="enhanced_scoring_demo.html" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Back to Results
+                </a>
+            </div>
+            
+            <div class="mb-8">
+                <p class="text-gray-600 mb-4">
+                    Thank you for using our enhanced scoring system. Your feedback helps us improve our scoring algorithms and provide more accurate results.
+                </p>
+                
+                <div class="bg-blue-50 p-4 rounded-lg mb-6">
+                    <h2 class="text-lg font-semibold text-blue-700 mb-2">About Enhanced Scoring</h2>
+                    <p class="text-blue-600">
+                        Our enhanced scoring system provides more detailed analysis of your responses, including:
+                    </p>
+                    <ul class="list-disc list-inside mt-2 text-blue-600">
+                        <li>Z-scores for standardized comparison</li>
+                        <li>Percentile rankings</li>
+                        <li>Category and subscale scores</li>
+                        <li>Conditional scoring based on answer patterns</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <form id="feedbackForm" class="space-y-6">
+                <input type="hidden" name="response_id" value="1">
+                <input type="hidden" name="scoring_system_id" value="1">
+                
+                <div class="mb-4">
+                    <label for="accuracy_rating" class="block text-sm font-medium text-gray-700 mb-2">
+                        How accurate do you think the enhanced scoring results are?
+                    </label>
+                    <div class="flex flex-wrap items-center space-x-0 md:space-x-4 space-y-2 md:space-y-0">
+                        <div class="rating-item flex items-center px-4 py-2 rounded-md border border-gray-300 cursor-pointer" data-value="1" data-field="accuracy_rating">
+                            <input type="radio" id="accuracy_1" name="accuracy_rating" value="1" class="hidden">
+                            <label for="accuracy_1" class="ml-2 text-sm text-gray-700 cursor-pointer">Not accurate</label>
+                        </div>
+                        <div class="rating-item flex items-center px-4 py-2 rounded-md border border-gray-300 cursor-pointer" data-value="2" data-field="accuracy_rating">
+                            <input type="radio" id="accuracy_2" name="accuracy_rating" value="2" class="hidden">
+                            <label for="accuracy_2" class="ml-2 text-sm text-gray-700 cursor-pointer">Somewhat accurate</label>
+                        </div>
+                        <div class="rating-item flex items-center px-4 py-2 rounded-md border border-gray-300 cursor-pointer" data-value="3" data-field="accuracy_rating">
+                            <input type="radio" id="accuracy_3" name="accuracy_rating" value="3" class="hidden">
+                            <label for="accuracy_3" class="ml-2 text-sm text-gray-700 cursor-pointer">Moderately accurate</label>
+                        </div>
+                        <div class="rating-item flex items-center px-4 py-2 rounded-md border border-gray-300 cursor-pointer" data-value="4" data-field="accuracy_rating">
+                            <input type="radio" id="accuracy_4" name="accuracy_rating" value="4" class="hidden">
+                            <label for="accuracy_4" class="ml-2 text-sm text-gray-700 cursor-pointer">Very accurate</label>
+                        </div>
+                        <div class="rating-item flex items-center px-4 py-2 rounded-md border border-gray-300 cursor-pointer" data-value="5" data-field="accuracy_rating">
+                            <input type="radio" id="accuracy_5" name="accuracy_rating" value="5" class="hidden">
+                            <label for="accuracy_5" class="ml-2 text-sm text-gray-700 cursor-pointer">Extremely accurate</label>
+                        </div>
+                    </div>
+                    <div class="text-red-500 text-sm mt-1 hidden" id="accuracy_rating_error">Please select an accuracy rating</div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="usefulness_rating" class="block text-sm font-medium text-gray-700 mb-2">
+                        How useful do you find the enhanced scoring information?
+                    </label>
+                    <div class="flex flex-wrap items-center space-x-0 md:space-x-4 space-y-2 md:space-y-0">
+                        <div class="rating-item flex items-center px-4 py-2 rounded-md border border-gray-300 cursor-pointer" data-value="1" data-field="usefulness_rating">
+                            <input type="radio" id="usefulness_1" name="usefulness_rating" value="1" class="hidden">
+                            <label for="usefulness_1" class="ml-2 text-sm text-gray-700 cursor-pointer">Not useful</label>
+                        </div>
+                        <div class="rating-item flex items-center px-4 py-2 rounded-md border border-gray-300 cursor-pointer" data-value="2" data-field="usefulness_rating">
+                            <input type="radio" id="usefulness_2" name="usefulness_rating" value="2" class="hidden">
+                            <label for="usefulness_2" class="ml-2 text-sm text-gray-700 cursor-pointer">Somewhat useful</label>
+                        </div>
+                        <div class="rating-item flex items-center px-4 py-2 rounded-md border border-gray-300 cursor-pointer" data-value="3" data-field="usefulness_rating">
+                            <input type="radio" id="usefulness_3" name="usefulness_rating" value="3" class="hidden">
+                            <label for="usefulness_3" class="ml-2 text-sm text-gray-700 cursor-pointer">Moderately useful</label>
+                        </div>
+                        <div class="rating-item flex items-center px-4 py-2 rounded-md border border-gray-300 cursor-pointer" data-value="4" data-field="usefulness_rating">
+                            <input type="radio" id="usefulness_4" name="usefulness_rating" value="4" class="hidden">
+                            <label for="usefulness_4" class="ml-2 text-sm text-gray-700 cursor-pointer">Very useful</label>
+                        </div>
+                        <div class="rating-item flex items-center px-4 py-2 rounded-md border border-gray-300 cursor-pointer" data-value="5" data-field="usefulness_rating">
+                            <input type="radio" id="usefulness_5" name="usefulness_rating" value="5" class="hidden">
+                            <label for="usefulness_5" class="ml-2 text-sm text-gray-700 cursor-pointer">Extremely useful</label>
+                        </div>
+                    </div>
+                    <div class="text-red-500 text-sm mt-1 hidden" id="usefulness_rating_error">Please select a usefulness rating</div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="preferred_features" class="block text-sm font-medium text-gray-700 mb-2">
+                        Which enhanced scoring features do you find most valuable? (Select all that apply)
+                    </label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="feature_zscore" name="preferred_features" value="zscore" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="feature_zscore" class="ml-2 text-sm text-gray-700">Z-scores</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="feature_percentile" name="preferred_features" value="percentile" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="feature_percentile" class="ml-2 text-sm text-gray-700">Percentile rankings</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="feature_category" name="preferred_features" value="category" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="feature_category" class="ml-2 text-sm text-gray-700">Category scores</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="feature_subscale" name="preferred_features" value="subscale" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="feature_subscale" class="ml-2 text-sm text-gray-700">Subscale scores</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="feature_conditional" name="preferred_features" value="conditional" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="feature_conditional" class="ml-2 text-sm text-gray-700">Conditional scoring</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="feature_interpretation" name="preferred_features" value="interpretation" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="feature_interpretation" class="ml-2 text-sm text-gray-700">Score interpretations</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="feedback_text" class="block text-sm font-medium text-gray-700 mb-2">
+                        Do you have any additional feedback or suggestions for improving our enhanced scoring system?
+                    </label>
+                    <textarea id="feedback_text" name="feedback_text" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Submit Feedback
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Success message (hidden by default) -->
+            <div id="successMessage" class="hidden mt-4 p-4 bg-green-50 rounded-md">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-green-800">Feedback submitted successfully!</h3>
+                        <div class="mt-2 text-sm text-green-700">
+                            <p>Thank you for your feedback. Your input helps us improve our enhanced scoring system.</p>
+                        </div>
+                        <div class="mt-4">
+                            <a href="enhanced_scoring_demo.html" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                Return to Results
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle rating item selection
+            const ratingItems = document.querySelectorAll('.rating-item');
+            
+            ratingItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const value = this.getAttribute('data-value');
+                    const field = this.getAttribute('data-field');
+                    
+                    // Update the radio button
+                    document.getElementById(`${field}_${value}`).checked = true;
+                    
+                    // Update the UI
+                    document.querySelectorAll(`.rating-item[data-field="${field}"]`).forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                    
+                    // Hide error message if shown
+                    document.getElementById(`${field}_error`).classList.add('hidden');
+                });
+            });
+            
+            // Form validation and submission
+            const form = document.getElementById('feedbackForm');
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                let isValid = true;
+                
+                // Check accuracy rating
+                if (!document.querySelector('input[name="accuracy_rating"]:checked')) {
+                    document.getElementById('accuracy_rating_error').classList.remove('hidden');
+                    isValid = false;
+                }
+                
+                // Check usefulness rating
+                if (!document.querySelector('input[name="usefulness_rating"]:checked')) {
+                    document.getElementById('usefulness_rating_error').classList.remove('hidden');
+                    isValid = false;
+                }
+                
+                if (isValid) {
+                    // In a real application, you would submit the form data to the server here
+                    // For this demo, we'll just show the success message
+                    
+                    // Get form data
+                    const formData = new FormData(form);
+                    const data = {};
+                    for (let [key, value] of formData.entries()) {
+                        if (key === 'preferred_features') {
+                            if (!data[key]) {
+                                data[key] = [];
+                            }
+                            data[key].push(value);
+                        } else {
+                            data[key] = value;
+                        }
+                    }
+                    
+                    // Log the data to console (for demo purposes)
+                    console.log('Form data:', data);
+                    
+                    // Hide the form and show the success message
+                    form.classList.add('hidden');
+                    document.getElementById('successMessage').classList.remove('hidden');
+                    
+                    // Save the feedback data to localStorage (for demo purposes)
+                    localStorage.setItem('enhancedScoringFeedback', JSON.stringify(data));
+                }
+            });
+        });
+    </script>
+</body>
+</html>

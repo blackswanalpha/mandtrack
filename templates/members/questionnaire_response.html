@@ -1,0 +1,414 @@
+{% extends 'client/base.html' %}
+{% load static %}
+
+{% block title %}{{ questionnaire.title }} - MindTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .progress-container {
+        width: 100%;
+        background-color: #e5e7eb;
+        border-radius: 9999px;
+        height: 8px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background-color: #4f46e5;
+        transition: width 0.3s ease;
+    }
+
+    .question-container {
+        transition: all 0.3s ease;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .question-container:hover {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .nav-button {
+        transition: all 0.2s ease;
+    }
+
+    .nav-button:hover {
+        transform: translateY(-2px);
+    }
+
+    .nav-button:active {
+        transform: translateY(0);
+    }
+
+    .radio-input {
+        display: none;
+    }
+
+    .radio-label {
+        display: block;
+        padding: 0.75rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .radio-label:hover {
+        background-color: #f3f4f6;
+    }
+
+    .radio-input:checked + .radio-label {
+        border-color: #4f46e5;
+        background-color: #eef2ff;
+    }
+
+    .checkbox-label {
+        display: block;
+        padding: 0.75rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .checkbox-label:hover {
+        background-color: #f3f4f6;
+    }
+
+    .checkbox-input:checked + .checkbox-label {
+        border-color: #4f46e5;
+        background-color: #eef2ff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <div class="px-6 py-8">
+            <div class="mb-8 text-center">
+                <h1 class="text-3xl font-display font-bold text-gray-900">{{ questionnaire.title }}</h1>
+                {% if questionnaire.description %}
+                    <p class="mt-4 text-gray-600">{{ questionnaire.description }}</p>
+                {% endif %}
+            </div>
+
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm text-gray-500">
+                        Question <span id="current-question-num">1</span> of <span id="total-questions">{{ questions|length }}</span>
+                    </span>
+                    <span class="text-sm text-gray-500">
+                        Progress: <span id="progress-percentage">0%</span>
+                    </span>
+                </div>
+                <div class="progress-container">
+                    <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <form method="post" id="questionnaireForm">
+                {% csrf_token %}
+
+                <!-- Questions Container -->
+                <div id="questions-container">
+                    {% if questions %}
+                        {% for question in questions %}
+                            <div class="bg-white shadow overflow-hidden sm:rounded-lg question-container"
+                                id="question-{{ question.id }}"
+                                data-question-index="{{ forloop.counter0 }}"
+                                style="display: {% if forloop.first %}block{% else %}none{% endif %};">
+                                <div class="px-4 py-5 sm:px-6">
+                                    <div class="flex items-center">
+                                        <span class="w-6 h-6 flex items-center justify-center rounded-full bg-primary-100 text-primary-600 text-xs mr-2">
+                                            {{ forloop.counter }}
+                                        </span>
+                                        <h2 class="text-lg font-medium text-gray-900">{{ question.text }}</h2>
+                                        {% if question.required %}
+                                            <span class="ml-2 px-1.5 py-0.5 text-xs rounded-full bg-red-100 text-red-800">Required</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if question.description %}
+                                        <p class="mt-1 ml-8 text-sm text-gray-500">{{ question.description }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                                    {% if question.question_type == 'text' %}
+                                        <input type="text" name="question_{{ question.id }}" id="question_{{ question.id }}"
+                                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-300"
+                                            {% if question.required %}required{% endif %}>
+
+                                    {% elif question.question_type == 'textarea' %}
+                                        <textarea name="question_{{ question.id }}" id="question_{{ question.id }}" rows="4"
+                                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-300"
+                                                {% if question.required %}required{% endif %}></textarea>
+
+                                    {% elif question.question_type == 'single_choice' or question.question_type == 'radio' %}
+                                        <div class="space-y-2">
+                                            {% if question.choices.all %}
+                                                {% for choice in question.choices.all %}
+                                                    <div>
+                                                        <input type="radio" name="question_{{ question.id }}" id="choice_{{ choice.id }}"
+                                                            value="{{ choice.id }}" class="radio-input"
+                                                            {% if question.required %}required{% endif %}>
+                                                        <label for="choice_{{ choice.id }}" class="radio-label">
+                                                            {{ choice.text }}
+                                                        </label>
+                                                    </div>
+                                                {% endfor %}
+                                            {% else %}
+                                                <p class="text-red-500">No choices available for this question.</p>
+                                            {% endif %}
+                                        </div>
+
+                                    {% elif question.question_type == 'multiple_choice' or question.question_type == 'checkbox' %}
+                                        <div class="space-y-2">
+                                            {% if question.choices.all %}
+                                                {% for choice in question.choices.all %}
+                                                    <div>
+                                                        <input type="checkbox" name="question_{{ question.id }}" id="choice_{{ choice.id }}"
+                                                            value="{{ choice.id }}" class="checkbox-input">
+                                                        <label for="choice_{{ choice.id }}" class="checkbox-label">
+                                                            {{ choice.text }}
+                                                        </label>
+                                                    </div>
+                                                {% endfor %}
+                                            {% else %}
+                                                <p class="text-red-500">No choices available for this question.</p>
+                                            {% endif %}
+                                        </div>
+
+                                    {% elif question.question_type == 'dropdown' %}
+                                        <select name="question_{{ question.id }}" id="question_{{ question.id }}"
+                                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-300"
+                                                {% if question.required %}required{% endif %}>
+                                            <option value="">Select an option</option>
+                                            {% if question.choices.all %}
+                                                {% for choice in question.choices.all %}
+                                                    <option value="{{ choice.id }}">{{ choice.text }}</option>
+                                                {% endfor %}
+                                            {% else %}
+                                                <option value="" disabled>No choices available</option>
+                                            {% endif %}
+                                        </select>
+
+                                    {% elif question.question_type == 'number' %}
+                                        <input type="number" name="question_{{ question.id }}" id="question_{{ question.id }}"
+                                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-300"
+                                            {% if question.metadata.min_value %}min="{{ question.metadata.min_value }}"{% endif %}
+                                            {% if question.metadata.max_value %}max="{{ question.metadata.max_value }}"{% endif %}
+                                            {% if question.required %}required{% endif %}>
+
+                                    {% elif question.question_type == 'country' %}
+                                        <select name="question_{{ question.id }}" id="question_{{ question.id }}"
+                                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-300"
+                                               {% if question.required %}required{% endif %}>
+                                            <option value="">Select a country</option>
+                                            {% load countries %}
+                                            {% get_countries as countries %}
+                                            {% for country in countries %}
+                                                <option value="{{ country.code }}">{{ country.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    {% else %}
+                                        <p class="text-red-500">Unknown question type: {{ question.question_type }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-yellow-700">
+                                        No questions found for this questionnaire. Please contact the administrator.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="mt-8 flex justify-between">
+                    <button type="button" id="prev-button" class="nav-button px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" style="visibility: hidden;">
+                        <i class="fas fa-arrow-left mr-2"></i> Previous
+                    </button>
+
+                    <button type="button" id="next-button" class="nav-button px-4 py-2 border border-transparent rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        Next <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+
+                    <button type="submit" id="submit-button" class="nav-button px-4 py-2 border border-transparent rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500" style="display: none;">
+                        Submit <i class="fas fa-check ml-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Wait for the DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM fully loaded');
+
+        // Initialize variables
+        const questionsContainer = document.getElementById('questions-container');
+        if (!questionsContainer) {
+            console.error('Questions container not found');
+            return;
+        }
+        console.log('Questions container found:', questionsContainer);
+
+        // Debug the HTML content of the questions container
+        console.log('Questions container HTML:', questionsContainer.innerHTML);
+
+        const questions = questionsContainer.querySelectorAll('.question-container');
+        console.log('Questions found:', questions.length);
+
+        if (!questions || questions.length === 0) {
+            console.error('No questions found');
+            return;
+        }
+
+        const totalQuestions = questions.length;
+
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercentage = document.getElementById('progress-percentage');
+        const currentQuestionNum = document.getElementById('current-question-num');
+        const totalQuestionsElement = document.getElementById('total-questions');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const submitButton = document.getElementById('submit-button');
+        const questionnaireForm = document.getElementById('questionnaireForm');
+
+        // Check if all required elements exist
+        if (!progressBar || !progressPercentage || !currentQuestionNum ||
+            !totalQuestionsElement || !prevButton || !nextButton ||
+            !submitButton || !questionnaireForm) {
+            console.error('One or more required elements not found');
+            return;
+        }
+
+        let currentQuestionIndex = 0;
+
+        // Set total questions
+        totalQuestionsElement.textContent = totalQuestions;
+
+        // Function to update the progress bar
+        function updateProgress() {
+            const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressPercentage.textContent = `${Math.round(progress)}%`;
+            currentQuestionNum.textContent = currentQuestionIndex + 1;
+
+            // Update button visibility
+            if (currentQuestionIndex === 0) {
+                prevButton.style.visibility = 'hidden';
+            } else {
+                prevButton.style.visibility = 'visible';
+            }
+
+            if (currentQuestionIndex === totalQuestions - 1) {
+                nextButton.style.display = 'none';
+                submitButton.style.display = 'block';
+            } else {
+                nextButton.style.display = 'block';
+                submitButton.style.display = 'none';
+            }
+        }
+
+        // Function to show a specific question
+        function showQuestion(index) {
+            // Hide all questions
+            for (let i = 0; i < questions.length; i++) {
+                questions[i].style.display = 'none';
+            }
+
+            // Show the current question
+            if (questions[index]) {
+                questions[index].style.display = 'block';
+            }
+
+            // Update progress
+            updateProgress();
+        }
+
+        // Function to validate the current question
+        function validateCurrentQuestion() {
+            const currentQuestion = questions[currentQuestionIndex];
+            if (!currentQuestion) {
+                console.error('Current question not found');
+                return false;
+            }
+
+            const inputs = currentQuestion.querySelectorAll('input, textarea, select');
+            if (!inputs || inputs.length === 0) {
+                // No inputs to validate
+                return true;
+            }
+
+            let isValid = true;
+
+            inputs.forEach(input => {
+                if (input.hasAttribute('required') && !input.value) {
+                    isValid = false;
+                }
+
+                // Special case for radio buttons
+                if (input.type === 'radio' && input.hasAttribute('required')) {
+                    const name = input.getAttribute('name');
+                    const radioGroup = currentQuestion.querySelectorAll(`input[name="${name}"]:checked`);
+                    if (radioGroup.length === 0) {
+                        isValid = false;
+                    }
+                }
+            });
+
+            return isValid;
+        }
+
+        // Event listener for the next button
+        nextButton.addEventListener('click', function() {
+            if (validateCurrentQuestion()) {
+                currentQuestionIndex++;
+                if (currentQuestionIndex >= totalQuestions) {
+                    currentQuestionIndex = totalQuestions - 1;
+                }
+                showQuestion(currentQuestionIndex);
+            } else {
+                alert('Please fill in all required fields before proceeding.');
+            }
+        });
+
+        // Event listener for the previous button
+        prevButton.addEventListener('click', function() {
+            currentQuestionIndex--;
+            if (currentQuestionIndex < 0) {
+                currentQuestionIndex = 0;
+            }
+            showQuestion(currentQuestionIndex);
+        });
+
+        // Event listener for the form submission
+        questionnaireForm.addEventListener('submit', function(event) {
+            if (!validateCurrentQuestion()) {
+                event.preventDefault();
+                alert('Please fill in all required fields before submitting.');
+            }
+        });
+
+        // Initialize the first question
+        showQuestion(currentQuestionIndex);
+    });
+</script>
+{% endblock %}

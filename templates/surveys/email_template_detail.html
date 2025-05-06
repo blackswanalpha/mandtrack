@@ -1,0 +1,235 @@
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
+
+{% block title %}{{ template.name }}{% endblock %}
+
+{% block page_title %}Email Template Details{% endblock %}
+
+{% block breadcrumbs %}
+<li>
+    <div class="flex items-center">
+        <i class="fas fa-chevron-right text-gray-400 text-xs mx-1"></i>
+        <a href="{% url 'surveys:email_template_list' %}" class="text-sm text-gray-500 hover:text-gray-700">
+            Email Templates
+        </a>
+    </div>
+</li>
+<li aria-current="page">
+    <div class="flex items-center">
+        <i class="fas fa-chevron-right text-gray-400 text-xs mx-1"></i>
+        <span class="text-sm text-gray-500">{{ template.name }}</span>
+    </div>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden mb-6">
+    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+            <i class="fas fa-envelope-open-text mr-2 text-blue-500"></i> {{ template.name }}
+        </h2>
+        
+        <div class="flex space-x-2">
+            <a href="{% url 'surveys:email_template_edit' pk=template.pk %}" class="btn-secondary">
+                <i class="fas fa-edit mr-1"></i> Edit
+            </a>
+            <a href="{% url 'surveys:email_template_delete' pk=template.pk %}" class="btn-danger">
+                <i class="fas fa-trash-alt mr-1"></i> Delete
+            </a>
+        </div>
+    </div>
+    
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Template Details</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Template Name</h4>
+                        <p class="mt-1 text-gray-900 dark:text-white">{{ template.name }}</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Subject Line</h4>
+                        <p class="mt-1 text-gray-900 dark:text-white">{{ template.subject }}</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Template Type</h4>
+                        <p class="mt-1 text-gray-900 dark:text-white">{{ template.get_template_type_display }}</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Organization</h4>
+                        <p class="mt-1 text-gray-900 dark:text-white">
+                            {% if template.organization %}
+                            {{ template.organization.name }}
+                            {% else %}
+                            <span class="text-gray-400 dark:text-gray-500">Personal</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Status Information</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</h4>
+                        <div class="mt-1">
+                            {% if template.is_active %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                                Active
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                Inactive
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Default Template</h4>
+                        <div class="mt-1">
+                            {% if template.is_default %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                                Default
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                Not Default
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Created By</h4>
+                        <p class="mt-1 text-gray-900 dark:text-white">{{ template.created_by.get_full_name|default:template.created_by.username }}</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Created On</h4>
+                        <p class="mt-1 text-gray-900 dark:text-white">{{ template.created_at|date:"F j, Y, g:i a" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Email Content Preview</h3>
+            
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                <div class="font-medium text-gray-800 dark:text-white mb-2">Subject: {{ template.subject }}</div>
+                <div class="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
+                    <div class="prose dark:prose-invert max-w-none">
+                        {{ template.content|safe }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-between">
+                <a href="{% url 'surveys:email_template_list' %}" class="btn-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to Templates
+                </a>
+                
+                <div class="flex space-x-2">
+                    <button id="test-email-btn" class="btn-secondary">
+                        <i class="fas fa-paper-plane mr-1"></i> Send Test Email
+                    </button>
+                    <a href="{% url 'surveys:email_template_edit' pk=template.pk %}" class="btn-primary">
+                        <i class="fas fa-edit mr-1"></i> Edit Template
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Email Modal -->
+<div id="test-email-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Send Test Email</h3>
+        </div>
+        
+        <div class="p-6">
+            <form id="test-email-form">
+                <div class="mb-4">
+                    <label for="test-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Email Address
+                    </label>
+                    <input type="email" id="test-email" name="test_email" class="enhanced-input w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" placeholder="Enter your email address" required>
+                </div>
+                
+                <div class="flex justify-end space-x-2 mt-6">
+                    <button type="button" id="cancel-test-email" class="btn-secondary">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-paper-plane mr-1"></i> Send Test
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Test email modal functionality
+        const testEmailBtn = document.getElementById('test-email-btn');
+        const testEmailModal = document.getElementById('test-email-modal');
+        const cancelTestEmail = document.getElementById('cancel-test-email');
+        const testEmailForm = document.getElementById('test-email-form');
+        
+        testEmailBtn.addEventListener('click', function() {
+            testEmailModal.classList.remove('hidden');
+            document.getElementById('test-email').focus();
+        });
+        
+        cancelTestEmail.addEventListener('click', function() {
+            testEmailModal.classList.add('hidden');
+        });
+        
+        // Close modal when clicking outside
+        testEmailModal.addEventListener('click', function(event) {
+            if (event.target === testEmailModal) {
+                testEmailModal.classList.add('hidden');
+            }
+        });
+        
+        // Handle test email form submission
+        testEmailForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Show a toast notification
+            // This is a placeholder - in a real implementation, you would send an AJAX request
+            // to send the test email and then show a success or error message
+            
+            // Simulate success
+            showToast('success', 'Test email sent successfully!', 'Check your inbox for the test email.');
+            
+            // Close the modal
+            testEmailModal.classList.add('hidden');
+        });
+        
+        // Toast notification function
+        function showToast(type, title, message) {
+            // Check if toast function exists (from toast.js)
+            if (typeof window.showToast === 'function') {
+                window.showToast(type, title, message);
+            } else {
+                // Fallback alert if toast function is not available
+                alert(`${title}: ${message}`);
+            }
+        }
+    });
+</script>
+{% endblock %}

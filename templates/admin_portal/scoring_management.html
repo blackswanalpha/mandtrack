@@ -1,4 +1,4 @@
-{% extends 'admin_portal/base.html' %}
+{% extends 'admin_portal/modern_base.html' %}
 
 {% block title %}Scoring Management - MindTrack{% endblock %}
 
@@ -9,16 +9,84 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
                 <h2 class="text-xl font-semibold text-gray-800">Scoring Management</h2>
-                <p class="mt-1 text-sm text-gray-600">Manage scoring configurations for your questionnaires</p>
+                <p class="mt-1 text-sm text-gray-600">Manage scoring systems and configurations for your questionnaires</p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <a href="{% url 'dashboard:scoring_create' %}" class="btn-animated inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-plus mr-2"></i> New Scoring System
+                </a>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Scoring Systems List -->
+<div class="bg-white rounded-lg shadow mb-6">
+    <div class="p-5 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Scoring Systems</h3>
+    </div>
+    <div class="p-5">
+        {% if scoring_systems %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Questionnaire</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rules</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for system in scoring_systems %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ system.name }}</div>
+                                    <div class="text-sm text-gray-500">{{ system.description|truncatechars:50 }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">{{ system.questionnaire.title|truncatechars:30 }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                        {{ system.get_scoring_type_display }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ system.score_rules.count }} rules
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ system.created_at|date:"M d, Y" }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="{% url 'dashboard:scoring_detail' system_id=system.id %}" class="text-primary-600 hover:text-primary-900 mr-3">View</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-8 text-center">
+                <div class="text-gray-500">
+                    <i class="fas fa-calculator text-4xl mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No Scoring Systems Found</h3>
+                    <p class="mb-4">You haven't created any scoring systems yet.</p>
+                    <a href="{% url 'dashboard:scoring_create' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                        <i class="fas fa-plus-circle mr-2"></i> Create First Scoring System
+                    </a>
+                </div>
+            </div>
+        {% endif %}
     </div>
 </div>
 
 <!-- Questionnaires List -->
 <div class="bg-white rounded-lg shadow mb-6">
     <div class="p-5 border-b border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900">Select a Questionnaire</h3>
+        <h3 class="text-lg font-semibold text-gray-900">Questionnaires</h3>
     </div>
     <div class="p-5">
         {% if questionnaires %}
@@ -42,15 +110,13 @@
                             </div>
 
                             <div class="flex flex-col space-y-2">
-                                <a href="{% url 'surveys:survey_detail' pk=questionnaire.id %}" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
-                                    <i class="fas fa-cog mr-2"></i> Manage Questionnaire
-                                </a>
-                                <!-- We'll use a direct link to the survey detail page instead -->
+                                <button
+                                    onclick="createScoringSystem('{{ questionnaire.id }}', '{{ questionnaire.title|escapejs }}')"
+                                    class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                                    <i class="fas fa-calculator mr-2"></i> Create Scoring System
+                                </button>
                                 <a href="{% url 'surveys:survey_detail' pk=questionnaire.id %}" class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
                                     <i class="fas fa-list-ol mr-2"></i> View Questionnaire
-                                </a>
-                                <a href="{% url 'surveys:survey_detail' pk=questionnaire.id %}" class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
-                                    <i class="fas fa-chart-bar mr-2"></i> View Responses
                                 </a>
                             </div>
                         </div>
@@ -71,4 +137,80 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Create Scoring System Modal -->
+<div id="createScoringModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Create Scoring System</h3>
+            <form action="{% url 'dashboard:scoring_create' %}" method="POST" class="mt-2 text-left">
+                {% csrf_token %}
+                <input type="hidden" id="questionnaire_id" name="questionnaire_id" value="">
+
+                <div class="mb-4">
+                    <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                    <input type="text" name="name" id="name" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
+                </div>
+
+                <div class="mb-4">
+                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea name="description" id="description" rows="3" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label for="scoring_type" class="block text-sm font-medium text-gray-700">Scoring Type</label>
+                    <select name="scoring_type" id="scoring_type" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" required>
+                        <option value="simple_sum">Simple Sum</option>
+                        <option value="weighted">Weighted Scoring</option>
+                        <option value="range_based">Range-Based Scoring</option>
+                        <option value="custom">Custom Formula</option>
+                    </select>
+                </div>
+
+                <div id="formula_field" class="mb-4 hidden">
+                    <label for="formula" class="block text-sm font-medium text-gray-700">Formula/Logic</label>
+                    <textarea name="formula" id="formula" rows="3" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
+                    <p class="mt-1 text-xs text-gray-500">For custom scoring, describe the formula or logic to be used.</p>
+                </div>
+
+                <div class="flex items-center justify-between mt-6">
+                    <button type="button" onclick="closeModal()" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        Cancel
+                    </button>
+                    <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        Create
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show/hide formula field based on scoring type
+        const scoringTypeSelect = document.getElementById('scoring_type');
+        const formulaField = document.getElementById('formula_field');
+
+        scoringTypeSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                formulaField.classList.remove('hidden');
+            } else {
+                formulaField.classList.add('hidden');
+            }
+        });
+    });
+
+    function createScoringSystem(questionnaireId, questionnaireTitle) {
+        document.getElementById('questionnaire_id').value = questionnaireId;
+        document.getElementById('name').value = 'Scoring for ' + questionnaireTitle;
+        document.getElementById('createScoringModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+        document.getElementById('createScoringModal').classList.add('hidden');
+    }
+</script>
 {% endblock %}

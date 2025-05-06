@@ -1,0 +1,674 @@
+{% extends 'base/client_base.html' %}
+{% load static %}
+
+{% block title %}Patient Portal - MindTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .portal-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .portal-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .portal-card {
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .portal-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .risk-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+    
+    .risk-low {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    
+    .risk-medium {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+    
+    .risk-high {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+    
+    .risk-critical {
+        background-color: #7f1d1d;
+        color: #fee2e2;
+    }
+    
+    .consultation-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+    
+    .consultation-not_required {
+        background-color: #e5e7eb;
+        color: #374151;
+    }
+    
+    .consultation-recommended {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+    
+    .consultation-required {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+    
+    .consultation-scheduled {
+        background-color: #e0e7ff;
+        color: #3730a3;
+    }
+    
+    .consultation-completed {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    
+    .progress-container {
+        margin: 1.5rem 0;
+    }
+    
+    .progress-bar {
+        height: 0.5rem;
+        background-color: #e5e7eb;
+        border-radius: 9999px;
+        overflow: hidden;
+    }
+    
+    .progress-value {
+        height: 100%;
+        border-radius: 9999px;
+        background-color: #4f46e5;
+    }
+    
+    .auth-form {
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 2rem;
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #374151;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        font-size: 1rem;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+    }
+    
+    .btn-primary {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        background-color: #4f46e5;
+        color: white;
+        font-weight: 500;
+        border-radius: 0.375rem;
+        text-align: center;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        border: none;
+    }
+    
+    .btn-primary:hover {
+        background-color: #4338ca;
+    }
+    
+    .btn-block {
+        display: block;
+        width: 100%;
+    }
+    
+    .tab-container {
+        margin-top: 2rem;
+    }
+    
+    .tab-nav {
+        display: flex;
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 1.5rem;
+    }
+    
+    .tab-link {
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        color: #6b7280;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+    }
+    
+    .tab-link.active {
+        color: #4f46e5;
+        border-bottom-color: #4f46e5;
+    }
+    
+    .tab-content {
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    .chart-container {
+        height: 300px;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="portal-container">
+    {% if not patient_identifier %}
+    <!-- Authentication Form -->
+    <div class="portal-header">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Patient Portal</h1>
+        <p class="text-gray-600">Please enter your access code and patient ID to view your assessments.</p>
+    </div>
+    
+    <div class="auth-form">
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if error_message %}
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+                <p>{{ error_message }}</p>
+            </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <label for="access_code" class="form-label">Access Code</label>
+                <input type="text" id="access_code" name="access_code" class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="patient_identifier" class="form-label">Patient ID</label>
+                <input type="text" id="patient_identifier" name="patient_identifier" class="form-control" required>
+            </div>
+            
+            <button type="submit" class="btn-primary btn-block">Access Portal</button>
+        </form>
+    </div>
+    {% else %}
+    <!-- Patient Portal Content -->
+    <div class="portal-header">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome to Your Patient Portal</h1>
+        <p class="text-gray-600">Patient ID: {{ patient_identifier }}</p>
+    </div>
+    
+    <div class="tab-container">
+        <div class="tab-nav">
+            <div class="tab-link active" data-tab="overview">Overview</div>
+            <div class="tab-link" data-tab="assessments">Assessments</div>
+            <div class="tab-link" data-tab="consultations">Consultations</div>
+            <div class="tab-link" data-tab="progress">Progress</div>
+        </div>
+        
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <div class="portal-card">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Your Assessment Summary</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-medium text-gray-700 mb-2">Total Assessments</h3>
+                        <p class="text-3xl font-bold text-indigo-600">{{ assessments|length }}</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-medium text-gray-700 mb-2">Latest Risk Level</h3>
+                        {% if latest_assessment %}
+                        <span class="risk-badge risk-{{ latest_assessment.get_risk_level }}">
+                            {{ latest_assessment.get_risk_level|title }}
+                        </span>
+                        {% else %}
+                        <p class="text-gray-500">No assessments yet</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-medium text-gray-700 mb-2">Upcoming Consultations</h3>
+                        <p class="text-3xl font-bold text-indigo-600">{{ upcoming_consultations|length }}</p>
+                    </div>
+                </div>
+                
+                {% if latest_assessment %}
+                <div class="mt-6">
+                    <h3 class="text-lg font-medium text-gray-700 mb-2">Latest Assessment</h3>
+                    <p class="text-gray-600 mb-2">
+                        <strong>Date:</strong> {{ latest_assessment.assessment_date|date:"F d, Y" }}
+                    </p>
+                    <p class="text-gray-600 mb-2">
+                        <strong>Questionnaire:</strong> {{ latest_assessment.response.survey.title }}
+                    </p>
+                    <p class="text-gray-600 mb-2">
+                        <strong>Consultation:</strong> 
+                        <span class="consultation-badge consultation-{{ latest_assessment.consultation_recommended }}">
+                            {{ latest_assessment.get_consultation_recommended_display }}
+                        </span>
+                    </p>
+                    
+                    {% if latest_assessment.strengths %}
+                    <div class="mt-4">
+                        <h4 class="text-md font-medium text-gray-700 mb-1">Strengths</h4>
+                        <p class="text-gray-600">{{ latest_assessment.strengths }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if latest_assessment.concerns %}
+                    <div class="mt-4">
+                        <h4 class="text-md font-medium text-gray-700 mb-1">Areas of Concern</h4>
+                        <p class="text-gray-600">{{ latest_assessment.concerns }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if upcoming_consultations %}
+            <div class="portal-card">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Upcoming Consultations</h2>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consultant</th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for consultation in upcoming_consultations %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {{ consultation.scheduled_date|date:"F d, Y H:i" }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {{ consultation.consultant.get_full_name|default:consultation.consultant.username }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        {{ consultation.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Assessments Tab -->
+        <div id="assessments" class="tab-content">
+            <div class="portal-card">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Your Assessments</h2>
+                
+                {% if assessments %}
+                <div class="space-y-6">
+                    {% for assessment in assessments %}
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-700">{{ assessment.response.survey.title }}</h3>
+                                <p class="text-gray-600 text-sm">{{ assessment.assessment_date|date:"F d, Y" }}</p>
+                            </div>
+                            <span class="risk-badge risk-{{ assessment.get_risk_level }}">
+                                {{ assessment.get_risk_level|title }} Risk
+                            </span>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <p class="text-gray-600 mb-2">
+                                <strong>Consultation:</strong> 
+                                <span class="consultation-badge consultation-{{ assessment.consultation_recommended }}">
+                                    {{ assessment.get_consultation_recommended_display }}
+                                </span>
+                            </p>
+                            
+                            {% if assessment.notes %}
+                            <div class="mt-2">
+                                <h4 class="text-md font-medium text-gray-700 mb-1">Assessment Notes</h4>
+                                <p class="text-gray-600">{{ assessment.notes }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if assessment.strengths %}
+                            <div class="mt-2">
+                                <h4 class="text-md font-medium text-gray-700 mb-1">Strengths</h4>
+                                <p class="text-gray-600">{{ assessment.strengths }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if assessment.concerns %}
+                            <div class="mt-2">
+                                <h4 class="text-md font-medium text-gray-700 mb-1">Areas of Concern</h4>
+                                <p class="text-gray-600">{{ assessment.concerns }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if assessment.follow_up_date %}
+                            <div class="mt-2">
+                                <h4 class="text-md font-medium text-gray-700 mb-1">Follow-up</h4>
+                                <p class="text-gray-600">Scheduled for {{ assessment.follow_up_date|date:"F d, Y" }}</p>
+                                {% if assessment.follow_up_notes %}
+                                <p class="text-gray-600">{{ assessment.follow_up_notes }}</p>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-600">No assessments found.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Consultations Tab -->
+        <div id="consultations" class="tab-content">
+            <div class="portal-card">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Your Consultations</h2>
+                
+                {% if consultations %}
+                <div class="space-y-6">
+                    {% for consultation in consultations %}
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-700">
+                                    Consultation on {{ consultation.scheduled_date|date:"F d, Y" }}
+                                </h3>
+                                <p class="text-gray-600 text-sm">
+                                    {{ consultation.scheduled_date|date:"H:i" }} with 
+                                    {{ consultation.consultant.get_full_name|default:consultation.consultant.username }}
+                                </p>
+                            </div>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if consultation.status == 'scheduled' %}bg-blue-100 text-blue-800
+                                {% elif consultation.status == 'completed' %}bg-green-100 text-green-800
+                                {% elif consultation.status == 'cancelled' %}bg-red-100 text-red-800
+                                {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                {{ consultation.get_status_display }}
+                            </span>
+                        </div>
+                        
+                        {% if consultation.notes %}
+                        <div class="mt-4">
+                            <h4 class="text-md font-medium text-gray-700 mb-1">Notes</h4>
+                            <p class="text-gray-600">{{ consultation.notes }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if consultation.status == 'completed' and consultation.outcome %}
+                        <div class="mt-4">
+                            <h4 class="text-md font-medium text-gray-700 mb-1">Outcome</h4>
+                            <p class="text-gray-600">{{ consultation.outcome }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if consultation.follow_up_required %}
+                        <div class="mt-4">
+                            <p class="text-gray-600">
+                                <i class="fas fa-calendar-check mr-2"></i> Follow-up required
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-600">No consultations found.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Progress Tab -->
+        <div id="progress" class="tab-content">
+            <div class="portal-card">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Your Progress</h2>
+                
+                {% if assessments|length > 1 %}
+                <div class="chart-container">
+                    <canvas id="riskLevelChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="scoreChart"></canvas>
+                </div>
+                
+                <div class="mt-6">
+                    <h3 class="text-lg font-medium text-gray-700 mb-2">Progress Summary</h3>
+                    <p class="text-gray-600">
+                        Based on your assessment history, here's a summary of your progress:
+                    </p>
+                    
+                    {% if risk_trend == 'improving' %}
+                    <div class="bg-green-50 border-l-4 border-green-400 p-4 mt-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-arrow-up text-green-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-green-700">
+                                    Your risk level has been improving over time. Keep up the good work!
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% elif risk_trend == 'worsening' %}
+                    <div class="bg-red-50 border-l-4 border-red-400 p-4 mt-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-arrow-down text-red-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-red-700">
+                                    Your risk level has been increasing over time. We recommend scheduling a consultation to discuss strategies for improvement.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mt-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-equals text-blue-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-blue-700">
+                                    Your risk level has remained stable over time. Continue with your current strategies and follow any recommendations from your healthcare provider.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p class="text-gray-600">Not enough assessment data to show progress. Complete more assessments to track your progress over time.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if patient_identifier %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab navigation
+        const tabLinks = document.querySelectorAll('.tab-link');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                
+                // Remove active class from all tabs
+                tabLinks.forEach(link => link.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                
+                // Add active class to current tab
+                this.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        {% if assessments|length > 1 %}
+        // Risk Level Chart
+        const riskLevelCtx = document.getElementById('riskLevelChart').getContext('2d');
+        const riskLevelChart = new Chart(riskLevelCtx, {
+            type: 'line',
+            data: {
+                labels: [{% for assessment in assessments reversed %}'{{ assessment.assessment_date|date:"M d, Y" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Risk Level',
+                    data: [{% for assessment in assessments reversed %}
+                        {% if assessment.get_risk_level == 'low' %}1
+                        {% elif assessment.get_risk_level == 'medium' %}2
+                        {% elif assessment.get_risk_level == 'high' %}3
+                        {% elif assessment.get_risk_level == 'critical' %}4
+                        {% else %}0{% endif %}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}],
+                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    pointBackgroundColor: 'rgba(79, 70, 229, 1)',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 4,
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(value) {
+                                switch (value) {
+                                    case 0: return 'None';
+                                    case 1: return 'Low';
+                                    case 2: return 'Medium';
+                                    case 3: return 'High';
+                                    case 4: return 'Critical';
+                                    default: return '';
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Risk Level Over Time',
+                        font: {
+                            size: 16
+                        }
+                    },
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Score Chart
+        const scoreCtx = document.getElementById('scoreChart').getContext('2d');
+        const scoreChart = new Chart(scoreCtx, {
+            type: 'line',
+            data: {
+                labels: [{% for assessment in assessments reversed %}'{{ assessment.assessment_date|date:"M d, Y" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Score',
+                    data: [{% for assessment in assessments reversed %}
+                        {{ assessment.response.score|default:0 }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}],
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Assessment Score Over Time',
+                        font: {
+                            size: 16
+                        }
+                    },
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        {% endif %}
+    });
+</script>
+{% endif %}
+{% endblock %}

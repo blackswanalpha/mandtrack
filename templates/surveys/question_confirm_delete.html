@@ -22,7 +22,7 @@
                         {% endif %}
                     </div>
                 </div>
-                
+
                 <div class="rounded-md bg-yellow-50 p-4 mb-6">
                     <div class="flex">
                         <div class="flex-shrink-0">
@@ -36,11 +36,11 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <form method="post" class="mt-5">
                     {% csrf_token %}
                     <div class="flex justify-center space-x-3">
-                        <a href="{% url 'surveys:question_detail' survey_pk=survey.pk pk=question.pk %}" 
+                        <a href="{% url 'surveys:question_detail' survey_pk=questionnaire.pk pk=question.pk %}"
                            class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                             Cancel
                         </a>

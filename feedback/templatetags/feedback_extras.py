@@ -47,3 +47,11 @@ def get_item(dictionary, key):
     if dictionary is None:
         return None
     return dictionary.get(key)
+
+@register.filter
+def widthmultiplier(value, multiplier=10):
+    """Multiply the value by the multiplier, used for width calculations in templates."""
+    try:
+        return float(value) * float(multiplier)
+    except (ValueError, TypeError):
+        return 0

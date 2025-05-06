@@ -14,13 +14,20 @@
                     {% if is_edit %}Edit Question{% else %}Add Question{% endif %}
                 </h1>
             </div>
-            <p class="mt-2 text-gray-600">
-                {% if is_edit %}
-                    Update question for "{{ questionnaire.title }}"
-                {% else %}
-                    Add a new question to "{{ questionnaire.title }}"
-                {% endif %}
-            </p>
+            <div class="flex items-center">
+                <p class="mt-2 text-gray-600 mr-4">
+                    {% if is_edit %}
+                        Update question for "{{ questionnaire.title }}"
+                    {% else %}
+                        Add a new question to "{{ questionnaire.title }}"
+                    {% endif %}
+                </p>
+                <!-- Quick Add Country Question Button -->
+                <button type="button" id="add-country-question"
+                        class="mt-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-300 flex items-center">
+                    <i class="fas fa-globe mr-2"></i> Add Country Question
+                </button>
+            </div>
         </div>
 
         <div class="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -87,7 +94,7 @@
                             <div class="mt-1">
                                 <select name="{{ form.question_type.name }}" id="{{ form.question_type.id_for_label }}"
                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.question_type.errors %}border-red-300{% endif %}"
-                                        onchange="toggleQuestionTypeInfo(); toggleChoicesSection()">
+                                        onchange="toggleQuestionTypeInfo()">
                                     {% for value, label in form.fields.question_type.choices %}
                                         <option value="{{ value }}" {% if form.question_type.value == value %}selected{% endif %}>{{ label }}</option>
                                     {% endfor %}
@@ -207,6 +214,163 @@
                                         </span>
                                     </div>
                                 </div>
+                                <div id="type-country" class="question-type-info hidden">
+                                    <h4 class="text-sm font-medium text-gray-700">Country</h4>
+                                    <p class="text-xs text-gray-500">A dropdown with all countries for selecting a country.</p>
+                                    <div class="mt-2 flex items-center text-xs text-gray-500">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                            <i class="fas fa-globe mr-1"></i> Standardized
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-flag mr-1"></i> ISO 3166-1
+                                        </span>
+                                    </div>
+                                </div>
+                                <!-- Additional question types -->
+                                <div id="type-email" class="question-type-info hidden">
+                                    <h4 class="text-sm font-medium text-gray-700">Email</h4>
+                                    <p class="text-xs text-gray-500">An input field for collecting email addresses with validation.</p>
+                                    <div class="mt-2 flex items-center text-xs text-gray-500">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                            <i class="fas fa-envelope mr-1"></i> Contact info
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-check-circle mr-1"></i> Validated
+                                        </span>
+                                    </div>
+                                </div>
+                                <div id="type-phone" class="question-type-info hidden">
+                                    <h4 class="text-sm font-medium text-gray-700">Phone</h4>
+                                    <p class="text-xs text-gray-500">An input field for collecting phone numbers.</p>
+                                    <div class="mt-2 flex items-center text-xs text-gray-500">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                            <i class="fas fa-phone mr-1"></i> Contact info
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                            <i class="fas fa-mobile-alt mr-1"></i> Formatted
+                                        </span>
+                                    </div>
+                                </div>
+                                <div id="type-image" class="question-type-info hidden">
+                                    <h4 class="text-sm font-medium text-gray-700">Image Upload</h4>
+                                    <p class="text-xs text-gray-500">Allows respondents to upload image files.</p>
+                                    <div class="mt-2 flex items-center text-xs text-gray-500">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                            <i class="fas fa-image mr-1"></i> Visual data
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i> Storage required
+                                        </span>
+                                    </div>
+                                </div>
+                                <div id="type-signature" class="question-type-info hidden">
+                                    <h4 class="text-sm font-medium text-gray-700">Signature</h4>
+                                    <p class="text-xs text-gray-500">Allows respondents to draw their signature.</p>
+                                    <div class="mt-2 flex items-center text-xs text-gray-500">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                            <i class="fas fa-signature mr-1"></i> Authentication
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-pen-fancy mr-1"></i> Digital signing
+                                        </span>
+                                    </div>
+                                </div>
+                                <div id="type-location" class="question-type-info hidden">
+                                    <h4 class="text-sm font-medium text-gray-700">Location</h4>
+                                    <p class="text-xs text-gray-500">Collects geographic location information.</p>
+                                    <div class="mt-2 flex items-center text-xs text-gray-500">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                            <i class="fas fa-map-marker-alt mr-1"></i> Geolocation
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-map mr-1"></i> Mappable
+                                        </span>
+                                    </div>
+                                </div>
+                                <div id="type-rating" class="question-type-info hidden">
+                                    <h4 class="text-sm font-medium text-gray-700">Rating</h4>
+                                    <p class="text-xs text-gray-500">Star or numeric rating system for feedback.</p>
+                                    <div class="mt-2 flex items-center text-xs text-gray-500">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                            <i class="fas fa-star mr-1"></i> Visual rating
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-chart-line mr-1"></i> Quantifiable
+                                        </span>
+                                    </div>
+                                </div>
+                                <div id="type-matrix" class="question-type-info hidden">
+                                    <h4 class="text-sm font-medium text-gray-700">Matrix</h4>
+                                    <p class="text-xs text-gray-500">Grid of questions with the same response options.</p>
+                                    <div class="mt-2 flex items-center text-xs text-gray-500">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                            <i class="fas fa-table mr-1"></i> Comprehensive
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-th mr-1"></i> Multiple items
+                                        </span>
+                                    </div>
+                                </div>
+                                <div id="type-slider" class="question-type-info hidden">
+                                    <h4 class="text-sm font-medium text-gray-700">Slider</h4>
+                                    <p class="text-xs text-gray-500">Drag slider to select a value within a range.</p>
+                                    <div class="mt-2 flex items-center text-xs text-gray-500">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                            <i class="fas fa-sliders-h mr-1"></i> Interactive
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-ruler-horizontal mr-1"></i> Range selection
+                                        </span>
+                                    </div>
+                                </div>
+                                <div id="type-dropdown" class="question-type-info hidden">
+                                    <h4 class="text-sm font-medium text-gray-700">Dropdown</h4>
+                                    <p class="text-xs text-gray-500">Select one option from a dropdown menu.</p>
+                                    <div class="mt-2 flex items-center text-xs text-gray-500">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                            <i class="fas fa-caret-down mr-1"></i> Space-efficient
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-list mr-1"></i> Many options
+                                        </span>
+                                    </div>
+                                </div>
+                                <div id="type-checkbox" class="question-type-info hidden">
+                                    <h4 class="text-sm font-medium text-gray-700">Checkbox</h4>
+                                    <p class="text-xs text-gray-500">Single checkbox for yes/no or agreement questions.</p>
+                                    <div class="mt-2 flex items-center text-xs text-gray-500">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                            <i class="fas fa-check-square mr-1"></i> Binary choice
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-toggle-on mr-1"></i> Simple
+                                        </span>
+                                    </div>
+                                </div>
+                                <div id="type-radio" class="question-type-info hidden">
+                                    <h4 class="text-sm font-medium text-gray-700">Radio Button</h4>
+                                    <p class="text-xs text-gray-500">Alternative to single choice with radio buttons.</p>
+                                    <div class="mt-2 flex items-center text-xs text-gray-500">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                            <i class="fas fa-dot-circle mr-1"></i> One selection
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-list-ul mr-1"></i> Clear options
+                                        </span>
+                                    </div>
+                                </div>
+                                <div id="type-hidden" class="question-type-info hidden">
+                                    <h4 class="text-sm font-medium text-gray-700">Hidden</h4>
+                                    <p class="text-xs text-gray-500">Hidden field not visible to respondents.</p>
+                                    <div class="mt-2 flex items-center text-xs text-gray-500">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                            <i class="fas fa-eye-slash mr-1"></i> Not visible
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            <i class="fas fa-code mr-1"></i> Technical use
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -283,9 +447,19 @@
                     </div>
 
                     <!-- Order -->
-                    <div class="hidden">
-                        <input type="number" name="{{ form.order.name }}" id="{{ form.order.id_for_label }}"
-                               value="{{ form.order.value|default:'0' }}">
+                    <div>
+                        <label for="{{ form.order.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Question Order
+                        </label>
+                        <div class="mt-1">
+                            <input type="number" name="{{ form.order.name }}" id="{{ form.order.id_for_label }}"
+                                   value="{{ form.order.value|default:'0' }}" min="0"
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Set the display order of this question (0 = auto-assign at the end)</p>
+                        {% if form.order.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.order.errors.0 }}</p>
+                        {% endif %}
                     </div>
 
                     <!-- Choices Section (for multiple choice questions) -->
@@ -410,6 +584,11 @@
             selectedTypeInfo.classList.remove('hidden');
         } else {
             console.warn(`No info div found for question type: ${questionType}`);
+            // Show a default info div for unknown question types
+            const defaultInfo = document.getElementById('type-text');
+            if (defaultInfo) {
+                defaultInfo.classList.remove('hidden');
+            }
         }
 
         // Also toggle the choices section when question type changes
@@ -425,6 +604,10 @@
         console.log('Toggling choices section for question type:', questionType);
 
         const choicesSection = document.getElementById('choicesSection');
+        if (!choicesSection) {
+            console.error('Choices section not found!');
+            return;
+        }
 
         if (['single_choice', 'multiple_choice'].includes(questionType)) {
             console.log('Showing choices section');
@@ -446,6 +629,11 @@
 
     function addChoice() {
         const container = document.getElementById('choicesContainer');
+        if (!container) {
+            console.error('Choices container not found!');
+            return;
+        }
+
         const choiceItems = container.querySelectorAll('.choice-item');
         const newIndex = choiceItems.length + 1;
 
@@ -475,8 +663,23 @@
     }
 
     function removeChoice(button) {
+        if (!button) {
+            console.error('Button not provided to removeChoice function');
+            return;
+        }
+
         const choiceItem = button.closest('.choice-item');
+        if (!choiceItem) {
+            console.error('Could not find parent choice item');
+            return;
+        }
+
         const container = document.getElementById('choicesContainer');
+        if (!container) {
+            console.error('Choices container not found!');
+            return;
+        }
+
         const choiceItems = container.querySelectorAll('.choice-item');
 
         // Don't remove if it's the last choice
@@ -490,11 +693,18 @@
 
     function updateChoiceNumbers() {
         const container = document.getElementById('choicesContainer');
+        if (!container) {
+            console.error('Choices container not found!');
+            return;
+        }
+
         const choiceItems = container.querySelectorAll('.choice-item');
 
         choiceItems.forEach((item, index) => {
             const numberSpan = item.querySelector('.choice-number');
-            numberSpan.textContent = index + 1;
+            if (numberSpan) {
+                numberSpan.textContent = index + 1;
+            }
         });
     }
 
@@ -511,9 +721,49 @@
         }
     }
 
+    // Function to set up the country question
+    function setupCountryQuestion() {
+        const questionTypeSelect = document.getElementById('{{ form.question_type.id_for_label }}');
+        if (!questionTypeSelect) {
+            console.error('Question type select not found!');
+            return false;
+        }
+
+        // Set the question type to 'country'
+        questionTypeSelect.value = 'country';
+
+        // Trigger the change event to update the UI
+        const changeEvent = new Event('change', { bubbles: true });
+        questionTypeSelect.dispatchEvent(changeEvent);
+
+        // Set a default question text if it's empty
+        const questionText = document.getElementById('{{ form.text.id_for_label }}');
+        if (questionText && !questionText.value.trim()) {
+            questionText.value = 'What country are you from?';
+            questionText.focus();
+        }
+
+        // Flash the button to indicate it was clicked
+        const addCountryButton = document.getElementById('add-country-question');
+        if (addCountryButton) {
+            addCountryButton.classList.add('bg-green-600');
+            setTimeout(() => {
+                addCountryButton.classList.remove('bg-green-600');
+            }, 500);
+        }
+
+        return true;
+    }
+
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         console.log('DOM loaded, initializing question form');
+
+        // Set up event listener for the "Add Country Question" button
+        const addCountryButton = document.getElementById('add-country-button');
+        if (addCountryButton) {
+            addCountryButton.addEventListener('click', setupCountryQuestion);
+        }
 
         // Set up event listener for question type changes
         const questionTypeSelect = document.getElementById('{{ form.question_type.id_for_label }}');
@@ -527,15 +777,25 @@
                 const isScorable = ['single_choice', 'multiple_choice', 'scale', 'number'].includes(this.value);
                 const isScoredCheckbox = document.getElementById('{{ form.is_scored.id_for_label }}');
 
-                // Show a hint if the question type is scorable
-                if (isScorable) {
-                    isScoredCheckbox.closest('div').classList.add('border-l-4', 'border-green-400', 'pl-2');
+                if (isScoredCheckbox) {
+                    // Show a hint if the question type is scorable
+                    if (isScorable) {
+                        isScoredCheckbox.closest('div').classList.add('border-l-4', 'border-green-400', 'pl-2');
+                    } else {
+                        isScoredCheckbox.closest('div').classList.remove('border-l-4', 'border-green-400', 'pl-2');
+                    }
                 } else {
-                    isScoredCheckbox.closest('div').classList.remove('border-l-4', 'border-green-400', 'pl-2');
+                    console.warn('Scoring checkbox not found!');
                 }
             });
         } else {
             console.error('Question type select not found!');
+        }
+
+        // Set up event listener for the "Add Country Question" button (correct ID)
+        const addCountryQuestionButton = document.getElementById('add-country-question');
+        if (addCountryQuestionButton) {
+            addCountryQuestionButton.addEventListener('click', setupCountryQuestion);
         }
 
         // Initial setup

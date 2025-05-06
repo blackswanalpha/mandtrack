@@ -14,5 +14,6 @@ urlpatterns = [
     path('<int:org_pk>/members/<int:pk>/', views.member_detail, name='member_detail'),
     path('<int:org_pk>/members/<int:pk>/edit/', views.member_edit, name='member_edit'),
     path('<int:org_pk>/members/<int:pk>/remove/', views.member_remove, name='member_remove'),
+    path('<int:org_pk>/members/<int:member_pk>/dashboard/', views.view_member_dashboard, name='view_member_dashboard'),
     path('<int:pk>/questionnaires/', views.organization_questionnaires, name='organization_questionnaires'),
 ]

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Analysis Report - MindTrack</title>
+    <style>
+        /* Additional custom styles for this specific report */
+        .analysis-header {
+            margin-bottom: 2em;
+            padding-bottom: 1em;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .analysis-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1em;
+            flex-wrap: wrap;
+        }
+        .meta-item {
+            flex: 1;
+            min-width: 200px;
+            margin-bottom: 1em;
+        }
+        .meta-label {
+            font-weight: bold;
+            color: #4b5563;
+            margin-bottom: 0.25em;
+        }
+        .meta-value {
+            font-size: 1.1em;
+        }
+        .ai-badge {
+            display: inline-block;
+            padding: 0.25em 0.5em;
+            background-color: #8b5cf6;
+            color: white;
+            border-radius: 0.25em;
+            font-size: 0.8em;
+            margin-left: 0.5em;
+        }
+        .insight {
+            margin-bottom: 1.5em;
+            padding: 1em;
+            background-color: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            border-radius: 0 0.25em 0.25em 0;
+        }
+        .insight-title {
+            font-weight: bold;
+            margin-bottom: 0.5em;
+        }
+        .recommendation {
+            margin-bottom: 1.5em;
+            padding: 1em;
+            background-color: #d1fae5;
+            border-left: 4px solid #10b981;
+            border-radius: 0 0.25em 0.25em 0;
+        }
+        .recommendation-title {
+            font-weight: bold;
+            margin-bottom: 0.5em;
+        }
+        .analysis-content {
+            margin-bottom: 2em;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>AI Analysis Report</h1>
+        <h2>{{ response.survey.title }}</h2>
+    </div>
+    
+    <div class="analysis-header">
+        <div class="analysis-meta">
+            <div class="meta-item">
+                <div class="meta-label">Response Date:</div>
+                <div class="meta-value">{{ response.created_at|date:"F j, Y" }}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">Analysis Date:</div>
+                <div class="meta-value">{{ response.ai_analysis.created_at|date:"F j, Y" }}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">Score:</div>
+                <div class="meta-value">{{ response.score|floatformat:0 }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <h2>Analysis Overview <span class="ai-badge">AI Generated</span></h2>
+    <div class="analysis-content">
+        {{ response.ai_analysis.content|linebreaks }}
+    </div>
+    
+    {% if response.ai_analysis.insights %}
+        <h2>Key Insights</h2>
+        <p>Based on your responses, our AI has identified the following key insights:</p>
+        
+        {% for insight in response.ai_analysis.insights %}
+            <div class="insight">
+                <div class="insight-title">{{ insight.title }}</div>
+                <div class="insight-description">
+                    {{ insight.description }}
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="page-break"></div>
+    
+    {% if response.ai_analysis.recommendations %}
+        <h2>Personalized Recommendations</h2>
+        <p>Based on your responses and the analysis, we recommend the following actions:</p>
+        
+        {% for recommendation in response.ai_analysis.recommendations %}
+            <div class="recommendation">
+                <div class="recommendation-title">{{ recommendation.title }}</div>
+                <div class="recommendation-description">
+                    {{ recommendation.description }}
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <h2>Response Summary</h2>
+    <div class="info-box">
+        <p><strong>Questionnaire:</strong> {{ response.survey.title }}</p>
+        <p><strong>Completion Time:</strong> {{ response.completion_time|floatformat:0 }} seconds</p>
+        <p><strong>Questions Answered:</strong> {{ answers.count }}</p>
+        <p><strong>Overall Score:</strong> {{ response.score|floatformat:0 }}</p>
+    </div>
+    
+    <h3>Selected Responses</h3>
+    <p>Below are some key responses that contributed to this analysis:</p>
+    
+    <div class="answers-container">
+        {% for answer in answers|slice:":5" %}
+            <div class="answer-item">
+                <div class="question-text">{{ answer.question.text }}</div>
+                <div class="answer-text">
+                    {% if answer.question.question_type == 'text' or answer.question.question_type == 'textarea' %}
+                        {{ answer.text_answer|default:"No answer provided" }}
+                    
+                    {% elif answer.question.question_type == 'radio' or answer.question.question_type == 'dropdown' %}
+                        {% if answer.selected_choice %}
+                            {{ answer.selected_choice.text }}
+                        {% else %}
+                            <em>No answer selected</em>
+                        {% endif %}
+                    
+                    {% elif answer.question.question_type == 'checkbox' %}
+                        {% if answer.multiple_choices.exists %}
+                            <ul>
+                                {% for choice in answer.multiple_choices.all %}
+                                    <li>{{ choice.text }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <em>No options selected</em>
+                        {% endif %}
+                    
+                    {% elif answer.question.question_type == 'number' %}
+                        {{ answer.numeric_value|default:"No value provided" }}
+                    
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <div class="footer">
+        <p>This report is confidential and intended for the recipient only.</p>
+        <p>Generated by MindTrack on {{ now|date:"F j, Y" }} at {{ now|time:"g:i A" }}</p>
+        <p><small>AI analysis is provided for informational purposes only and should not be considered as professional advice.</small></p>
+    </div>
+</body>
+</html>

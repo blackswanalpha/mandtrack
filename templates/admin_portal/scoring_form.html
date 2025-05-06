@@ -1,0 +1,107 @@
+{% extends 'admin_portal/modern_base.html' %}
+
+{% block title %}Create Scoring System - MindTrack{% endblock %}
+
+{% block content %}
+<!-- Scoring Form Header -->
+<div class="bg-white rounded-lg shadow mb-6">
+    <div class="p-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+                <div class="flex items-center">
+                    <a href="{% url 'dashboard:scoring_management' %}" class="text-primary-600 hover:text-primary-900 mr-2">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <h2 class="text-xl font-semibold text-gray-800">Create Scoring System</h2>
+                </div>
+                <p class="mt-1 text-sm text-gray-600">Define a new scoring system for a questionnaire</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scoring Form -->
+<div class="bg-white rounded-lg shadow mb-6">
+    <div class="p-5 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Scoring System Details</h3>
+    </div>
+    <div class="p-5">
+        <form action="{% url 'dashboard:scoring_create' %}" method="POST" class="space-y-6">
+            {% csrf_token %}
+            
+            <div>
+                <label for="questionnaire_id" class="block text-sm font-medium text-gray-700">Questionnaire</label>
+                <select id="questionnaire_id" name="questionnaire_id" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" required>
+                    <option value="">Select a questionnaire</option>
+                    {% for questionnaire in questionnaires %}
+                        <option value="{{ questionnaire.id }}">{{ questionnaire.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                <input type="text" name="name" id="name" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
+            </div>
+            
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                <textarea name="description" id="description" rows="3" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
+            </div>
+            
+            <div>
+                <label for="scoring_type" class="block text-sm font-medium text-gray-700">Scoring Type</label>
+                <select name="scoring_type" id="scoring_type" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" required>
+                    {% for type_code, type_name in scoring_types %}
+                        <option value="{{ type_code }}">{{ type_name }}</option>
+                    {% endfor %}
+                </select>
+                <p class="mt-2 text-sm text-gray-500">
+                    <strong>Simple Sum:</strong> Adds up all scores directly.<br>
+                    <strong>Weighted Scoring:</strong> Applies weights to different questions.<br>
+                    <strong>Range-Based Scoring:</strong> Categorizes scores into ranges with interpretations.<br>
+                    <strong>Custom Formula:</strong> Uses a custom formula for scoring.
+                </p>
+            </div>
+            
+            <div id="formula_field" class="hidden">
+                <label for="formula" class="block text-sm font-medium text-gray-700">Formula/Logic</label>
+                <textarea name="formula" id="formula" rows="3" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
+                <p class="mt-1 text-xs text-gray-500">For custom scoring, describe the formula or logic to be used.</p>
+            </div>
+            
+            <div class="flex justify-end">
+                <a href="{% url 'dashboard:scoring_management' %}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 mr-3">
+                    Cancel
+                </a>
+                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    Create Scoring System
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show/hide formula field based on scoring type
+        const scoringTypeSelect = document.getElementById('scoring_type');
+        const formulaField = document.getElementById('formula_field');
+        
+        scoringTypeSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                formulaField.classList.remove('hidden');
+            } else {
+                formulaField.classList.add('hidden');
+            }
+        });
+        
+        // Initial check
+        if (scoringTypeSelect.value === 'custom') {
+            formulaField.classList.remove('hidden');
+        }
+    });
+</script>
+{% endblock %}

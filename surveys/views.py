@@ -3,10 +3,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
 from django.forms import modelformset_factory
-from .models import Questionnaire, Question, QuestionChoice, QRCode, ScoringConfig, EmailTemplate
+from django.utils import timezone
+from .models import Questionnaire, Question, QuestionChoice, QRCode, ScoringConfig, EmailTemplate, Survey
 from .forms import SurveyForm, QuestionForm, QuestionChoiceForm
 import qrcode
 from io import BytesIO
+import logging
+
+logger = logging.getLogger(__name__)
 
 @login_required
 def survey_list(request):
@@ -33,7 +37,13 @@ def survey_list(request):
         surveys = surveys.filter(status=status)
 
     # Get template surveys
-    template_surveys = Survey.objects.filter(is_template=True)
+    try:
+        # Try to get template surveys if the field exists
+        template_surveys = Survey.objects.filter(is_template=True)
+    except Exception as e:
+        # If 'is_template' field doesn't exist, use an empty queryset
+        print(f"Error filtering by is_template in survey_list: {e}")
+        template_surveys = Survey.objects.none()
 
     context = {
         'surveys': surveys,
@@ -59,25 +69,38 @@ def survey_create(request):
             # If cloning from a template
             template_id = request.POST.get('template_id')
             if template_id:
-                template = get_object_or_404(Survey, pk=template_id, is_template=True)
-                # Clone questions from template
-                for template_question in template.questions.all():
-                    question = Question.objects.create(
-                        survey=survey,
-                        text=template_question.text,
-                        description=template_question.description,
-                        question_type=template_question.question_type,
-                        required=template_question.required,
-                        order=template_question.order
-                    )
-                    # Clone choices if applicable
-                    for template_choice in template_question.choices.all():
-                        QuestionChoice.objects.create(
-                            question=question,
-                            text=template_choice.text,
-                            order=template_choice.order,
-                            score=template_choice.score
+                try:
+                    # Try to get the template survey
+                    try:
+                        # First try with is_template filter
+                        template = get_object_or_404(Survey, pk=template_id, is_template=True)
+                    except Exception as e:
+                        # If is_template field doesn't exist, just get by ID
+                        print(f"Error filtering by is_template: {e}")
+                        template = get_object_or_404(Survey, pk=template_id)
+
+                    # Clone questions from template
+                    for template_question in template.questions.all():
+                        question = Question.objects.create(
+                            survey=survey,
+                            text=template_question.text,
+                            description=template_question.description,
+                            question_type=template_question.question_type,
+                            required=template_question.required,
+                            order=template_question.order
                         )
+                        # Clone choices if applicable
+                        for template_choice in template_question.choices.all():
+                            QuestionChoice.objects.create(
+                                question=question,
+                                text=template_choice.text,
+                                order=template_choice.order,
+                                score=template_choice.score
+                            )
+                except Exception as e:
+                    # If there's an error with the template, log it but continue
+                    print(f"Error cloning template: {e}")
+                    # The survey is still created, just without template questions
 
             messages.success(request, 'Survey created successfully!')
             return redirect('surveys:survey_detail', pk=survey.pk)
@@ -85,7 +108,13 @@ def survey_create(request):
         form = SurveyForm()
 
     # Get template surveys for cloning
-    template_surveys = Survey.objects.filter(is_template=True)
+    try:
+        # Try to get template surveys if the field exists
+        template_surveys = Survey.objects.filter(is_template=True)
+    except Exception as e:
+        # If 'is_template' field doesn't exist, use an empty queryset
+        print(f"Error filtering by is_template in survey_create: {e}")
+        template_surveys = Survey.objects.none()
 
     return render(request, 'surveys/survey_form.html', {
         'form': form,
@@ -204,7 +233,11 @@ def question_create(request, survey_pk):
         if form.is_valid():
             question = form.save(commit=False)
             question.survey = survey
-            question.order = next_order
+
+            # Set the order automatically if not provided or is zero
+            if not form.cleaned_data.get('order') or form.cleaned_data.get('order') == 0:
+                question.order = next_order
+
             question.save()
 
             # Handle choices for multiple choice questions
@@ -231,6 +264,59 @@ def question_create(request, survey_pk):
         'form': form,
         'choice_formset': choice_formset,
         'survey': survey
+    })
+
+@login_required
+def country_question_create(request, survey_pk):
+    """
+    Create a new country question for a survey with minimal input
+    """
+    survey = get_object_or_404(Survey, pk=survey_pk)
+
+    # Check if user has permission to add questions to this survey
+    if survey.created_by != request.user and not survey.organization.members.filter(user=request.user, role__in=['admin', 'manager']).exists():
+        messages.error(request, "You don't have permission to add questions to this survey.")
+        return redirect('surveys:survey_detail', pk=survey_pk)
+
+    # Get the next order number
+    next_order = survey.questions.count() + 1
+
+    if request.method == 'POST':
+        # Get the question text from the form
+        question_text = request.POST.get('text', 'What country are you from?')
+        description = request.POST.get('description', '')
+        required = request.POST.get('required', 'on') == 'on'
+
+        # Create the question
+        question = Question(
+            survey=survey,
+            text=question_text,
+            description=description,
+            question_type='country',
+            required=required,
+            order=next_order,
+            created_at=timezone.now(),
+            updated_at=timezone.now()
+        )
+
+        # Try to get the QuestionType object for 'country'
+        try:
+            from surveys.models.question_type import QuestionType
+            question_type_obj = QuestionType.objects.filter(code='country').first()
+            if question_type_obj:
+                question.question_type_obj = question_type_obj
+        except Exception as e:
+            logger.error(f"Error setting question_type_obj: {e}")
+
+        question.save()
+
+        messages.success(request, 'Country question added successfully!')
+        return redirect('surveys:question_list', pk=survey_pk)
+
+    # For GET requests, render the country question form
+    return render(request, 'surveys/country_question_form.html', {
+        'survey': survey,
+        'next_order': next_order
     })
 
 @login_required
@@ -410,8 +496,54 @@ def survey_respond(request, slug=None, pk=None):
             # If QR code doesn't exist or isn't active, just continue
             pass
 
-    # For now, just show a placeholder response page
-    # In a real implementation, this would show the survey form
+    # Get all questions for this survey
+    questions = survey.questions.all().order_by('order')
+
+    # Handle form submission
+    if request.method == 'POST':
+        # Get patient information
+        patient_email = request.POST.get('patient_email')
+        patient_age = request.POST.get('patient_age')
+        patient_gender = request.POST.get('patient_gender')
+
+        # Create a new response with patient information
+        from feedback.models import Response
+        import uuid
+
+        # Generate a UUID for anonymous patients
+        patient_identifier = str(uuid.uuid4())
+
+        # Create the response
+        response = Response(
+            survey=survey,
+            patient_identifier=patient_identifier,
+            patient_email=patient_email,
+            patient_age=patient_age if patient_age else None,
+            patient_gender=patient_gender,
+            status='completed',
+            ip_address=request.META.get('REMOTE_ADDR'),
+            user_agent=request.META.get('HTTP_USER_AGENT')
+        )
+        response.save()
+
+        # Process answers
+        for question in questions:
+            answer_key = f'question_{question.id}'
+            answer_value = request.POST.get(answer_key)
+
+            if answer_value:
+                from feedback.models import Answer
+                Answer.objects.create(
+                    response=response,
+                    question=question,
+                    answer_text=answer_value
+                )
+
+        messages.success(request, "Thank you for completing the questionnaire!")
+        return redirect('core:home')
+
+    # Render the questionnaire form
     return render(request, 'surveys/survey_respond.html', {
-        'survey': survey
+        'survey': survey,
+        'questions': questions
     })

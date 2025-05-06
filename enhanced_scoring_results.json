@@ -1,0 +1,29 @@
+{
+  "response_id": 1,
+  "scoring_system_id": 1,
+  "raw_score": 69,
+  "z_score": 1.27,
+  "percentile": 89.8,
+  "additional_data": {
+    "category_scores": {
+      "anxiety": 8,
+      "depression": 7,
+      "stress": 4,
+      "wellbeing": 1
+    },
+    "subscales": {
+      "cognitive": 3,
+      "emotional": 9,
+      "physical": 2,
+      "behavioral": 0
+    }
+  },
+  "score_range": {
+    "id": 2,
+    "name": "Medium",
+    "min_score": 31,
+    "max_score": 70,
+    "color": "yellow",
+    "interpretation": "This score indicates a moderate level of the measured attribute."
+  }
+}

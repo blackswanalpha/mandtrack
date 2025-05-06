@@ -1,5 +1,6 @@
 {% extends 'client/base.html' %}
 {% load static %}
+{% load feedback_extras %}
 
 {% block title %}Response Submitted - MindTrack{% endblock %}
 
@@ -34,17 +35,62 @@
                         <h3 class="text-lg font-medium leading-6 text-gray-900">Response Summary</h3>
                     </div>
                     <div class="px-4 py-5 sm:p-6 space-y-4">
+                        <!-- Questionnaire Info -->
+                        <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+                            <span class="text-sm font-medium text-gray-500">Questionnaire:</span>
+                            <span class="text-sm font-semibold text-gray-900">
+                                {{ response.survey.title }}
+                            </span>
+                        </div>
+
+                        <!-- Patient Info (if available) -->
+                        {% if response.patient_email or response.patient_age or response.patient_gender %}
+                        <div class="border-b border-gray-100 pb-3">
+                            <span class="text-sm font-medium text-gray-500 block mb-2">Patient Information:</span>
+                            <div class="ml-4 space-y-1">
+                                {% if response.patient_email %}
+                                <div class="flex justify-between">
+                                    <span class="text-xs text-gray-500">Email:</span>
+                                    <span class="text-xs font-medium text-gray-900">{{ response.patient_email }}</span>
+                                </div>
+                                {% endif %}
+
+                                {% if response.patient_age %}
+                                <div class="flex justify-between">
+                                    <span class="text-xs text-gray-500">Age:</span>
+                                    <span class="text-xs font-medium text-gray-900">{{ response.patient_age }}</span>
+                                </div>
+                                {% endif %}
+
+                                {% if response.patient_gender %}
+                                <div class="flex justify-between">
+                                    <span class="text-xs text-gray-500">Gender:</span>
+                                    <span class="text-xs font-medium text-gray-900">
+                                        {% if response.patient_gender == 'male' %}Male
+                                        {% elif response.patient_gender == 'female' %}Female
+                                        {% elif response.patient_gender == 'non-binary' %}Non-Binary
+                                        {% elif response.patient_gender == 'prefer_not_to_say' %}Prefer Not to Say
+                                        {% else %}{{ response.patient_gender|title }}{% endif %}
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
                         <!-- Time Taken -->
                         <div class="flex justify-between items-center border-b border-gray-100 pb-3">
                             <span class="text-sm font-medium text-gray-500">Time Taken:</span>
                             <span class="text-sm font-semibold text-gray-900">
                                 {% if response.completion_time %}
-                                    {% with minutes=response.completion_time|floatformat:0|divisibleby:60 seconds=response.completion_time|floatformat:0|modulo:60 %}
-                                        {% if minutes > 0 %}
-                                            {{ minutes }} min {{ seconds }} sec
-                                        {% else %}
-                                            {{ seconds }} seconds
-                                        {% endif %}
+                                    {% with seconds=response.completion_time|floatformat:0 %}
+                                        {% with minutes=seconds|divisibleby:60 remaining_seconds=seconds|modulo:60 %}
+                                            {% if minutes > 0 %}
+                                                {{ minutes }} min {{ remaining_seconds }} sec
+                                            {% else %}
+                                                {{ seconds }} seconds
+                                            {% endif %}
+                                        {% endwith %}
                                     {% endwith %}
                                 {% else %}
                                     Not recorded
@@ -68,7 +114,7 @@
                         <div class="flex justify-between items-center border-b border-gray-100 pb-3">
                             <span class="text-sm font-medium text-gray-500">Risk Level:</span>
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                {% if response.risk_level == 'high' %}bg-red-100 text-red-800
+                                {% if response.risk_level == 'high' or response.risk_level == 'critical' %}bg-red-100 text-red-800
                                 {% elif response.risk_level == 'medium' %}bg-yellow-100 text-yellow-800
                                 {% elif response.risk_level == 'low' %}bg-green-100 text-green-800
                                 {% else %}bg-gray-100 text-gray-800{% endif %}">
@@ -80,10 +126,23 @@
                         <div class="flex justify-between items-center pb-3">
                             <span class="text-sm font-medium text-gray-500">Questions Answered:</span>
                             <span class="text-sm font-semibold text-gray-900">
-                                {{ response.get_answer_count }}
+                                {{ response.answers.count }}
+                            </span>
+                        </div>
+
+                        <!-- Completion Date -->
+                        <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+                            <span class="text-sm font-medium text-gray-500">Completed On:</span>
+                            <span class="text-sm font-semibold text-gray-900">
+                                {{ response.completed_at|date:"F j, Y, g:i a" }}
                             </span>
                         </div>
                     </div>
+                </div>
+
+                <!-- Response ID for Reference -->
+                <div class="mt-4 text-center">
+                    <span class="text-xs text-gray-500">Response ID: <span class="font-mono">{{ response.id }}</span></span>
                 </div>
                 {% endif %}
 

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risk Assessment Report - MindTrack</title>
+    <style>
+        /* Additional custom styles for this specific report */
+        .risk-summary {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2em;
+        }
+        .risk-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1em;
+            font-size: 24pt;
+            font-weight: bold;
+            color: white;
+        }
+        .risk-high {
+            background-color: #ef4444;
+        }
+        .risk-medium {
+            background-color: #f59e0b;
+        }
+        .risk-low {
+            background-color: #10b981;
+        }
+        .risk-details {
+            flex: 1;
+        }
+        .risk-level {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 0.5em;
+        }
+        .risk-description {
+            color: #4b5563;
+        }
+        .factor-container {
+            margin-bottom: 1.5em;
+            padding: 1em;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5em;
+        }
+        .factor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5em;
+        }
+        .factor-title {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .factor-score {
+            font-weight: bold;
+            padding: 0.25em 0.5em;
+            border-radius: 0.25em;
+            color: white;
+        }
+        .score-high {
+            background-color: #10b981;
+        }
+        .score-medium {
+            background-color: #f59e0b;
+        }
+        .score-low {
+            background-color: #ef4444;
+        }
+        .progress-bar {
+            height: 0.5em;
+            background-color: #e5e7eb;
+            border-radius: 0.25em;
+            margin-top: 0.5em;
+            overflow: hidden;
+        }
+        .progress-value {
+            height: 100%;
+            border-radius: 0.25em;
+        }
+        .progress-high {
+            background-color: #10b981;
+        }
+        .progress-medium {
+            background-color: #f59e0b;
+        }
+        .progress-low {
+            background-color: #ef4444;
+        }
+        .recommendation {
+            margin-bottom: 1em;
+            padding: 1em;
+            border-left: 4px solid #10b981;
+            background-color: #d1fae5;
+        }
+        .recommendation-title {
+            font-weight: bold;
+            margin-bottom: 0.5em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Risk Assessment Report</h1>
+        <p>Comprehensive analysis of risk factors based on your responses</p>
+    </div>
+    
+    <div class="risk-summary">
+        {% if risk_level == 'low' %}
+            <div class="risk-icon risk-low">L</div>
+        {% elif risk_level == 'medium' %}
+            <div class="risk-icon risk-medium">M</div>
+        {% else %}
+            <div class="risk-icon risk-high">H</div>
+        {% endif %}
+        
+        <div class="risk-details">
+            <div class="risk-level">
+                {% if risk_level == 'low' %}
+                    Low Risk
+                {% elif risk_level == 'medium' %}
+                    Medium Risk
+                {% else %}
+                    High Risk
+                {% endif %}
+            </div>
+            <div class="risk-description">
+                {{ risk_description }}
+            </div>
+        </div>
+    </div>
+    
+    <h2>Risk Factors Analysis</h2>
+    <p>This assessment evaluates various factors that contribute to your overall risk profile. Each factor is scored on a scale of 0-100, with higher scores indicating better outcomes (lower risk).</p>
+    
+    <!-- Factor 1 -->
+    <div class="factor-container">
+        <div class="factor-header">
+            <div class="factor-title">Emotional Well-being</div>
+            <div class="factor-score {% if factor1_score >= 80 %}score-high{% elif factor1_score >= 50 %}score-medium{% else %}score-low{% endif %}">
+                {{ factor1_score }}/100
+            </div>
+        </div>
+        <div class="factor-description">
+            {{ factor1_description }}
+        </div>
+        <div class="progress-bar">
+            <div class="progress-value {% if factor1_score >= 80 %}progress-high{% elif factor1_score >= 50 %}progress-medium{% else %}progress-low{% endif %}" style="width: {{ factor1_score }}%;"></div>
+        </div>
+    </div>
+    
+    <!-- Factor 2 -->
+    <div class="factor-container">
+        <div class="factor-header">
+            <div class="factor-title">Stress Management</div>
+            <div class="factor-score {% if factor2_score >= 80 %}score-high{% elif factor2_score >= 50 %}score-medium{% else %}score-low{% endif %}">
+                {{ factor2_score }}/100
+            </div>
+        </div>
+        <div class="factor-description">
+            {{ factor2_description }}
+        </div>
+        <div class="progress-bar">
+            <div class="progress-value {% if factor2_score >= 80 %}progress-high{% elif factor2_score >= 50 %}progress-medium{% else %}progress-low{% endif %}" style="width: {{ factor2_score }}%;"></div>
+        </div>
+    </div>
+    
+    <!-- Factor 3 -->
+    <div class="factor-container">
+        <div class="factor-header">
+            <div class="factor-title">Social Support</div>
+            <div class="factor-score {% if factor3_score >= 80 %}score-high{% elif factor3_score >= 50 %}score-medium{% else %}score-low{% endif %}">
+                {{ factor3_score }}/100
+            </div>
+        </div>
+        <div class="factor-description">
+            {{ factor3_description }}
+        </div>
+        <div class="progress-bar">
+            <div class="progress-value {% if factor3_score >= 80 %}progress-high{% elif factor3_score >= 50 %}progress-medium{% else %}progress-low{% endif %}" style="width: {{ factor3_score }}%;"></div>
+        </div>
+    </div>
+    
+    <div class="page-break"></div>
+    
+    <h2>Recommendations</h2>
+    <p>Based on your risk assessment, we recommend the following actions to improve your well-being and reduce risk factors:</p>
+    
+    <div class="recommendation">
+        <div class="recommendation-title">{{ recommendation1_title }}</div>
+        <div class="recommendation-description">
+            {{ recommendation1_description }}
+        </div>
+    </div>
+    
+    <div class="recommendation">
+        <div class="recommendation-title">{{ recommendation2_title }}</div>
+        <div class="recommendation-description">
+            {{ recommendation2_description }}
+        </div>
+    </div>
+    
+    <div class="recommendation">
+        <div class="recommendation-title">{{ recommendation3_title }}</div>
+        <div class="recommendation-description">
+            {{ recommendation3_description }}
+        </div>
+    </div>
+    
+    <h2>Next Steps</h2>
+    <div class="info-box">
+        <p>This risk assessment is based on your responses to our questionnaires and provides a general overview of potential risk factors. For a more comprehensive evaluation, we recommend:</p>
+        <ul>
+            <li>Reviewing your responses and considering areas for improvement</li>
+            <li>Implementing the recommendations provided in this report</li>
+            <li>Monitoring your progress over time through regular assessments</li>
+            <li>Seeking professional guidance if you have concerns about specific risk factors</li>
+        </ul>
+    </div>
+    
+    <div class="footer">
+        <p>This report is confidential and intended for the recipient only.</p>
+        <p>Generated by MindTrack on {{ now|date:"F j, Y" }} at {{ now|time:"g:i A" }}</p>
+    </div>
+</body>
+</html>

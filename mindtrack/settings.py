@@ -44,12 +44,14 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
 # Application definition
 
 INSTALLED_APPS = [
+    # Admin app
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 
     # Third-party apps
     'crispy_forms',
@@ -68,6 +70,7 @@ INSTALLED_APPS = [
     'groups.apps.GroupsConfig',
     'analytics.apps.AnalyticsConfig',
     'dashboard.apps.DashboardConfig',
+    'members.apps.MembersConfig',
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -194,6 +197,9 @@ AUTH_USER_MODEL = 'users.User'
 
 # Site URL for generating absolute URLs
 SITE_URL = 'http://localhost:8000'
+
+# Site ID for django.contrib.sites
+SITE_ID = 1
 
 # Authentication settings
 AUTHENTICATION_BACKENDS = [

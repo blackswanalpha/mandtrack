@@ -7,47 +7,35 @@ from io import BytesIO
 from django.core.files import File
 from PIL import Image
 
+# Import email schedule models
+from surveys.models.email_schedule import EmailSchedule, EmailLog
+
+# Import data for selector features
+from surveys.data.selector_data import (
+    QUESTIONNAIRE_CATEGORIES,
+    QUESTIONNAIRE_TYPES,
+    QUESTIONNAIRE_STATUSES,
+    QUESTION_TYPES,
+    QUESTION_CATEGORIES
+)
+
+# Import scoring models - we'll import these at the end of the file to avoid circular imports
+
 class Questionnaire(models.Model):
     """
     Model for questionnaires/surveys
     """
     class Meta:
-        db_table = 'surveys_survey'
+        db_table = 'surveys_questionnaire'
 
-    CATEGORY_CHOICES = [
-        ('anxiety', 'Anxiety'),
-        ('depression', 'Depression'),
-        ('stress', 'Stress'),
-        ('general', 'General'),
-        ('mental_health', 'Mental Health'),
-        ('physical_health', 'Physical Health'),
-        ('education', 'Education'),
-        ('customer_satisfaction', 'Customer Satisfaction'),
-        ('employee_feedback', 'Employee Feedback'),
-        ('research', 'Research'),
-        ('clinical_assessment', 'Clinical Assessment'),
-        ('custom', 'Custom'),
-    ]
+    # Use imported choices from selector_data.py
+    CATEGORY_CHOICES = QUESTIONNAIRE_CATEGORIES
+    TYPE_CHOICES = QUESTIONNAIRE_TYPES
+    STATUS_CHOICES = QUESTIONNAIRE_STATUSES
 
-    TYPE_CHOICES = [
-        ('standard', 'Standard'),
-        ('assessment', 'Assessment'),
-        ('screening', 'Screening'),
-        ('feedback', 'Feedback'),
-        ('survey', 'Survey'),
-        ('clinical', 'Clinical'),
-        ('research', 'Research'),
-        ('educational', 'Educational'),
-        ('other', 'Other'),
-    ]
-
-    STATUS_CHOICES = [
-        ('draft', 'Draft'),
-        ('active', 'Active'),
-        ('archived', 'Archived'),
-    ]
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Use CharField instead of UUIDField to match the database schema
+    # The database has a char(32) field, not a UUID field
+    id = models.CharField(max_length=32, primary_key=True, default=lambda: uuid.uuid4().hex, editable=False)
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True, blank=True)
     description = models.TextField(blank=True)
@@ -76,17 +64,18 @@ class Questionnaire(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     qr_code = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
     access_code = models.CharField(max_length=20, blank=True, null=True, unique=True)
+    is_template = models.BooleanField(default=False, help_text='Whether this questionnaire is a template that can be used to create new questionnaires')
 
     class Meta:
         ordering = ['-created_at']
         verbose_name = 'Questionnaire'
         verbose_name_plural = 'Questionnaires'
         indexes = [
-            models.Index(fields=['is_active']),
-            models.Index(fields=['is_public']),
-            models.Index(fields=['category']),
-            models.Index(fields=['type']),
-            models.Index(fields=['created_at']),
+            models.Index(fields=['is_active'], name='surveys_questionnaire_is_active_idx'),
+            models.Index(fields=['is_public'], name='surveys_questionnaire_is_public_idx'),
+            models.Index(fields=['category'], name='surveys_questionnaire_category_idx'),
+            models.Index(fields=['type'], name='surveys_questionnaire_type_idx'),
+            models.Index(fields=['created_at'], name='surveys_questionnaire_created_at_idx'),
         ]
 
     def __str__(self):
@@ -184,17 +173,33 @@ class QuestionType(models.Model):
     @classmethod
     def get_default_types(cls):
         """Return default question types if none exist"""
-        return [
-            {'code': 'text', 'name': 'Text', 'is_text': True, 'display_order': 1},
-            {'code': 'textarea', 'name': 'Long Text', 'is_text': True, 'display_order': 2},
-            {'code': 'number', 'name': 'Number', 'is_numeric': True, 'is_scorable': True, 'display_order': 3},
-            {'code': 'single_choice', 'name': 'Single Choice', 'has_choices': True, 'is_scorable': True, 'display_order': 4},
-            {'code': 'multiple_choice', 'name': 'Multiple Choice', 'has_choices': True, 'is_scorable': True, 'display_order': 5},
-            {'code': 'scale', 'name': 'Scale', 'is_numeric': True, 'is_scorable': True, 'display_order': 6},
-            {'code': 'date', 'name': 'Date', 'is_date': True, 'display_order': 7},
-            {'code': 'time', 'name': 'Time', 'is_date': True, 'display_order': 8},
-            {'code': 'file', 'name': 'File Upload', 'is_file': True, 'display_order': 9},
-        ]
+        # Create a list of default types based on the QUESTION_TYPES from selector_data.py
+        default_types = []
+        for i, (code, name) in enumerate(QUESTION_TYPES):
+            type_data = {
+                'code': code,
+                'name': name,
+                'display_order': i + 1,
+                'is_text': code in ['text', 'textarea', 'email'],
+                'has_choices': code in ['single_choice', 'multiple_choice', 'dropdown', 'radio', 'checkbox', 'country'],
+                'is_numeric': code in ['number', 'scale', 'rating', 'slider'],
+                'is_date': code in ['date', 'time'],
+                'is_file': code in ['file', 'image'],
+                'is_scorable': code in ['single_choice', 'multiple_choice', 'scale', 'number', 'rating'],
+            }
+            default_types.append(type_data)
+
+        # Ensure country question type is available
+        if not any(t['code'] == 'country' for t in default_types):
+            default_types.append({
+                'code': 'country',
+                'name': 'Country',
+                'has_choices': True,
+                'is_text': False,
+                'display_order': len(default_types) + 1
+            })
+
+        return default_types
 
 
 class Question(models.Model):
@@ -204,31 +209,13 @@ class Question(models.Model):
     class Meta:
         db_table = 'surveys_question'
 
-    # Keep the choices for backward compatibility
-    TYPE_CHOICES = [
-        ('text', 'Text'),
-        ('textarea', 'Long Text'),
-        ('number', 'Number'),
-        ('single_choice', 'Single Choice'),
-        ('multiple_choice', 'Multiple Choice'),
-        ('scale', 'Scale'),
-        ('date', 'Date'),
-        ('time', 'Time'),
-        ('file', 'File Upload'),
-    ]
-
-    CATEGORY_CHOICES = [
-        ('demographic', 'Demographic'),
-        ('clinical', 'Clinical'),
-        ('behavioral', 'Behavioral'),
-        ('satisfaction', 'Satisfaction'),
-        ('feedback', 'Feedback'),
-        ('knowledge', 'Knowledge'),
-        ('other', 'Other'),
-    ]
+    # Use imported choices from selector_data.py
+    TYPE_CHOICES = QUESTION_TYPES
+    CATEGORY_CHOICES = QUESTION_CATEGORIES
 
     id = models.BigAutoField(primary_key=True)
-    survey = models.ForeignKey(Questionnaire, on_delete=models.CASCADE, related_name='questions', null=True)
+    # Use the correct model reference
+    survey = models.ForeignKey('surveys.Questionnaire', on_delete=models.CASCADE, related_name='questions', null=True)
     text = models.TextField()
     description = models.TextField(blank=True)
     # Keep the CharField for backward compatibility
@@ -257,9 +244,9 @@ class Question(models.Model):
         verbose_name = 'Question'
         verbose_name_plural = 'Questions'
         indexes = [
-            models.Index(fields=['survey']),
-            models.Index(fields=['question_type']),
-            models.Index(fields=['order']),
+            models.Index(fields=['survey'], name='surveys_question_survey_idx'),
+            models.Index(fields=['question_type'], name='surveys_question_type_idx'),
+            models.Index(fields=['order'], name='surveys_question_order_idx'),
         ]
 
     def __str__(self):
@@ -283,14 +270,17 @@ class Question(models.Model):
             self.question_type = 'text'
             logger.warning(f"Question type was empty, defaulting to 'text'")
 
-        # Link to QuestionType object if not already set
-        if not self.question_type_obj:
-            try:
-                self.question_type_obj = QuestionType.objects.filter(code=self.question_type).first()
-                if not self.question_type_obj:
-                    logger.warning(f"No QuestionType found for code: {self.question_type}")
-            except Exception as e:
-                logger.error(f"Error linking to QuestionType: {e}")
+        # Link to QuestionType object if not already set and the field exists
+        try:
+            if hasattr(self, 'question_type_obj') and not self.question_type_obj:
+                try:
+                    self.question_type_obj = QuestionType.objects.filter(code=self.question_type).first()
+                    if not self.question_type_obj:
+                        logger.warning(f"No QuestionType found for code: {self.question_type}")
+                except Exception as e:
+                    logger.error(f"Error linking to QuestionType: {e}")
+        except Exception as e:
+            logger.error(f"Error checking question_type_obj field: {e}")
 
         # Set default values for scoring fields based on question type
         if self.is_scored:
@@ -331,6 +321,18 @@ class Question(models.Model):
             logger.warning(f"Choice-based question has no choices, consider adding some")
 
 
+class QuestionChoiceManager(models.Manager):
+    """
+    Custom manager for QuestionChoice model to handle created_at and updated_at fields
+    """
+    def create(self, **kwargs):
+        # Set created_at and updated_at if not provided
+        if 'created_at' not in kwargs:
+            kwargs['created_at'] = timezone.now()
+        if 'updated_at' not in kwargs:
+            kwargs['updated_at'] = timezone.now()
+        return super().create(**kwargs)
+
 class QuestionChoice(models.Model):
     """
     Model for choices in multiple choice questions
@@ -338,14 +340,18 @@ class QuestionChoice(models.Model):
     class Meta:
         db_table = 'surveys_questionchoice'
     id = models.BigAutoField(primary_key=True)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='choices', null=True)
+    # Use the correct model reference
+    question = models.ForeignKey('surveys.Question', on_delete=models.CASCADE, related_name='choices', null=True)
     text = models.CharField(max_length=255)
     order = models.PositiveIntegerField(default=0)
     score = models.IntegerField(default=0)  # For scoring responses
     is_correct = models.BooleanField(default=False)  # For knowledge questions
     metadata = models.JSONField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField()  # Removed auto_now_add=True
+    updated_at = models.DateTimeField()  # Removed auto_now=True
+
+    # Use the custom manager
+    objects = QuestionChoiceManager()
 
     # Update the Meta class to include both db_table and other options
     class Meta:
@@ -354,12 +360,19 @@ class QuestionChoice(models.Model):
         verbose_name = 'Question Choice'
         verbose_name_plural = 'Question Choices'
         indexes = [
-            models.Index(fields=['question']),
-            models.Index(fields=['order']),
+            models.Index(fields=['question'], name='surveys_questionchoice_question_idx'),
+            models.Index(fields=['order'], name='surveys_questionchoice_order_idx'),
         ]
 
     def __str__(self):
         return self.text
+
+    def save(self, *args, **kwargs):
+        # Set created_at and updated_at if not set
+        if not self.created_at:
+            self.created_at = timezone.now()
+        self.updated_at = timezone.now()
+        super().save(*args, **kwargs)
 
 
 class QRCode(models.Model):
@@ -370,7 +383,8 @@ class QRCode(models.Model):
         db_table = 'surveys_qrcode'
     id = models.BigAutoField(primary_key=True)
     # Keep the original field name for database compatibility
-    survey = models.ForeignKey(Questionnaire, on_delete=models.CASCADE, related_name='qr_codes', null=True)
+    # Use the correct model reference
+    survey = models.ForeignKey('surveys.Questionnaire', on_delete=models.CASCADE, related_name='qr_codes', null=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     image = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
@@ -398,9 +412,9 @@ class QRCode(models.Model):
         verbose_name = 'QR Code'
         verbose_name_plural = 'QR Codes'
         indexes = [
-            models.Index(fields=['survey']),
-            models.Index(fields=['is_active']),
-            models.Index(fields=['created_at']),
+            models.Index(fields=['survey'], name='surveys_qrcode_survey_idx'),
+            models.Index(fields=['is_active'], name='surveys_qrcode_is_active_idx'),
+            models.Index(fields=['created_at'], name='surveys_qrcode_created_at_idx'),
         ]
 
     def __str__(self):
@@ -443,7 +457,8 @@ class ScoringConfig(models.Model):
     ]
 
     id = models.BigAutoField(primary_key=True)
-    survey = models.ForeignKey(Questionnaire, on_delete=models.CASCADE, related_name='scoring_configs', null=True)
+    # Use the correct model reference
+    survey = models.ForeignKey('surveys.Questionnaire', on_delete=models.CASCADE, related_name='scoring_configs', null=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     scoring_method = models.CharField(max_length=20, choices=SCORING_METHOD_CHOICES, default='sum')
@@ -461,9 +476,9 @@ class ScoringConfig(models.Model):
         verbose_name = 'Scoring Configuration'
         verbose_name_plural = 'Scoring Configurations'
         indexes = [
-            models.Index(fields=['survey']),
-            models.Index(fields=['is_active']),
-            models.Index(fields=['is_default']),
+            models.Index(fields=['survey'], name='surveys_scoringconfig_survey_idx'),
+            models.Index(fields=['is_active'], name='surveys_scoringconfig_is_active_idx'),
+            models.Index(fields=['is_default'], name='surveys_scoringconfig_is_default_idx'),
         ]
 
     def __str__(self):
@@ -542,8 +557,8 @@ class EmailTemplate(models.Model):
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='general')
     is_active = models.BooleanField(default=True)
     is_default = models.BooleanField(default=False)
-    organization = models.ForeignKey('groups.Organization', on_delete=models.SET_NULL, null=True, blank=True, related_name='email_templates')
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_email_templates')
+    organization = models.ForeignKey('groups.Organization', on_delete=models.SET_NULL, null=True, blank=True, related_name='surveys_email_templates')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='surveys_created_email_templates')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -552,10 +567,10 @@ class EmailTemplate(models.Model):
         verbose_name = 'Email Template'
         verbose_name_plural = 'Email Templates'
         indexes = [
-            models.Index(fields=['category']),
-            models.Index(fields=['is_active']),
-            models.Index(fields=['is_default']),
-            models.Index(fields=['organization']),
+            models.Index(fields=['category'], name='surveys_emailtemplate_category_idx'),
+            models.Index(fields=['is_active'], name='surveys_emailtemplate_is_active_idx'),
+            models.Index(fields=['is_default'], name='surveys_emailtemplate_is_default_idx'),
+            models.Index(fields=['organization'], name='surveys_emailtemplate_org_idx'),
         ]
 
     def __str__(self):
@@ -602,8 +617,9 @@ class EmailLog(models.Model):
     sent_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, default='sent')
     error_message = models.TextField(blank=True)
-    sent_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='sent_emails')
-    survey = models.ForeignKey(Questionnaire, on_delete=models.SET_NULL, null=True, blank=True, related_name='email_logs')
+    sent_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='surveys_sent_emails')
+    # Use the correct model reference
+    survey = models.ForeignKey('surveys.Questionnaire', on_delete=models.SET_NULL, null=True, blank=True, related_name='email_logs')
     response = models.ForeignKey('feedback.Response', on_delete=models.SET_NULL, null=True, blank=True, related_name='email_logs')
     metadata = models.JSONField(default=dict)
 
@@ -612,10 +628,10 @@ class EmailLog(models.Model):
         verbose_name = 'Email Log'
         verbose_name_plural = 'Email Logs'
         indexes = [
-            models.Index(fields=['recipient']),
-            models.Index(fields=['sent_at']),
-            models.Index(fields=['status']),
-            models.Index(fields=['template']),
+            models.Index(fields=['recipient'], name='surveys_emaillog_recipient_idx'),
+            models.Index(fields=['sent_at'], name='surveys_emaillog_sent_at_idx'),
+            models.Index(fields=['status'], name='surveys_emaillog_status_idx'),
+            models.Index(fields=['template'], name='surveys_emaillog_template_idx'),
         ]
 
     def __str__(self):
@@ -639,7 +655,8 @@ class ScoringSystem(models.Model):
 
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    questionnaire = models.ForeignKey(Questionnaire, on_delete=models.CASCADE, related_name='scoring_systems')
+    # Use the correct model reference
+    questionnaire = models.ForeignKey('surveys.Questionnaire', on_delete=models.CASCADE, related_name='scoring_systems')
     scoring_type = models.CharField(max_length=20, choices=SCORING_TYPE_CHOICES, default='simple_sum')
     formula = models.TextField(blank=True, help_text="For custom scoring, enter a formula or description of the scoring logic")
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_scoring_systems')
@@ -789,14 +806,16 @@ class ScoreRule(models.Model):
     Model for scoring rules for individual questions
     """
     scoring_system = models.ForeignKey(ScoringSystem, on_delete=models.CASCADE, related_name='score_rules')
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='score_rules')
+    # Use the correct model reference with the actual database model name
+    question = models.ForeignKey('surveys.SurveysQuestion', on_delete=models.CASCADE, related_name='score_rules')
     weight = models.FloatField(default=1.0, help_text="Weight to apply to this question's score")
     text_score_enabled = models.BooleanField(default=False, help_text="Enable scoring for text answers")
     text_score = models.FloatField(default=0.0, help_text="Score to apply to text answers if enabled")
     notes = models.TextField(blank=True)
 
     class Meta:
-        ordering = ['scoring_system', 'question__order']
+        # Fix the ordering issue by removing the reference to question__order
+        ordering = ['scoring_system', 'id']
         verbose_name = 'Score Rule'
         verbose_name_plural = 'Score Rules'
         unique_together = ['scoring_system', 'question']
@@ -810,11 +829,13 @@ class OptionScore(models.Model):
     Model for scores assigned to individual answer options
     """
     score_rule = models.ForeignKey(ScoreRule, on_delete=models.CASCADE, related_name='option_scores')
-    option = models.ForeignKey(QuestionChoice, on_delete=models.CASCADE, related_name='scores')
+    # Use the correct model reference with the actual database model name
+    option = models.ForeignKey('surveys.SurveysQuestionchoice', on_delete=models.CASCADE, related_name='scores')
     score = models.FloatField(default=0.0)
 
     class Meta:
-        ordering = ['score_rule', 'option__order']
+        # Fix the ordering issue by removing the reference to option__order
+        ordering = ['score_rule', 'id']
         verbose_name = 'Option Score'
         verbose_name_plural = 'Option Scores'
         unique_together = ['score_rule', 'option']
@@ -848,6 +869,7 @@ class ResponseScore(models.Model):
     """
     Model for storing calculated scores for responses
     """
+    # Use the correct model reference with the actual database model name
     response = models.ForeignKey('feedback.Response', on_delete=models.CASCADE, related_name='scores')
     scoring_system = models.ForeignKey(ScoringSystem, on_delete=models.CASCADE, related_name='response_scores')
     raw_score = models.FloatField()
@@ -863,3 +885,12 @@ class ResponseScore(models.Model):
 
     def __str__(self):
         return f"Score for {self.response}: {self.raw_score}"
+
+
+# Create alias for backward compatibility
+Survey = Questionnaire
+
+# Import scoring models at the end to avoid circular imports
+from surveys.models.scoring import (
+    ScoringSystem, ScoreRule, ScoreRange, ResponseScore, OptionScore
+)

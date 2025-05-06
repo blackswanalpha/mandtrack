@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ response.survey.title }} - Response Report</title>
+    <style>
+        /* Additional custom styles for this specific report */
+        .response-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2em;
+            flex-wrap: wrap;
+        }
+        .meta-item {
+            flex: 1;
+            min-width: 200px;
+            margin-bottom: 1em;
+        }
+        .meta-label {
+            font-weight: bold;
+            color: #4b5563;
+            margin-bottom: 0.25em;
+        }
+        .meta-value {
+            font-size: 1.1em;
+        }
+        .answer-item {
+            margin-bottom: 1.5em;
+            padding-bottom: 1em;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .question-text {
+            font-weight: bold;
+            margin-bottom: 0.5em;
+        }
+        .answer-text {
+            margin-left: 1em;
+        }
+        .score-label {
+            text-align: center;
+            margin-top: 0.5em;
+            font-weight: bold;
+        }
+        .analysis-section {
+            margin-top: 2em;
+            padding-top: 1em;
+            border-top: 1px solid #e5e7eb;
+        }
+        .enhanced-scores {
+            margin: 2em 0;
+            padding: 1em;
+            background-color: #f3f4f6;
+            border-radius: 0.5em;
+        }
+        .score-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1em;
+            margin: 1em 0;
+        }
+        .score-grid-item {
+            flex: 1;
+            min-width: 200px;
+            padding: 1em;
+            background-color: white;
+            border-radius: 0.5em;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .meta-description {
+            font-size: 0.9em;
+            color: #6b7280;
+            margin-top: 0.5em;
+        }
+        .category-scores, .subscale-scores {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1em;
+            margin: 1em 0;
+        }
+        .category-score-item, .subscale-score-item {
+            flex: 1;
+            min-width: 150px;
+            padding: 0.75em;
+            background-color: white;
+            border-radius: 0.5em;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .category-name, .subscale-name {
+            font-weight: bold;
+            margin-bottom: 0.5em;
+        }
+        .category-score, .subscale-score {
+            font-size: 1.2em;
+            color: #4f46e5;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Response Report</h1>
+        <h2>{{ response.survey.title }}</h2>
+    </div>
+
+    <div class="response-meta">
+        <div class="meta-item">
+            <div class="meta-label">Date Submitted:</div>
+            <div class="meta-value">{{ response.created_at|date:"F j, Y" }}</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Time:</div>
+            <div class="meta-value">{{ response.created_at|time:"g:i A" }}</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Completion Time:</div>
+            <div class="meta-value">{{ response.completion_time|floatformat:0 }} seconds</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Status:</div>
+            <div class="meta-value">{{ response.status|title }}</div>
+        </div>
+    </div>
+
+    <div class="score-container">
+        {% if response.score >= 80 %}
+            <div class="score-circle score-high">{{ response.score|floatformat:0 }}</div>
+        {% elif response.score >= 50 %}
+            <div class="score-circle score-medium">{{ response.score|floatformat:0 }}</div>
+        {% else %}
+            <div class="score-circle score-low">{{ response.score|floatformat:0 }}</div>
+        {% endif %}
+    </div>
+    <div class="score-label">Overall Score</div>
+
+    {% if enhanced_score %}
+    <div class="enhanced-scores">
+        <h3>Enhanced Scoring Metrics</h3>
+        <div class="score-grid">
+            <div class="score-grid-item">
+                <div class="meta-label">Z-Score:</div>
+                <div class="meta-value">{{ enhanced_score.z_score|floatformat:2 }}</div>
+                <div class="meta-description">
+                    {% if enhanced_score.z_score > 0 %}
+                        {{ enhanced_score.z_score|floatformat:2 }} standard deviations above average
+                    {% elif enhanced_score.z_score < 0 %}
+                        {{ enhanced_score.z_score|abs|floatformat:2 }} standard deviations below average
+                    {% else %}
+                        At the average
+                    {% endif %}
+                </div>
+            </div>
+            <div class="score-grid-item">
+                <div class="meta-label">Percentile:</div>
+                <div class="meta-value">{{ enhanced_score.percentile|floatformat:1 }}%</div>
+                <div class="meta-description">
+                    Better than {{ enhanced_score.percentile|floatformat:1 }}% of respondents
+                </div>
+            </div>
+        </div>
+
+        {% if enhanced_score.additional_data.category_scores %}
+        <h4>Category Scores</h4>
+        <div class="category-scores">
+            {% for category, score in enhanced_score.additional_data.category_scores.items %}
+            <div class="category-score-item">
+                <div class="category-name">{{ category|title }}</div>
+                <div class="category-score">{{ score|floatformat:1 }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if enhanced_score.additional_data.subscales %}
+        <h4>Subscale Scores</h4>
+        <div class="subscale-scores">
+            {% for subscale, score in enhanced_score.additional_data.subscales.items %}
+            <div class="subscale-score-item">
+                <div class="subscale-name">{{ subscale|title }}</div>
+                <div class="subscale-score">{{ score|floatformat:1 }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <h2>Response Summary</h2>
+    <p>{{ response.survey.description }}</p>
+
+    {% if response.survey.category %}
+        <div class="info-box">
+            <p><strong>Category:</strong> {{ response.survey.category }}</p>
+        </div>
+    {% endif %}
+
+    <h2>Answers</h2>
+    <div class="answers-container">
+        {% for answer in answers %}
+            <div class="answer-item">
+                <div class="question-text">{{ forloop.counter }}. {{ answer.question.text }}</div>
+                <div class="answer-text">
+                    {% if answer.question.question_type == 'text' or answer.question.question_type == 'textarea' %}
+                        {{ answer.text_answer|default:"No answer provided" }}
+
+                    {% elif answer.question.question_type == 'radio' or answer.question.question_type == 'dropdown' %}
+                        {% if answer.selected_choice %}
+                            {{ answer.selected_choice.text }}
+                            {% if answer.score is not None %}
+                                <div class="meta-label">Score: {{ answer.score }}</div>
+                            {% endif %}
+                        {% else %}
+                            <em>No answer selected</em>
+                        {% endif %}
+
+                    {% elif answer.question.question_type == 'checkbox' %}
+                        {% if answer.multiple_choices.exists %}
+                            <ul>
+                                {% for choice in answer.multiple_choices.all %}
+                                    <li>{{ choice.text }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% if answer.score is not None %}
+                                <div class="meta-label">Score: {{ answer.score }}</div>
+                            {% endif %}
+                        {% else %}
+                            <em>No options selected</em>
+                        {% endif %}
+
+                    {% elif answer.question.question_type == 'number' %}
+                        {{ answer.numeric_value|default:"No value provided" }}
+                        {% if answer.score is not None %}
+                            <div class="meta-label">Score: {{ answer.score }}</div>
+                        {% endif %}
+
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <p><em>No answers found for this response.</em></p>
+        {% endfor %}
+    </div>
+
+    {% if response.ai_analysis %}
+        <div class="page-break"></div>
+        <div class="analysis-section">
+            <h2>AI Analysis</h2>
+            <div class="info-box">
+                <p><strong>Analysis generated on:</strong> {{ response.ai_analysis.created_at|date:"F j, Y" }}</p>
+            </div>
+
+            <div class="analysis-content">
+                {{ response.ai_analysis.content|linebreaks }}
+            </div>
+
+            {% if response.ai_analysis.insights %}
+                <h3>Key Insights</h3>
+                {% for insight in response.ai_analysis.insights %}
+                    <div class="info-box">
+                        <h4>{{ insight.title }}</h4>
+                        <p>{{ insight.description }}</p>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% if response.ai_analysis.recommendations %}
+                <h3>Recommendations</h3>
+                {% for recommendation in response.ai_analysis.recommendations %}
+                    <div class="success-box">
+                        <h4>{{ recommendation.title }}</h4>
+                        <p>{{ recommendation.description }}</p>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div class="footer">
+        <p>This report is confidential and intended for the recipient only.</p>
+        <p>Generated by MindTrack on {{ now|date:"F j, Y" }} at {{ now|time:"g:i A" }}</p>
+    </div>
+</body>
+</html>

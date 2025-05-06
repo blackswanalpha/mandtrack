@@ -1,0 +1,165 @@
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
+
+{% block title %}{{ template.name }} - Email Template - MindTrack{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-6">
+            <div class="flex items-center">
+                <a href="{% url 'email_system:template_list' %}" class="mr-2 text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">{{ template.name }}</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                {{ template.description|default:"No description provided." }}
+            </p>
+        </div>
+
+        <!-- Template Actions -->
+        <div class="mb-6 flex flex-wrap gap-3">
+            <a href="{% url 'email_system:template_edit' pk=template.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                <i class="fas fa-edit mr-2"></i> Edit Template
+            </a>
+            <a href="{% url 'email_system:template_preview' pk=template.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                <i class="fas fa-eye mr-2"></i> Preview
+            </a>
+            <a href="{% url 'email_system:send_email' %}?template={{ template.pk }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                <i class="fas fa-paper-plane mr-2"></i> Send Email
+            </a>
+            <a href="{% url 'email_system:template_delete' pk=template.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+                <i class="fas fa-trash-alt mr-2"></i> Delete
+            </a>
+        </div>
+
+        <!-- Template Details -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Template Details</h2>
+            </div>
+            <div class="border-t border-gray-200">
+                <dl>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Category</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                {% if template.category == 'notification' %}bg-blue-100 text-blue-800
+                                {% elif template.category == 'report' %}bg-green-100 text-green-800
+                                {% elif template.category == 'reminder' %}bg-yellow-100 text-yellow-800
+                                {% elif template.category == 'welcome' %}bg-purple-100 text-purple-800
+                                {% elif template.category == 'feedback' %}bg-pink-100 text-pink-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ template.category|title }}
+                            </span>
+                        </dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Status</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {% if template.is_active %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <i class="fas fa-check-circle mr-1"></i> Active
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    <i class="fas fa-times-circle mr-1"></i> Inactive
+                                </span>
+                            {% endif %}
+                            
+                            {% if template.is_default %}
+                                <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    <i class="fas fa-star mr-1"></i> Default
+                                </span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Created By</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ template.created_by.get_full_name|default:template.created_by.email|default:"System" }}
+                        </dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Created At</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ template.created_at|date:"F j, Y, g:i a" }}
+                        </dd>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Last Updated</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ template.updated_at|date:"F j, Y, g:i a" }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Email Content -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Email Content</h2>
+            </div>
+            <div class="border-t border-gray-200">
+                <dl>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Subject</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ template.subject }}
+                        </dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Plain Text Message</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            <div class="bg-gray-50 p-4 rounded whitespace-pre-wrap font-mono text-xs">{{ template.message }}</div>
+                        </dd>
+                    </div>
+                    {% if template.html_content %}
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">HTML Content</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                <div class="bg-gray-50 p-4 rounded overflow-auto max-h-96">
+                                    <pre class="language-html text-xs"><code>{{ template.html_content }}</code></pre>
+                                </div>
+                            </dd>
+                        </div>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        <!-- Usage Statistics -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Usage Statistics</h2>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gray-50 rounded-lg p-4 text-center">
+                        <p class="text-sm font-medium text-gray-500">Total Sent</p>
+                        <p class="mt-1 text-3xl font-semibold text-gray-900">{{ template.sent_emails.count }}</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-4 text-center">
+                        <p class="text-sm font-medium text-gray-500">Successful</p>
+                        <p class="mt-1 text-3xl font-semibold text-green-600">{{ template.sent_emails.filter.status='sent' }}</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-4 text-center">
+                        <p class="text-sm font-medium text-gray-500">Failed</p>
+                        <p class="mt-1 text-3xl font-semibold text-red-600">{{ template.sent_emails.filter.status='failed' }}</p>
+                    </div>
+                </div>
+                
+                {% if template.sent_emails.exists %}
+                    <div class="mt-6">
+                        <a href="{% url 'email_system:email_log_list' %}?template={{ template.pk }}" class="text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                            View all emails sent with this template <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

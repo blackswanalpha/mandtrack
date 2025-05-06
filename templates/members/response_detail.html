@@ -1,0 +1,120 @@
+{% extends 'client/base.html' %}
+{% load static %}
+{% load member_filters %}
+
+{% block title %}Response Details - MindTrack{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="flex items-center">
+                <a href="{% url 'members:reports' %}" class="mr-2 text-indigo-600 hover:text-indigo-900 transition-colors duration-200">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Response Details</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+                {{ response.survey.title }} - Completed on {{ response.created_at|date:"F j, Y" }}
+            </p>
+        </div>
+
+        <!-- Response Actions -->
+        <div class="mb-6 flex flex-wrap gap-3">
+            <a href="{% url 'members:download_report' pk=response.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                <i class="fas fa-download mr-2"></i> Download Report
+            </a>
+            {% if response.ai_analysis %}
+                <a href="{% url 'members:analysis' %}?response={{ response.pk }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                    <i class="fas fa-brain mr-2"></i> View AI Analysis
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Response Overview -->
+        <div class="bg-white shadow rounded-lg mb-8 overflow-hidden">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Response Overview</h2>
+            </div>
+            
+            <div class="px-4 py-5 sm:p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gray-50 rounded-lg p-4 text-center">
+                        <p class="text-sm font-medium text-gray-500">Score</p>
+                        <p class="mt-1 text-3xl font-semibold 
+                            {% if response.score >= 80 %}text-green-600
+                            {% elif response.score >= 50 %}text-yellow-600
+                            {% else %}text-red-600{% endif %}">
+                            {{ response.score|floatformat:0 }}
+                        </p>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-4 text-center">
+                        <p class="text-sm font-medium text-gray-500">Questions Answered</p>
+                        <p class="mt-1 text-3xl font-semibold text-gray-900">{{ answers.count }}</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-4 text-center">
+                        <p class="text-sm font-medium text-gray-500">Time Taken</p>
+                        <p class="mt-1 text-3xl font-semibold text-gray-900">{{ response.completion_time|format_seconds }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Response Answers -->
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Your Answers</h2>
+            </div>
+            
+            <div class="px-4 py-5 sm:p-6">
+                <div class="space-y-6">
+                    {% for answer in answers %}
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">{{ answer.question.text }}</h3>
+                            
+                            {% if answer.question.question_type == 'text' or answer.question.question_type == 'textarea' %}
+                                <p class="text-gray-700">{{ answer.text_answer|default:"No answer provided" }}</p>
+                            
+                            {% elif answer.question.question_type == 'radio' or answer.question.question_type == 'dropdown' %}
+                                {% if answer.selected_choice %}
+                                    <p class="text-gray-700">{{ answer.selected_choice.text }}</p>
+                                    {% if answer.score is not None %}
+                                        <p class="text-sm text-gray-500 mt-1">Score: {{ answer.score }}</p>
+                                    {% endif %}
+                                {% else %}
+                                    <p class="text-gray-500 italic">No answer selected</p>
+                                {% endif %}
+                            
+                            {% elif answer.question.question_type == 'checkbox' %}
+                                {% if answer.multiple_choices.exists %}
+                                    <ul class="list-disc list-inside text-gray-700">
+                                        {% for choice in answer.multiple_choices.all %}
+                                            <li>{{ choice.text }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% if answer.score is not None %}
+                                        <p class="text-sm text-gray-500 mt-1">Score: {{ answer.score }}</p>
+                                    {% endif %}
+                                {% else %}
+                                    <p class="text-gray-500 italic">No options selected</p>
+                                {% endif %}
+                            
+                            {% elif answer.question.question_type == 'number' %}
+                                <p class="text-gray-700">{{ answer.numeric_value|default:"No value provided" }}</p>
+                                {% if answer.score is not None %}
+                                    <p class="text-sm text-gray-500 mt-1">Score: {{ answer.score }}</p>
+                                {% endif %}
+                            
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <div class="text-center text-gray-500">
+                            <p>No answers found for this response.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

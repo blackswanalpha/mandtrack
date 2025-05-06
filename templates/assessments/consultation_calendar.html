@@ -1,0 +1,435 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Consultation Calendar - MindTrack{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+<style>
+    .fc-event {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .fc-event:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    .fc-toolbar-title {
+        font-size: 1.5rem !important;
+        font-weight: 600;
+    }
+    
+    .fc-button-primary {
+        background-color: #4e73df !important;
+        border-color: #4e73df !important;
+    }
+    
+    .fc-button-primary:hover {
+        background-color: #2e59d9 !important;
+        border-color: #2e59d9 !important;
+    }
+    
+    .fc-button-active {
+        background-color: #2e59d9 !important;
+        border-color: #2e59d9 !important;
+    }
+    
+    .fc-day-today {
+        background-color: #eef2ff !important;
+    }
+    
+    .fc-event-scheduled {
+        background-color: #4e73df;
+        border-color: #4e73df;
+    }
+    
+    .fc-event-completed {
+        background-color: #1cc88a;
+        border-color: #1cc88a;
+    }
+    
+    .fc-event-cancelled {
+        background-color: #e74a3b;
+        border-color: #e74a3b;
+    }
+    
+    .fc-event-no-show {
+        background-color: #f6c23e;
+        border-color: #f6c23e;
+    }
+    
+    .calendar-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.875rem;
+    }
+    
+    .legend-color {
+        width: 1rem;
+        height: 1rem;
+        border-radius: 0.25rem;
+        margin-right: 0.5rem;
+    }
+    
+    .modal-backdrop {
+        z-index: 1040;
+    }
+    
+    .modal {
+        z-index: 1050;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Consultation Calendar</h1>
+            <p class="text-gray-600">View and manage scheduled consultations</p>
+        </div>
+        <div>
+            <a href="{% url 'assessments:assessment_list' %}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-list me-2"></i> All Assessments
+            </a>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newConsultationModal">
+                <i class="fas fa-plus-circle me-2"></i> New Consultation
+            </button>
+        </div>
+    </div>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <div class="calendar-legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #4e73df;"></div>
+                    <span>Scheduled</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #1cc88a;"></div>
+                    <span>Completed</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #e74a3b;"></div>
+                    <span>Cancelled</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #f6c23e;"></div>
+                    <span>No Show</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Consultation Detail Modal -->
+<div class="modal fade" id="consultationDetailModal" tabindex="-1" aria-labelledby="consultationDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="consultationDetailModalLabel">Consultation Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading consultation details...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="#" class="btn btn-primary" id="editConsultationBtn">
+                    <i class="fas fa-edit me-2"></i> Edit
+                </a>
+                <a href="#" class="btn btn-info" id="viewAssessmentBtn">
+                    <i class="fas fa-eye me-2"></i> View Assessment
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Consultation Modal -->
+<div class="modal fade" id="newConsultationModal" tabindex="-1" aria-labelledby="newConsultationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newConsultationModalLabel">Schedule New Consultation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newConsultationForm" method="post" action="{% url 'assessments:consultation_create_ajax' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="assessment" class="form-label">Assessment</label>
+                        <select class="form-select" id="assessment" name="assessment" required>
+                            <option value="">Select an assessment</option>
+                            {% for assessment in assessments %}
+                            <option value="{{ assessment.pk }}">
+                                {{ assessment.response.patient_identifier|default:"Anonymous" }} - 
+                                {{ assessment.get_risk_level|title }} Risk - 
+                                {{ assessment.assessment_date|date:"M d, Y" }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="consultant" class="form-label">Consultant</label>
+                        <select class="form-select" id="consultant" name="consultant" required>
+                            <option value="">Select a consultant</option>
+                            {% for consultant in consultants %}
+                            <option value="{{ consultant.pk }}">
+                                {{ consultant.get_full_name|default:consultant.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="scheduled_date" class="form-label">Date & Time</label>
+                        <input type="datetime-local" class="form-control" id="scheduled_date" name="scheduled_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="follow_up_required" name="follow_up_required">
+                        <label class="form-check-label" for="follow_up_required">Follow-up Required</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="newConsultationForm" class="btn btn-primary">Schedule Consultation</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize FullCalendar
+        const calendarEl = document.getElementById('calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            themeSystem: 'bootstrap',
+            events: '{% url "assessments:consultation_events" %}',
+            eventClick: function(info) {
+                showConsultationDetails(info.event.id);
+            },
+            eventClassNames: function(arg) {
+                return ['fc-event-' + arg.event.extendedProps.status];
+            },
+            eventTimeFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                meridiem: false,
+                hour12: false
+            },
+            dayMaxEvents: true,
+            nowIndicator: true,
+            businessHours: {
+                daysOfWeek: [1, 2, 3, 4, 5], // Monday - Friday
+                startTime: '08:00',
+                endTime: '18:00',
+            }
+        });
+        calendar.render();
+        
+        // Set default date/time for new consultation
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getMinutes() % 15 + 15); // Round to next 15 minutes
+        document.getElementById('scheduled_date').value = now.toISOString().slice(0, 16);
+        
+        // Function to show consultation details
+        function showConsultationDetails(consultationId) {
+            const modal = new bootstrap.Modal(document.getElementById('consultationDetailModal'));
+            const modalBody = document.querySelector('#consultationDetailModal .modal-body');
+            const editBtn = document.getElementById('editConsultationBtn');
+            const viewAssessmentBtn = document.getElementById('viewAssessmentBtn');
+            
+            // Reset modal content
+            modalBody.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading consultation details...</p>
+                </div>
+            `;
+            
+            // Show modal
+            modal.show();
+            
+            // Fetch consultation details
+            fetch(`/assessments/consultation/${consultationId}/details/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const consultation = data.consultation;
+                        
+                        // Update modal content
+                        modalBody.innerHTML = `
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="font-weight-bold">Patient</h6>
+                                    <p>${consultation.patient_id}</p>
+                                    
+                                    <h6 class="font-weight-bold mt-3">Consultant</h6>
+                                    <p>${consultation.consultant_name}</p>
+                                    
+                                    <h6 class="font-weight-bold mt-3">Date & Time</h6>
+                                    <p>${consultation.scheduled_date}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="font-weight-bold">Status</h6>
+                                    <p><span class="badge bg-${getStatusBadgeColor(consultation.status)}">${consultation.status_display}</span></p>
+                                    
+                                    <h6 class="font-weight-bold mt-3">Follow-up Required</h6>
+                                    <p>${consultation.follow_up_required ? 'Yes' : 'No'}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <h6 class="font-weight-bold">Notes</h6>
+                                    <p>${consultation.notes || 'No notes provided.'}</p>
+                                    
+                                    ${consultation.status === 'completed' ? `
+                                        <h6 class="font-weight-bold mt-3">Outcome</h6>
+                                        <p>${consultation.outcome || 'No outcome recorded.'}</p>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Update buttons
+                        editBtn.href = `/assessments/consultation/${consultationId}/update/`;
+                        viewAssessmentBtn.href = `/assessments/${consultation.assessment_id}/`;
+                    } else {
+                        modalBody.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                Error loading consultation details: ${data.message}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    modalBody.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            Error loading consultation details. Please try again.
+                        </div>
+                    `;
+                    console.error('Error fetching consultation details:', error);
+                });
+        }
+        
+        // Helper function to get badge color based on status
+        function getStatusBadgeColor(status) {
+            switch (status) {
+                case 'scheduled':
+                    return 'primary';
+                case 'completed':
+                    return 'success';
+                case 'cancelled':
+                    return 'danger';
+                case 'no_show':
+                    return 'warning';
+                default:
+                    return 'secondary';
+            }
+        }
+        
+        // Handle form submission via AJAX
+        document.getElementById('newConsultationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('newConsultationModal')).hide();
+                    
+                    // Show success message
+                    const alertHtml = `
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            ${data.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                    document.querySelector('.container-fluid').insertAdjacentHTML('afterbegin', alertHtml);
+                    
+                    // Refresh calendar
+                    calendar.refetchEvents();
+                    
+                    // Reset form
+                    this.reset();
+                    
+                    // Set default date/time
+                    const now = new Date();
+                    now.setMinutes(now.getMinutes() - now.getMinutes() % 15 + 15);
+                    document.getElementById('scheduled_date').value = now.toISOString().slice(0, 16);
+                } else {
+                    // Show error message
+                    const alertHtml = `
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            ${data.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                    document.querySelector('#newConsultationModal .modal-body').insertAdjacentHTML('afterbegin', alertHtml);
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting form:', error);
+                
+                // Show error message
+                const alertHtml = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        An error occurred while scheduling the consultation. Please try again.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                document.querySelector('#newConsultationModal .modal-body').insertAdjacentHTML('afterbegin', alertHtml);
+            });
+        });
+    });
+</script>
+{% endblock %}

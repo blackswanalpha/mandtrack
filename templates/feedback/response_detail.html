@@ -56,20 +56,52 @@
                     <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt class="text-sm font-medium text-gray-500">Respondent</dt>
                         <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {% if response.respondent %}
-                                {{ response.respondent.get_full_name|default:response.respondent.email }}
-                            {% elif response.respondent_name %}
-                                {{ response.respondent_name }}
-                                {% if response.respondent_email %}
-                                    <span class="text-gray-500">({{ response.respondent_email }})</span>
-                                {% endif %}
-                            {% elif response.respondent_email %}
-                                {{ response.respondent_email }}
+                            {% if response.user %}
+                                {{ response.user.get_full_name|default:response.user.email }}
+                            {% elif response.patient_email %}
+                                {{ response.patient_email }}
                             {% else %}
                                 Anonymous
                             {% endif %}
                         </dd>
                     </div>
+
+                    <!-- Patient Information -->
+                    {% if response.patient_email or response.patient_age or response.patient_gender %}
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Patient Information</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            <div class="space-y-2">
+                                {% if response.patient_email %}
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500">Email:</span>
+                                    <span class="ml-2">{{ response.patient_email }}</span>
+                                </div>
+                                {% endif %}
+
+                                {% if response.patient_age %}
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500">Age:</span>
+                                    <span class="ml-2">{{ response.patient_age }}</span>
+                                </div>
+                                {% endif %}
+
+                                {% if response.patient_gender %}
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500">Gender:</span>
+                                    <span class="ml-2">
+                                        {% if response.patient_gender == 'male' %}Male
+                                        {% elif response.patient_gender == 'female' %}Female
+                                        {% elif response.patient_gender == 'non-binary' %}Non-Binary
+                                        {% elif response.patient_gender == 'prefer_not_to_say' %}Prefer Not to Say
+                                        {% else %}{{ response.patient_gender|title }}{% endif %}
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </dd>
+                    </div>
+                    {% endif %}
                     <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt class="text-sm font-medium text-gray-500">Response ID</dt>
                         <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-mono">{{ response.response_id }}</dd>
@@ -82,6 +114,23 @@
                         <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                             <dt class="text-sm font-medium text-gray-500">Completed</dt>
                             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ response.completed_at }}</dd>
+                        </div>
+                    {% endif %}
+
+                    {% if response.completion_time %}
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">Time Taken</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                {% with seconds=response.completion_time|floatformat:0 %}
+                                    {% with minutes=seconds|divisibleby:60 remaining_seconds=seconds|modulo:60 %}
+                                        {% if minutes > 0 %}
+                                            {{ minutes }} min {{ remaining_seconds }} sec
+                                        {% else %}
+                                            {{ seconds }} seconds
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endwith %}
+                            </dd>
                         </div>
                     {% endif %}
                     {% if response.total_score is not None %}
@@ -199,7 +248,7 @@
                                             <div class="flex items-center">
                                                 <span class="text-gray-900 font-medium">{{ answer.numeric_value }}</span>
                                                 <div class="ml-3 w-48 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                                    <div class="h-full bg-primary-500" style="width: {{ answer.numeric_value }}0%"></div>
+                                                    <div class="h-full bg-primary-500" style="width: {% widthmultiplier answer.numeric_value 10 %}%"></div>
                                                 </div>
                                             </div>
                                         {% else %}
@@ -276,6 +325,9 @@
                 <a href="{% url 'feedback:response_detail_tabs' pk=response.pk %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                     <i class="fas fa-chart-bar mr-2"></i> Enhanced View
                 </a>
+                <a href="{% url 'enhanced_scoring:detail' response_id=response.id %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-calculator mr-2"></i> Enhanced Scoring
+                </a>
             </div>
 
             <div class="flex flex-wrap gap-3">
@@ -284,6 +336,9 @@
                         <i class="fas fa-brain mr-2"></i> Generate Analysis
                     </a>
                 {% endif %}
+                <a href="{% url 'assessments:assessment_create_from_response' response_id=response.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                    <i class="fas fa-heartbeat mr-2"></i> Create Assessment
+                </a>
                 <a href="{% url 'feedback:export_response' pk=response.pk %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                     <i class="fas fa-file-export mr-2"></i> Export Response
                 </a>

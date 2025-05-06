@@ -145,6 +145,22 @@
                         <p class="mt-1 text-sm text-gray-500">Draft surveys are not visible to respondents</p>
                     </div>
 
+                    <!-- Estimated Time -->
+                    <div>
+                        <label for="{{ form.estimated_time.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Estimated Time (minutes) <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            <input type="number" name="{{ form.estimated_time.name }}" id="{{ form.estimated_time.id_for_label }}"
+                                   min="1" value="{{ form.estimated_time.value|default:10 }}"
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 {% if form.estimated_time.errors %}border-red-300{% endif %}">
+                        </div>
+                        {% if form.estimated_time.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.estimated_time.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Approximate time needed to complete the survey</p>
+                    </div>
+
                     <!-- Organization -->
                     <div>
                         <label for="{{ form.organization.id_for_label }}" class="block text-sm font-medium text-gray-700">

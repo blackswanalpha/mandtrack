@@ -48,17 +48,17 @@
             <div class="collapse {% if request.resolver_match.namespace == 'surveys' %}show{% endif %}" id="questionnairesCollapse">
                 <ul class="nav flex-column ms-3 small">
                     <li class="nav-item">
-                        <a class="nav-link py-1 slide-in-right" href="{% url 'surveys:survey_list' %}" hx-boost="true">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
                             <i class="fas fa-list me-2"></i> All Questionnaires
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link py-1 slide-in-right" href="{% url 'surveys:survey_create' %}" hx-boost="true">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
                             <i class="fas fa-plus-circle me-2"></i> Create New
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link py-1 slide-in-right" href="{% url 'surveys:qr_code_list' %}" hx-boost="true">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
                             <i class="fas fa-qrcode me-2"></i> QR Codes
                         </a>
                     </li>
@@ -110,7 +110,7 @@
             <div class="collapse {% if request.resolver_match.namespace == 'analytics' %}show{% endif %}" id="analyticsCollapse">
                 <ul class="nav flex-column ms-3 small">
                     <li class="nav-item">
-                        <a class="nav-link py-1 slide-in-right" href="{% url 'analytics:dashboard' %}" hx-boost="true">
+                        <a class="nav-link py-1 slide-in-right" href="#" hx-boost="true">
                             <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                         </a>
                     </li>

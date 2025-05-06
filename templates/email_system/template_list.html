@@ -1,0 +1,145 @@
+{% extends 'admin_portal/modern_base.html' %}
+{% load static %}
+
+{% block title %}Email Templates - MindTrack{% endblock %}
+
+{% block content %}
+<div class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-display font-bold text-gray-900">Email Templates</h1>
+                <p class="mt-2 text-gray-600">
+                    Manage email templates for notifications, reports, and more.
+                </p>
+            </div>
+            <div>
+                <a href="{% url 'email_system:template_create' %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                    <i class="fas fa-plus mr-2"></i> New Template
+                </a>
+            </div>
+        </div>
+
+        <!-- Email System Navigation -->
+        <div class="mb-6">
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="flex border-b border-gray-200">
+                    <a href="{% url 'email_system:template_list' %}" class="flex-1 px-4 py-3 text-center text-sm font-medium border-b-2 border-indigo-500 text-indigo-600">
+                        <i class="fas fa-file-alt mr-2"></i> Templates
+                    </a>
+                    <a href="{% url 'email_system:scheduled_email_list' %}" class="flex-1 px-4 py-3 text-center text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent">
+                        <i class="fas fa-calendar-alt mr-2"></i> Scheduled Emails
+                    </a>
+                    <a href="{% url 'email_system:email_log_list' %}" class="flex-1 px-4 py-3 text-center text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent">
+                        <i class="fas fa-history mr-2"></i> Email Logs
+                    </a>
+                    <a href="{% url 'email_system:send_email' %}" class="flex-1 px-4 py-3 text-center text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent">
+                        <i class="fas fa-paper-plane mr-2"></i> Send Email
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white shadow rounded-lg mb-6 overflow-hidden">
+            <div class="px-4 py-5 sm:p-6">
+                <form method="get" class="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:space-x-4">
+                    <div class="w-full sm:w-1/3">
+                        <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                        <input type="text" name="search" id="search" value="{{ search|default:'' }}" placeholder="Search templates..." class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                    <div class="w-full sm:w-1/3">
+                        <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <select name="category" id="category" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            <option value="">All Categories</option>
+                            <option value="notification" {% if category == 'notification' %}selected{% endif %}>Notification</option>
+                            <option value="report" {% if category == 'report' %}selected{% endif %}>Report</option>
+                            <option value="reminder" {% if category == 'reminder' %}selected{% endif %}>Reminder</option>
+                            <option value="welcome" {% if category == 'welcome' %}selected{% endif %}>Welcome</option>
+                            <option value="feedback" {% if category == 'feedback' %}selected{% endif %}>Feedback</option>
+                            <option value="other" {% if category == 'other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    <div class="w-full sm:w-1/3 flex items-end">
+                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                            <i class="fas fa-search mr-2"></i> Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Templates List -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Templates</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    {% if templates %}
+                        Showing {{ templates|length }} template{{ templates|length|pluralize }}
+                        {% if category %}in category "{{ category|title }}"{% endif %}
+                        {% if search %}matching "{{ search }}"{% endif %}
+                    {% else %}
+                        No templates found
+                        {% if category %}in category "{{ category|title }}"{% endif %}
+                        {% if search %}matching "{{ search }}"{% endif %}
+                    {% endif %}
+                </p>
+            </div>
+
+            {% if templates %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                    {% for template in templates %}
+                        <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+                            <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="text-lg font-medium text-gray-900 truncate" title="{{ template.name }}">
+                                        {{ template.name }}
+                                    </h3>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                        {% if template.category == 'notification' %}bg-blue-100 text-blue-800
+                                        {% elif template.category == 'report' %}bg-green-100 text-green-800
+                                        {% elif template.category == 'reminder' %}bg-yellow-100 text-yellow-800
+                                        {% elif template.category == 'welcome' %}bg-purple-100 text-purple-800
+                                        {% elif template.category == 'feedback' %}bg-pink-100 text-pink-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ template.category|title }}
+                                    </span>
+                                </div>
+                                <p class="mt-1 text-sm text-gray-500 truncate" title="{{ template.subject }}">
+                                    {{ template.subject }}
+                                </p>
+                            </div>
+                            <div class="px-4 py-4 sm:px-6">
+                                <p class="text-sm text-gray-500 mb-4 h-12 overflow-hidden">
+                                    {{ template.description|default:"No description"|truncatechars:100 }}
+                                </p>
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center text-sm text-gray-500">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        <span>{{ template.updated_at|date:"M j, Y" }}</span>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <a href="{% url 'email_system:template_preview' pk=template.pk %}" class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                                            <i class="fas fa-eye mr-1"></i> Preview
+                                        </a>
+                                        <a href="{% url 'email_system:template_detail' pk=template.pk %}" class="inline-flex items-center px-2.5 py-1.5 border border-transparent shadow-sm text-xs font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                                            <i class="fas fa-chevron-right mr-1"></i> View
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="px-4 py-5 sm:p-6 text-center">
+                    <p class="text-gray-500 mb-4">No templates found.</p>
+                    <a href="{% url 'email_system:template_create' %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                        <i class="fas fa-plus mr-2"></i> Create Template
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

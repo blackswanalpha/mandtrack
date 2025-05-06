@@ -1,0 +1,67 @@
+{% load static %}
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form id="dashboard-filter-form" class="row g-3 align-items-end">
+            <!-- Date Range Filter -->
+            <div class="col-md-4">
+                <label for="date-range" class="form-label">Date Range</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="date-range" name="date_range" placeholder="Select date range" readonly>
+                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                </div>
+            </div>
+            
+            <!-- Organization Filter -->
+            <div class="col-md-3">
+                <label for="organization-filter" class="form-label">Organization</label>
+                <select class="form-select" id="organization-filter" name="organization">
+                    <option value="">All Organizations</option>
+                    {% for org in organizations %}
+                    <option value="{{ org.id }}">{{ org.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Questionnaire Type Filter -->
+            <div class="col-md-3">
+                <label for="questionnaire-type" class="form-label">Questionnaire Type</label>
+                <select class="form-select" id="questionnaire-type" name="questionnaire_type">
+                    <option value="">All Types</option>
+                    <option value="mental_health">Mental Health</option>
+                    <option value="physical_health">Physical Health</option>
+                    <option value="customer_satisfaction">Customer Satisfaction</option>
+                    <option value="employee_feedback">Employee Feedback</option>
+                </select>
+            </div>
+            
+            <!-- Filter Button -->
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-1"></i> Apply Filters
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Filter Tags -->
+<div id="active-filters" class="mb-4 d-none">
+    <div class="d-flex flex-wrap gap-2">
+        <span class="badge bg-light text-dark border px-3 py-2">
+            <span id="date-range-tag">Last 30 days</span>
+            <button type="button" class="btn-close ms-2" data-filter="date_range"></button>
+        </span>
+        <span class="badge bg-light text-dark border px-3 py-2 d-none" id="organization-tag">
+            <span id="organization-name"></span>
+            <button type="button" class="btn-close ms-2" data-filter="organization"></button>
+        </span>
+        <span class="badge bg-light text-dark border px-3 py-2 d-none" id="questionnaire-type-tag">
+            <span id="questionnaire-type-name"></span>
+            <button type="button" class="btn-close ms-2" data-filter="questionnaire_type"></button>
+        </span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-all-filters">
+            Clear All Filters
+        </button>
+    </div>
+</div>

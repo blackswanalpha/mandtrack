@@ -1,16 +1,17 @@
 from django import forms
-from .models import Questionnaire, Question, QuestionChoice, QRCode, ScoringConfig, EmailTemplate
+from .models import SurveysQuestionnaire as Questionnaire, SurveysQuestion as Question, SurveysQuestionchoice as QuestionChoice, SurveysQrcode as QRCode, SurveysScoringconfig as ScoringConfig, SurveysEmailtemplate as EmailTemplate
 
 class SurveyForm(forms.ModelForm):
     class Meta:
         model = Questionnaire
-        fields = ['title', 'description', 'instructions', 'type', 'category', 'status', 'organization']
+        fields = ['title', 'description', 'instructions', 'type', 'category', 'status', 'organization', 'estimated_time']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
             'instructions': forms.Textarea(attrs={'rows': 4}),
+            'estimated_time': forms.NumberInput(attrs={'min': 1, 'value': 10}),
         }
         # Explicitly set the table name to match the model's Meta.db_table
-        db_table = 'surveys_survey'
+        db_table = 'surveys_questionnaire'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -19,6 +20,9 @@ class SurveyForm(forms.ModelForm):
         # Set default values for required fields that aren't in the form
         if 'type' not in self.data:
             self.fields['type'].initial = 'standard'
+        # Set default value for estimated_time
+        if 'estimated_time' not in self.data:
+            self.fields['estimated_time'].initial = 10
 
     def save(self, commit=True):
         # Override the save method to handle the UUID to bigint conversion
@@ -46,13 +50,15 @@ class SurveyForm(forms.ModelForm):
                 instance.access_code = str(uuid.uuid4())[:8].upper()
 
             with connection.cursor() as cursor:
-                # Insert directly into surveys_survey table
+                # Insert directly into surveys_questionnaire table
                 cursor.execute("""
-                    INSERT INTO surveys_survey
-                    (title, slug, description, instructions, category, status,
+                    INSERT INTO surveys_questionnaire
+                    (title, slug, description, instructions, category, type, status,
                     is_template, allow_anonymous, requires_auth, created_by_id,
-                    organization_id, created_at, updated_at, qr_code, access_code)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), %s, %s)
+                    organization_id, created_at, updated_at, qr_code, access_code, estimated_time,
+                    is_active, is_adaptive, is_qr_enabled, is_public, version, tags, language, time_limit)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING id
                 """, [
                     instance.title,
@@ -60,6 +66,7 @@ class SurveyForm(forms.ModelForm):
                     instance.description or '',
                     instance.instructions or '',
                     instance.category,
+                    instance.type or 'standard',  # Add type field
                     instance.status,
                     False,  # is_template
                     True,   # allow_anonymous
@@ -67,7 +74,16 @@ class SurveyForm(forms.ModelForm):
                     instance.created_by_id,
                     instance.organization_id if hasattr(instance, 'organization_id') and instance.organization_id else None,
                     None,   # qr_code
-                    instance.access_code
+                    instance.access_code,
+                    instance.estimated_time or 10,  # Default to 10 minutes if not provided
+                    True,   # is_active - set to True by default
+                    False,  # is_adaptive - set to False by default
+                    True,   # is_qr_enabled - set to True by default
+                    False,  # is_public - set to False by default
+                    1,      # version - set to 1 by default
+                    '[]',   # tags - set to empty array by default
+                    'en',   # language - set to English by default
+                    0,      # time_limit - set to 0 (no limit) by default
                 ])
 
                 # Get the ID of the newly created record
@@ -127,6 +143,11 @@ class QuestionForm(forms.ModelForm):
 
         # Validate that the question type is one of the allowed choices
         valid_types = [choice[0] for choice in Question.TYPE_CHOICES]
+
+        # Add 'country' as a valid type if it's not already in the list
+        if 'country' not in valid_types:
+            valid_types.append('country')
+
         if question_type not in valid_types:
             self.add_error('question_type', f'Invalid question type. Must be one of: {", ".join(valid_types)}')
             return 'text'
@@ -147,7 +168,7 @@ class QuestionForm(forms.ModelForm):
 
         # For choice questions, we'll validate the choices in the view
         # We'll handle this with client-side validation instead of adding a form error
-        if question_type in ['single_choice', 'multiple_choice']:
+        if question_type in ['single_choice', 'multiple_choice', 'country']:
             # Just log a reminder, don't add an error
             pass
 
@@ -167,7 +188,7 @@ class QuestionForm(forms.ModelForm):
                 cleaned_data['max_score'] = 0
 
             # For choice-based questions, ensure they can be scored
-            if question_type in ['single_choice', 'multiple_choice', 'scale']:
+            if question_type in ['single_choice', 'multiple_choice', 'scale', 'country']:
                 # These question types can be scored, so make sure scoring_weight is set
                 if not cleaned_data.get('scoring_weight'):
                     cleaned_data['scoring_weight'] = 1.0

@@ -7,6 +7,9 @@ from feedback.models.base import Response, Answer, AIAnalysis
 # Then import the models from the completion module
 from feedback.models.completion import CompletionTracker, CompletionEvent
 
+# Import email models
+from feedback.models.email import EmailLog
+
 # Define the model extension functions directly here to avoid circular imports
 def _answer_calculate_score(self):
     """Calculate the score for this answer"""
@@ -160,4 +163,5 @@ __all__ = [
     'AIAnalysis',
     'CompletionTracker',
     'CompletionEvent',
+    'EmailLog',
 ]

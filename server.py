@@ -394,17 +394,30 @@ def delete_database():
     logger.info("Database cleanup completed.")
     return True
 
+def create_empty_database():
+    """Create an empty SQLite database file."""
+    logger.info("Creating empty SQLite database file...")
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db.sqlite3')
+
+    try:
+        # Create an empty database file
+        import sqlite3
+        conn = sqlite3.connect(db_path)
+        conn.close()
+        logger.info(f"Empty database file created at {db_path}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to create empty database file: {e}")
+        return False
+
 def run_migrations(settings_module):
     """Run database migrations."""
     logger.info("Running database migrations...")
     env = os.environ.copy()
     env['DJANGO_SETTINGS_MODULE'] = settings_module
 
-    # Delete the database first
-    if not delete_database():
-        logger.warning("Failed to delete database. Continuing with migrations anyway.")
-
     try:
+        logger.info("Running migrations on the newly created database...")
         result = subprocess.run(
             [sys.executable, 'manage.py', 'migrate', '--noinput'],
             env=env,
@@ -900,8 +913,19 @@ def main():
     if not ensure_sqlite_database():
         logger.warning("Failed to ensure SQLite database. Continuing anyway.")
 
-    # Always delete database and run migrations
-    logger.info("Preparing database...")
+    # Database management process:
+    # 1. Delete existing database
+    logger.info("Step 1: Deleting existing database...")
+    if not delete_database():
+        logger.warning("Failed to delete existing database. Continuing anyway.")
+
+    # 2. Create empty database
+    logger.info("Step 2: Creating new empty database...")
+    if not create_empty_database():
+        logger.warning("Failed to create empty database. Migrations may fail.")
+
+    # 3. Run migrations on the new database
+    logger.info("Step 3: Running migrations on the new database...")
     if not run_migrations(config.settings_module):
         logger.warning("Database migrations failed. Continuing anyway.")
 

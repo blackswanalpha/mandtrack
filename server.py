@@ -458,73 +458,120 @@ def create_admin_user(settings_module):
             logger.info("Admin user already exists.")
             return True
 
+        # Check available fields on the User model
+        available_fields = [field.name for field in User._meta.fields]
+        logger.info(f"Available fields on User model: {available_fields}")
+
         # Check if User model requires username
-        requires_username = 'username' in [field.name for field in User._meta.fields]
+        requires_username = 'username' in available_fields
         logger.info(f"User model requires username: {requires_username}")
+
+        # Check if User model has first_name and last_name fields
+        has_first_name = 'first_name' in available_fields
+        has_last_name = 'last_name' in available_fields
+        logger.info(f"User model has first_name: {has_first_name}, last_name: {has_last_name}")
+
+        # Check if User model has role field
+        has_role = 'role' in available_fields
+        logger.info(f"User model has role field: {has_role}")
 
         # Create admin user
         logger.info("Creating admin user...")
         try:
-            # Try to create user with username if required
+            # Create base parameters
+            create_params = {
+                'email': 'admin@example.com',
+                'password': 'admin123',
+                'is_active': True,
+                'is_staff': True,
+                'is_superuser': True
+            }
+
+            # Add username if required
             if requires_username:
-                admin_user = User.objects.create_superuser(
-                    username='admin',
-                    email='admin@example.com',
-                    password='admin123',
-                    is_active=True,
-                    is_staff=True,
-                    is_superuser=True
-                )
-            else:
-                admin_user = User.objects.create_superuser(
-                    email='admin@example.com',
-                    password='admin123',
-                    is_active=True,
-                    is_staff=True,
-                    is_superuser=True
-                )
+                create_params['username'] = 'admin'
+
+            # Add role if available
+            if has_role:
+                create_params['role'] = 'admin'
+
+            logger.info(f"Creating admin user with parameters: {create_params}")
+            admin_user = User.objects.create_superuser(**create_params)
 
             # Set additional fields if they exist on the User model
-            if hasattr(admin_user, 'first_name'):
-                admin_user.first_name = 'Admin'
-            if hasattr(admin_user, 'last_name'):
-                admin_user.last_name = 'User'
+            # Only try to set these fields if they exist and weren't set during creation
+            if has_first_name and not admin_user.first_name:
+                try:
+                    admin_user.first_name = 'Admin'
+                except Exception as name_e:
+                    logger.warning(f"Could not set first_name: {name_e}")
+
+            if has_last_name and not admin_user.last_name:
+                try:
+                    admin_user.last_name = 'User'
+                except Exception as name_e:
+                    logger.warning(f"Could not set last_name: {name_e}")
+
             if hasattr(admin_user, 'is_admin'):
                 admin_user.is_admin = True
 
-            admin_user.save()
-            logger.info("Admin user created successfully.")
+            # Save the user with any additional fields
+            try:
+                admin_user.save()
+                logger.info("Admin user created and saved successfully.")
+            except Exception as save_e:
+                logger.warning(f"Could not save admin user with additional fields: {save_e}")
+                logger.info("Continuing without setting additional fields.")
 
             # Create a second admin user with different credentials
             logger.info("Creating second admin user...")
+
+            # Create base parameters for second admin
+            create_params2 = {
+                'email': 'admin12@example.com',
+                'password': 'admin1234',
+                'is_active': True,
+                'is_staff': True,
+                'is_superuser': True
+            }
+
+            # Add username if required
             if requires_username:
-                admin_user2 = User.objects.create_superuser(
-                    username='admin12',
-                    email='admin12@example.com',
-                    password='admin1234',
-                    is_active=True,
-                    is_staff=True,
-                    is_superuser=True
-                )
-            else:
-                admin_user2 = User.objects.create_superuser(
-                    email='admin12@example.com',
-                    password='admin1234',
-                    is_active=True,
-                    is_staff=True,
-                    is_superuser=True
-                )
+                create_params2['username'] = 'admin12'
+
+            # Add role if available
+            if has_role:
+                create_params2['role'] = 'admin'
+
+            logger.info(f"Creating second admin user with parameters: {create_params2}")
+            admin_user2 = User.objects.create_superuser(**create_params2)
 
             # Set additional fields if they exist on the User model
-            if hasattr(admin_user2, 'first_name'):
-                admin_user2.first_name = 'Admin'
-            if hasattr(admin_user2, 'last_name'):
-                admin_user2.last_name = 'User'
+            if has_first_name and not admin_user2.first_name:
+                try:
+                    admin_user2.first_name = 'Admin'
+                except Exception as name_e:
+                    logger.warning(f"Could not set first_name for second admin: {name_e}")
+
+            if has_last_name and not admin_user2.last_name:
+                try:
+                    admin_user2.last_name = 'User'
+                except Exception as name_e:
+                    logger.warning(f"Could not set last_name for second admin: {name_e}")
+
             if hasattr(admin_user2, 'is_admin'):
                 admin_user2.is_admin = True
 
-            admin_user2.save()
-            logger.info("Second admin user created successfully.")
+            # Save the second user with any additional fields
+            try:
+                admin_user2.save()
+                logger.info("Second admin user created and saved successfully.")
+            except Exception as save_e:
+                logger.warning(f"Could not save second admin user with additional fields: {save_e}")
+                logger.info("Continuing without setting additional fields for second admin.")
+
+            return True
+
         except TypeError as e:
             # If we get a TypeError, it might be because we're missing required arguments
             logger.error(f"TypeError creating user: {e}")
@@ -551,6 +598,7 @@ def create_admin_user(settings_module):
                 admin_user.is_superuser = True
                 admin_user.save()
                 logger.info("Admin user created successfully with minimal parameters.")
+                return True
             except Exception as inner_e:
                 logger.error(f"Failed to create user with inspect method: {inner_e}")
                 # Last resort: try with hardcoded username and email
@@ -561,10 +609,10 @@ def create_admin_user(settings_module):
                         password='admin123'
                     )
                     logger.info("Admin user created with hardcoded parameters.")
+                    return True
                 except Exception as last_e:
                     logger.error(f"All attempts to create admin user failed: {last_e}")
-
-        return True
+                    return False
     except Exception as e:
         logger.error(f"Failed to create admin user: {e}")
         logger.error(traceback.format_exc())

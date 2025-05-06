@@ -351,17 +351,48 @@ def delete_database():
     logger.info("Deleting SQLite database file...")
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db.sqlite3')
 
+    # Also check for journal and wal files
+    journal_path = f"{db_path}-journal"
+    wal_path = f"{db_path}-wal"
+    shm_path = f"{db_path}-shm"
+
+    # Delete main database file
     if os.path.exists(db_path):
         try:
             os.remove(db_path)
             logger.info(f"Database file {db_path} deleted successfully.")
-            return True
         except Exception as e:
             logger.error(f"Failed to delete database file: {e}")
             return False
     else:
         logger.info(f"Database file {db_path} does not exist. Nothing to delete.")
-        return True
+
+    # Delete journal file if it exists
+    if os.path.exists(journal_path):
+        try:
+            os.remove(journal_path)
+            logger.info(f"Journal file {journal_path} deleted successfully.")
+        except Exception as e:
+            logger.warning(f"Failed to delete journal file: {e}")
+
+    # Delete WAL file if it exists
+    if os.path.exists(wal_path):
+        try:
+            os.remove(wal_path)
+            logger.info(f"WAL file {wal_path} deleted successfully.")
+        except Exception as e:
+            logger.warning(f"Failed to delete WAL file: {e}")
+
+    # Delete SHM file if it exists
+    if os.path.exists(shm_path):
+        try:
+            os.remove(shm_path)
+            logger.info(f"SHM file {shm_path} deleted successfully.")
+        except Exception as e:
+            logger.warning(f"Failed to delete SHM file: {e}")
+
+    logger.info("Database cleanup completed.")
+    return True
 
 def run_migrations(settings_module):
     """Run database migrations."""
@@ -569,6 +600,46 @@ def run_django_checks(settings_module):
         logger.error(f"Django system checks failed: {e}")
         logger.debug(e.stdout)
         logger.debug(e.stderr)
+        return False
+
+def update_admin_txt():
+    """Update the admin.txt file with login credentials."""
+    logger.info("Updating admin.txt file...")
+
+    admin_txt_content = """# MindTrack Admin Login Credentials
+
+## Primary Admin User
+- Email: admin@example.com
+- Username: admin
+- Password: admin123
+- Role: Administrator
+- Access Level: Full
+
+## Secondary Admin User
+- Email: admin12@example.com
+- Username: admin12
+- Password: admin1234
+- Role: Administrator
+- Access Level: Full
+
+## Login URLs
+- Admin Portal: /admin/
+- Admin Dashboard: /admin-portal/dashboard/
+
+## Notes
+- These credentials are automatically created when the server starts
+- Both users have superuser privileges
+- Use these credentials for development and testing only
+- For production, please change these passwords immediately after first login
+"""
+
+    try:
+        with open('admin.txt', 'w') as f:
+            f.write(admin_txt_content)
+        logger.info("admin.txt file updated successfully.")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to update admin.txt file: {e}")
         return False
 
 class HealthCheckServer(threading.Thread):
@@ -825,23 +896,27 @@ def main():
         logger.error("Pre-flight checks failed. Exiting.")
         sys.exit(1)
 
-    # Prepare the application (only in production)
+    # Ensure SQLite database is used
+    if not ensure_sqlite_database():
+        logger.warning("Failed to ensure SQLite database. Continuing anyway.")
+
+    # Always delete database and run migrations
+    logger.info("Preparing database...")
+    if not run_migrations(config.settings_module):
+        logger.warning("Database migrations failed. Continuing anyway.")
+
+    # In production mode, also collect static files
     if not config.is_development:
         # Collect static files
         if not collect_static(config.settings_module):
             logger.warning("Static file collection failed. Continuing anyway.")
 
-        # Run migrations
-        if not run_migrations(config.settings_module):
-            logger.warning("Database migrations failed. Continuing anyway.")
-
-    # Ensure SQLite database is used
-    if not ensure_sqlite_database():
-        logger.warning("Failed to ensure SQLite database. Continuing anyway.")
-
     # Create admin user if it doesn't exist
     if not create_admin_user(config.settings_module):
         logger.warning("Failed to create admin user. Continuing anyway.")
+
+    # Update admin.txt file with login credentials
+    update_admin_txt()
 
     # Run the server
     run_gunicorn(config)

@@ -1,0 +1,25 @@
+# MindTrack Admin Login Credentials
+
+## Primary Admin User
+- Email: admin@example.com
+- Username: admin
+- Password: admin123
+- Role: Administrator
+- Access Level: Full
+
+## Secondary Admin User
+- Email: admin12@example.com
+- Username: admin12
+- Password: admin1234
+- Role: Administrator
+- Access Level: Full
+
+## Login URLs
+- Admin Portal: /admin/
+- Admin Dashboard: /admin-portal/dashboard/
+
+## Notes
+- These credentials are automatically created when the server starts
+- Both users have superuser privileges
+- Use these credentials for development and testing only
+- For production, please change these passwords immediately after first login

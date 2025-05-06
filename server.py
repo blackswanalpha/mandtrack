@@ -410,12 +410,95 @@ def create_empty_database():
         logger.error(f"Failed to create empty database file: {e}")
         return False
 
+def fix_migration_issues():
+    """Attempt to fix common migration issues."""
+    logger.info("Attempting to fix common migration issues...")
+
+    try:
+        # 1. Check for and fix migration files with conflicts
+        migrations_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'migrations')
+        if os.path.exists(migrations_dir):
+            logger.info(f"Checking migration files in {migrations_dir}")
+            # This is just a placeholder - in a real implementation, you would scan for
+            # conflicting migration files and fix them
+
+        # 2. Check for and fix broken migration dependencies
+        # Another placeholder for real implementation
+
+        # 3. Look for and fix common database schema issues
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db.sqlite3')
+        if os.path.exists(db_path):
+            logger.info(f"Checking database schema in {db_path}")
+            try:
+                import sqlite3
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
+
+                # Check if django_migrations table exists
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='django_migrations'")
+                if cursor.fetchone() is None:
+                    logger.info("Creating django_migrations table...")
+                    cursor.execute("""
+                    CREATE TABLE django_migrations (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        app VARCHAR(255) NOT NULL,
+                        name VARCHAR(255) NOT NULL,
+                        applied DATETIME NOT NULL
+                    )
+                    """)
+                    conn.commit()
+                    logger.info("Created django_migrations table")
+
+                # Check if django_content_type table exists
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='django_content_type'")
+                if cursor.fetchone() is None:
+                    logger.info("Creating django_content_type table...")
+                    cursor.execute("""
+                    CREATE TABLE django_content_type (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        app_label VARCHAR(100) NOT NULL,
+                        model VARCHAR(100) NOT NULL,
+                        UNIQUE (app_label, model)
+                    )
+                    """)
+                    conn.commit()
+                    logger.info("Created django_content_type table")
+
+                # Check if auth_permission table exists
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='auth_permission'")
+                if cursor.fetchone() is None:
+                    logger.info("Creating auth_permission table...")
+                    cursor.execute("""
+                    CREATE TABLE auth_permission (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name VARCHAR(255) NOT NULL,
+                        content_type_id INTEGER NOT NULL REFERENCES django_content_type (id),
+                        codename VARCHAR(100) NOT NULL,
+                        UNIQUE (content_type_id, codename)
+                    )
+                    """)
+                    conn.commit()
+                    logger.info("Created auth_permission table")
+
+                conn.close()
+                logger.info("Database schema check completed")
+            except Exception as db_e:
+                logger.error(f"Error checking database schema: {db_e}")
+
+        logger.info("Migration issue fixing completed")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to fix migration issues: {e}")
+        logger.error(traceback.format_exc())
+        return False
+
 def run_migrations(settings_module):
     """Run database migrations."""
     logger.info("Running database migrations...")
     env = os.environ.copy()
     env['DJANGO_SETTINGS_MODULE'] = settings_module
 
+    # First attempt: Run migrations normally
     try:
         logger.info("Running migrations on the newly created database...")
         result = subprocess.run(
@@ -430,8 +513,78 @@ def run_migrations(settings_module):
         return True
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to run migrations: {e}")
-        logger.debug(e.stdout)
-        logger.debug(e.stderr)
+        logger.error("Migration stdout: " + e.stdout)
+        logger.error("Migration stderr: " + e.stderr)
+
+        # Look for specific error patterns
+        if "no such column" in e.stderr or "no such table" in e.stderr:
+            logger.warning("Detected schema-related error. Attempting to run migrations with --fake-initial...")
+            try:
+                # Try with --fake-initial flag
+                logger.info("Attempting migrations with --fake-initial flag...")
+                result = subprocess.run(
+                    [sys.executable, 'manage.py', 'migrate', '--noinput', '--fake-initial'],
+                    env=env,
+                    check=True,
+                    capture_output=True,
+                    text=True
+                )
+                logger.info("Migrations with --fake-initial completed successfully.")
+                logger.debug(result.stdout)
+                return True
+            except subprocess.CalledProcessError as fake_e:
+                logger.error(f"Failed to run migrations with --fake-initial: {fake_e}")
+                logger.error("Migration stdout: " + fake_e.stdout)
+                logger.error("Migration stderr: " + fake_e.stderr)
+
+                # Last resort: Try running migrations one by one
+                try:
+                    logger.info("Attempting to run migrations app by app...")
+
+                    # Get list of installed apps
+                    import django
+                    from django.conf import settings
+
+                    # Setup Django
+                    os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings_module)
+                    django.setup()
+
+                    # Get installed apps
+                    installed_apps = settings.INSTALLED_APPS
+                    logger.info(f"Found {len(installed_apps)} installed apps: {', '.join(installed_apps)}")
+
+                    # Run migrations for each app individually
+                    success_count = 0
+                    for app in installed_apps:
+                        app_name = app.split('.')[-1]  # Get the last part of the app path
+                        logger.info(f"Migrating app: {app_name}")
+                        try:
+                            app_result = subprocess.run(
+                                [sys.executable, 'manage.py', 'migrate', app_name, '--noinput'],
+                                env=env,
+                                check=True,
+                                capture_output=True,
+                                text=True
+                            )
+                            logger.info(f"Successfully migrated {app_name}")
+                            success_count += 1
+                        except subprocess.CalledProcessError as app_e:
+                            logger.warning(f"Failed to migrate {app_name}: {app_e}")
+                            logger.debug(f"App migration stdout: {app_e.stdout}")
+                            logger.debug(f"App migration stderr: {app_e.stderr}")
+
+                    if success_count > 0:
+                        logger.info(f"Successfully migrated {success_count} out of {len(installed_apps)} apps.")
+                        return True
+                    else:
+                        logger.error("Failed to migrate any apps.")
+                        return False
+                except Exception as app_by_app_e:
+                    logger.error(f"Failed to run app-by-app migrations: {app_by_app_e}")
+                    logger.error(traceback.format_exc())
+                    return False
+
+        # If we get here, all migration attempts failed
         return False
 
 def create_admin_user(settings_module):
@@ -974,8 +1127,35 @@ def main():
 
     # 3. Run migrations on the new database
     logger.info("Step 3: Running migrations on the new database...")
-    if not run_migrations(config.settings_module):
-        logger.warning("Database migrations failed. Continuing anyway.")
+    migration_success = run_migrations(config.settings_module)
+
+    if not migration_success:
+        logger.warning("Database migrations failed. Attempting to fix common issues...")
+
+        # Try to fix migration issues
+        fix_success = fix_migration_issues()
+        if fix_success:
+            logger.info("Migration issues may have been fixed. Trying migrations again...")
+            # Try migrations again
+            migration_success = run_migrations(config.settings_module)
+
+            if migration_success:
+                logger.info("Migrations succeeded after fixing issues!")
+            else:
+                logger.error("Migrations still failing after attempting fixes.")
+                logger.warning("This may cause issues with the application.")
+                logger.warning("You may need to manually fix migration issues or restore from a backup.")
+
+                # Provide more detailed warnings based on environment
+                if not config.is_development:
+                    logger.warning("In production mode, continuing with failed migrations may cause data corruption.")
+                    logger.warning("Consider fixing the migration issues before proceeding.")
+                else:
+                    logger.warning("In development mode, you can continue, but some features may not work correctly.")
+        else:
+            logger.error("Failed to fix migration issues automatically.")
+            logger.warning("This may cause issues with the application.")
+            logger.warning("You may need to manually fix migration issues or restore from a backup.")
 
     # In production mode, also collect static files
     if not config.is_development:

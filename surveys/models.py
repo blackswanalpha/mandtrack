@@ -69,6 +69,7 @@ class Questionnaire(models.Model):
     qr_code = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
     access_code = models.CharField(max_length=20, blank=True, null=True, unique=True)
     is_template = models.BooleanField(default=False, help_text='Whether this questionnaire is a template that can be used to create new questionnaires')
+    slug = models.SlugField(max_length=255, blank=True, null=True, default='')
 
     class Meta:
         ordering = ['-created_at']
@@ -89,6 +90,18 @@ class Questionnaire(models.Model):
         # Generate access code if not provided
         if not self.access_code:
             self.access_code = str(uuid.uuid4())[:8].upper()
+
+        # Generate slug if not provided
+        if hasattr(self, 'slug') and not self.slug:
+            from django.utils.text import slugify
+            self.slug = slugify(self.title)
+
+            # Ensure slug is unique
+            original_slug = self.slug
+            counter = 1
+            while Questionnaire.objects.filter(slug=self.slug).exclude(pk=self.pk).exists():
+                self.slug = f"{original_slug}-{counter}"
+                counter += 1
 
         # Generate QR code if not exists
         if not self.qr_code and self.is_qr_enabled:

@@ -447,7 +447,7 @@ def generate_qr_code(request, pk):
     )
 
     # Use the survey's URL
-    survey_url = request.build_absolute_uri(f"/surveys/{survey.slug}/")
+    survey_url = request.build_absolute_uri(f"/surveys/{survey.pk}/")
     qr.add_data(survey_url)
     qr.make(fit=True)
 
@@ -456,20 +456,18 @@ def generate_qr_code(request, pk):
     # Save the QR code to the survey
     buffer = BytesIO()
     img.save(buffer, format="PNG")
-    survey.qr_code.save(f"qr_{survey.slug}.png", buffer, save=True)
+    survey.qr_code.save(f"qr_{survey.pk}.png", buffer, save=True)
 
     return render(request, 'surveys/qr_code.html', {'survey': survey})
 
 
-def survey_respond(request, slug=None, pk=None):
+def survey_respond(request, pk=None):
     """
     Public view for responding to a survey via QR code or direct link
-    Can be accessed by slug or pk
+    Can be accessed by pk
     """
-    # Get the survey by slug or pk
-    if slug:
-        survey = get_object_or_404(Survey, slug=slug)
-    elif pk:
+    # Get the survey by pk
+    if pk:
         survey = get_object_or_404(Survey, pk=pk)
     else:
         messages.error(request, "Invalid survey link.")

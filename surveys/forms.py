@@ -32,9 +32,8 @@ class SurveyForm(forms.ModelForm):
         if not instance.pk:
             from django.db import connection
             import uuid
-            from django.utils.text import slugify
 
-            # Slug field has been removed
+            # No need for slugify as slug field has been removed
 
             # Generate access code if not provided
             if not instance.access_code:

@@ -41,36 +41,56 @@ def survey_list(request):
     """
     Display a list of all questionnaires
     """
-    # Get questionnaires created by the user or in their organizations
-    user_questionnaires = Questionnaire.objects.filter(created_by=request.user)
+    try:
+        # Get questionnaires created by the user or in their organizations
+        user_questionnaires = Questionnaire.objects.filter(created_by=request.user)
 
-    # Get questionnaires from organizations the user is a member of
-    org_questionnaires = Questionnaire.objects.filter(organization__members__user=request.user)
+        # Get questionnaires from organizations the user is a member of
+        org_questionnaires = Questionnaire.objects.filter(organization__members__user=request.user)
 
-    # Combine and remove duplicates
-    questionnaires = (user_questionnaires | org_questionnaires).distinct()
+        # Combine and remove duplicates
+        questionnaires = (user_questionnaires | org_questionnaires).distinct()
 
-    # Filter by category if provided
-    category = request.GET.get('category')
-    if category:
-        questionnaires = questionnaires.filter(category=category)
+        # Filter by category if provided
+        category = request.GET.get('category')
+        if category:
+            questionnaires = questionnaires.filter(category=category)
 
-    # Filter by status if provided
-    status = request.GET.get('status')
-    if status:
-        questionnaires = questionnaires.filter(status=status)
+        # Filter by status if provided
+        status = request.GET.get('status')
+        if status:
+            questionnaires = questionnaires.filter(status=status)
 
-    # Get template questionnaires
-    template_questionnaires = Questionnaire.objects.filter(is_template=True)
+        # Get template questionnaires
+        template_questionnaires = Questionnaire.objects.filter(is_template=True)
 
-    context = {
-        'questionnaires': questionnaires,
-        'template_questionnaires': template_questionnaires,
-        'categories': Questionnaire.CATEGORY_CHOICES,
-        'statuses': Questionnaire.STATUS_CHOICES,
-    }
+        context = {
+            'questionnaires': questionnaires,
+            'template_questionnaires': template_questionnaires,
+            'categories': Questionnaire.CATEGORY_CHOICES,
+            'statuses': Questionnaire.STATUS_CHOICES,
+        }
 
-    return render(request, 'surveys/survey_list.html', context)
+        return render(request, 'surveys/survey_list.html', context)
+    except Exception as e:
+        # Log the error
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in survey_list view: {str(e)}")
+
+        # Show error message to user
+        from django.contrib import messages
+        messages.error(request, f"An error occurred while loading the questionnaires: {str(e)}")
+
+        # Return empty context
+        context = {
+            'questionnaires': [],
+            'template_questionnaires': [],
+            'categories': Questionnaire.CATEGORY_CHOICES,
+            'statuses': Questionnaire.STATUS_CHOICES,
+        }
+
+        return render(request, 'surveys/survey_list.html', context)
 
 @login_required
 def survey_create(request):
@@ -817,6 +837,192 @@ def question_edit(request, survey_pk, pk):
         'choices': choices,
         'is_edit': True
     })
+
+@login_required
+def country_question_create(request, survey_pk):
+    """
+    Create a new country question for a questionnaire
+    """
+    questionnaire = get_object_or_404(Questionnaire, pk=survey_pk)
+
+    # Check if user has permission to add questions to this questionnaire
+    if questionnaire.created_by != request.user and not questionnaire.organization.members.filter(user=request.user, role__in=['admin', 'manager']).exists():
+        messages.error(request, "You don't have permission to add questions to this questionnaire.")
+        return redirect('surveys:survey_detail', pk=survey_pk)
+
+    # Get the next order number
+    next_order = questionnaire.questions.count() + 1
+
+    if request.method == 'POST':
+        # Log the raw POST data for debugging
+        logger.info(f"Country question creation POST data: {json.dumps(dict(request.POST))}")
+
+        # Create a copy of POST data to modify
+        post_data = request.POST.copy()
+
+        # Ensure question_type is set to 'country'
+        post_data['question_type'] = 'country'
+
+        form = QuestionForm(post_data)
+
+        # Log form data before validation
+        logger.info(f"Form data before validation: {json.dumps({field: form[field].value() for field in form.fields})}")
+
+        if form.is_valid():
+            try:
+                # Create the question directly
+                logger.info("Creating country question")
+
+                # Get the cleaned data from the form
+                question_data = form.cleaned_data
+
+                # Try to get the QuestionType object
+                try:
+                    from .models import QuestionType
+                    question_type_obj = QuestionType.objects.filter(code='country').first()
+                    logger.info(f"Found QuestionType: {question_type_obj}")
+                except Exception as e:
+                    logger.error(f"Error getting QuestionType: {e}")
+                    question_type_obj = None
+
+                # Set default values for scoring fields
+                is_scored = question_data.get('is_scored', False)
+                scoring_weight = question_data.get('scoring_weight', 1.0)
+                max_score = question_data.get('max_score', 0)
+
+                # Create the question directly
+                question = Question(
+                    survey=questionnaire,
+                    text=question_data.get('text', 'Select your country'),
+                    description=question_data.get('description', ''),
+                    question_type='country',  # Explicitly set to 'country'
+                    question_type_obj=question_type_obj,
+                    required=question_data.get('required', True),
+                    is_scored=is_scored,
+                    is_visible=question_data.get('is_visible', True),
+                    scoring_weight=scoring_weight,
+                    max_score=max_score,
+                    category=question_data.get('category')
+                )
+
+                # Log the question data
+                logger.info(f"Question data: {vars(question)}")
+
+                # Handle order field
+                order_value = question_data.get('order', 0)
+                if order_value > 0:
+                    # User specified an order - shift other questions if needed
+                    with transaction.atomic():
+                        # Set this question's order
+                        question.order = order_value
+
+                        # Shift questions with order >= the new order down by 1
+                        questionnaire.questions.filter(order__gte=order_value).update(order=models.F('order') + 1)
+                else:
+                    # Auto-assign at the end
+                    question.order = next_order
+
+                # Save the question
+                question.save()
+                logger.info(f"Country question saved with ID: {question.id}")
+
+                # Add country choices
+                from django.utils import timezone
+                from django.db import connection
+                import pycountry
+
+                now = timezone.now()
+
+                # Get list of countries
+                try:
+                    countries = list(pycountry.countries)
+                    country_list = [{"name": country.name, "code": country.alpha_2} for country in countries]
+                except (ImportError, AttributeError):
+                    # Fallback list if pycountry is not available
+                    country_list = [
+                        {"name": "United States", "code": "US"},
+                        {"name": "United Kingdom", "code": "GB"},
+                        {"name": "Canada", "code": "CA"},
+                        {"name": "Australia", "code": "AU"},
+                        {"name": "Germany", "code": "DE"},
+                        {"name": "France", "code": "FR"},
+                        {"name": "Japan", "code": "JP"},
+                        {"name": "China", "code": "CN"},
+                        {"name": "India", "code": "IN"},
+                        {"name": "Brazil", "code": "BR"},
+                    ]
+
+                # Create country choices
+                for i, country in enumerate(country_list):
+                    try:
+                        country_name = country["name"]
+                        country_code = country["code"]
+
+                        # Use SQL to directly insert into the database
+                        with connection.cursor() as cursor:
+                            cursor.execute("""
+                                INSERT INTO surveys_questionchoice
+                                (question_id, text, "order", score, is_correct, created_at, updated_at, metadata)
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                            """, [
+                                question.id,
+                                country_name,
+                                i+1,
+                                0,  # score
+                                False,  # is_correct
+                                now,
+                                now,
+                                json.dumps({"code": country_code})  # Store country code in metadata
+                            ])
+
+                        if i < 5:  # Log only the first few countries to avoid excessive logging
+                            logger.info(f"Created country choice {i+1}: {country_name} ({country_code})")
+                    except Exception as e:
+                        logger.error(f"Error creating country choice: {e}")
+
+                messages.success(request, 'Country question added successfully!')
+                return redirect('surveys:question_list', pk=survey_pk)
+
+            except Exception as e:
+                # Log any exceptions
+                logger.error(f"Error creating country question: {str(e)}")
+                messages.error(request, f"Error creating country question: {str(e)}")
+        else:
+            # Log form validation errors
+            logger.error(f"Form validation failed: {form.errors}")
+            messages.error(request, "Please correct the errors in the form.")
+    else:
+        # For GET requests, initialize form with country question type
+        form = QuestionForm(initial={
+            'order': next_order,
+            'question_type': 'country',
+            'text': 'Select your country',
+            'required': True
+        })
+
+    # Add debug information to the context
+    context = {
+        'form': form,
+        'questionnaire': questionnaire,
+        'is_country_question': True
+    }
+
+    # Add debug info in development
+    if settings.DEBUG:
+        post_data = None
+        if request.method == 'POST':
+            post_data = dict(request.POST)
+            if 'csrfmiddlewaretoken' in post_data:
+                post_data['csrfmiddlewaretoken'] = '[REDACTED]'
+
+        context['debug_info'] = {
+            'form_data': {field: form[field].value() for field in form.fields},
+            'form_errors': form.errors if hasattr(form, 'errors') else None,
+            'post_data': post_data,
+        }
+
+    return render(request, 'surveys/question_form.html', context)
+
 
 @login_required
 def question_delete(request, survey_pk, pk):

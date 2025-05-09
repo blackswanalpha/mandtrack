@@ -5,9 +5,7 @@ This script runs migrations and creates a superuser.
 """
 
 import os
-import sys
 import django
-import subprocess
 
 # Set the Django settings module
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mindtrack.vercel_settings')
@@ -22,6 +20,50 @@ from django.core.management import call_command
 
 User = get_user_model()
 
+def build_tailwind_css():
+    """Build Tailwind CSS."""
+    print("Building Tailwind CSS...")
+    try:
+        import subprocess
+        import os
+
+        # Check if Node.js is installed
+        try:
+            subprocess.run(['node', '--version'], check=True, capture_output=True)
+            print("Node.js is installed.")
+        except (subprocess.SubprocessError, FileNotFoundError):
+            print("Node.js is not installed. Using pre-built CSS.")
+            return False
+
+        # Check if npm is installed
+        try:
+            subprocess.run(['npm', '--version'], check=True, capture_output=True)
+            print("npm is installed.")
+        except (subprocess.SubprocessError, FileNotFoundError):
+            print("npm is not installed. Using pre-built CSS.")
+            return False
+
+        # Install dependencies if needed
+        if not os.path.exists('node_modules'):
+            print("Installing dependencies...")
+            subprocess.run(['npm', 'install'], check=True)
+
+        # Build Tailwind CSS
+        print("Building Tailwind CSS...")
+        result = subprocess.run(['npm', 'run', 'build'], check=True)
+
+        if result.returncode == 0:
+            print("Tailwind CSS built successfully.")
+            return True
+        else:
+            print("Failed to build Tailwind CSS. Using pre-built CSS.")
+            return False
+    except Exception as e:
+        print(f"Error building Tailwind CSS: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return False
+
 def collect_static():
     """Collect static files."""
     print("Collecting static files...")
@@ -35,8 +77,40 @@ def collect_static():
         if not os.path.exists(settings.STATIC_ROOT):
             os.makedirs(settings.STATIC_ROOT, exist_ok=True)
 
+        # Try to build Tailwind CSS first
+        build_tailwind_css()
+
+        # Create a backup of tailwind-custom.css if it exists
+        tailwind_css_path = os.path.join('static', 'css', 'tailwind-custom.css')
+        fallback_css_path = os.path.join('static', 'css', 'tailwind-fallback.css')
+
+        if os.path.exists(tailwind_css_path):
+            backup_path = os.path.join('static', 'css', 'tailwind-custom.css.bak')
+            shutil.copy2(tailwind_css_path, backup_path)
+            print(f"Created backup of tailwind-custom.css at {backup_path}")
+        elif os.path.exists(fallback_css_path):
+            # If tailwind-custom.css doesn't exist but fallback does, use the fallback
+            shutil.copy2(fallback_css_path, tailwind_css_path)
+            print(f"Using fallback CSS: copied {fallback_css_path} to {tailwind_css_path}")
+
         # Run collectstatic command
         call_command('collectstatic', '--noinput', '--clear')
+
+        # Check if tailwind-custom.css exists in staticfiles
+        staticfiles_tailwind_path = os.path.join(settings.STATIC_ROOT, 'css', 'tailwind-custom.css')
+        if not os.path.exists(staticfiles_tailwind_path):
+            print(f"WARNING: {staticfiles_tailwind_path} does not exist after collectstatic")
+
+            # If fallback exists, copy it to staticfiles
+            if os.path.exists(fallback_css_path):
+                os.makedirs(os.path.dirname(staticfiles_tailwind_path), exist_ok=True)
+                shutil.copy2(fallback_css_path, staticfiles_tailwind_path)
+                print(f"Copied fallback CSS to {staticfiles_tailwind_path}")
+            else:
+                print("WARNING: Fallback CSS not found. Creating empty CSS file.")
+                os.makedirs(os.path.dirname(staticfiles_tailwind_path), exist_ok=True)
+                with open(staticfiles_tailwind_path, 'w') as f:
+                    f.write('/* Auto-generated empty file */\n')
 
         # Create a list of all CSS and JS files to ensure they exist
         css_files = [
@@ -100,7 +174,7 @@ def collect_static():
 
         # Now copy all files from staticfiles back to static for Vercel
         print("Copying all files from staticfiles to static")
-        for root, dirs, files in os.walk(settings.STATIC_ROOT):
+        for root, _, files in os.walk(settings.STATIC_ROOT):  # Use _ to ignore dirs
             for file in files:
                 staticfiles_path = os.path.join(root, file)
                 # Get the relative path from STATIC_ROOT
@@ -230,6 +304,10 @@ def test_database_connection():
 def main():
     """Main build function."""
     print("Starting Vercel build process...")
+
+    # Build Tailwind CSS first
+    print("Building Tailwind CSS...")
+    build_tailwind_css()
 
     # Collect static files
     collect_static()

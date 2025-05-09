@@ -587,6 +587,107 @@ def run_migrations(settings_module):
         # If we get here, all migration attempts failed
         return False
 
+def populate_question_types(settings_module):
+    """Populate question types in the database."""
+    logger.info("Populating question types...")
+    try:
+        # Import Django settings and QuestionType model
+        import django
+
+        # Set up Django
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings_module)
+        django.setup()
+
+        from django.conf import settings
+
+        # Try to import QuestionType model
+        try:
+            from surveys.models.question_type import QuestionType
+            logger.info("Successfully imported QuestionType model from surveys.models.question_type")
+        except ImportError:
+            try:
+                from surveys.models import QuestionType
+                logger.info("Successfully imported QuestionType model from surveys.models")
+            except ImportError:
+                # Try to get the model dynamically
+                try:
+                    from django.apps import apps
+                    QuestionType = apps.get_model('surveys', 'QuestionType')
+                    logger.info("Successfully got QuestionType model from apps registry")
+                except Exception as model_e:
+                    logger.error(f"Failed to get QuestionType model: {model_e}")
+                    return False
+
+        # Check if question types already exist
+        existing_count = QuestionType.objects.count()
+        logger.info(f"Found {existing_count} existing question types")
+
+        if existing_count == 0:
+            # Get default question types
+            default_types = QuestionType.get_default_types()
+            logger.info(f"Got {len(default_types)} default question types")
+
+            # Create default question types
+            created_count = 0
+            for type_data in default_types:
+                QuestionType.objects.create(**type_data)
+                created_count += 1
+                logger.info(f"Created question type: {type_data['name']} ({type_data['code']})")
+
+            logger.info(f"Created {created_count} question types")
+
+            # Ensure country question type exists
+            country_exists = QuestionType.objects.filter(code='country').exists()
+            if not country_exists:
+                logger.info("Creating country question type...")
+                QuestionType.objects.create(
+                    code='country',
+                    name='Country',
+                    description='Country selection question type',
+                    has_choices=True,
+                    is_text=False,
+                    is_numeric=False,
+                    is_date=False,
+                    is_file=False,
+                    is_scorable=False,
+                    default_max_score=0,
+                    default_scoring_weight=1.0,
+                    display_order=existing_count + created_count + 1,
+                    icon='fa-globe'
+                )
+                logger.info("Country question type created successfully")
+
+            return True
+        else:
+            logger.info("Question types already exist, skipping population")
+
+            # Check if country question type exists
+            country_exists = QuestionType.objects.filter(code='country').exists()
+            if not country_exists:
+                logger.info("Creating country question type...")
+                QuestionType.objects.create(
+                    code='country',
+                    name='Country',
+                    description='Country selection question type',
+                    has_choices=True,
+                    is_text=False,
+                    is_numeric=False,
+                    is_date=False,
+                    is_file=False,
+                    is_scorable=False,
+                    default_max_score=0,
+                    default_scoring_weight=1.0,
+                    display_order=existing_count + 1,
+                    icon='fa-globe'
+                )
+                logger.info("Country question type created successfully")
+
+            return True
+    except Exception as e:
+        logger.error(f"Failed to populate question types: {e}")
+        logger.error(traceback.format_exc())
+        return False
+
 def create_admin_user(settings_module):
     """Create an admin user if it doesn't exist."""
     logger.info("Checking for admin user...")
@@ -1166,6 +1267,12 @@ def main():
     # Create admin user if it doesn't exist
     if not create_admin_user(config.settings_module):
         logger.warning("Failed to create admin user. Continuing anyway.")
+
+    # Populate question types
+    if not populate_question_types(config.settings_module):
+        logger.warning("Failed to populate question types. Continuing anyway.")
+    else:
+        logger.info("Question types populated successfully.")
 
     # Update admin.txt file with login credentials
     update_admin_txt()

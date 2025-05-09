@@ -50,6 +50,10 @@ urlpatterns = [
     # Uncommented to fix NoReverseMatch error
     path('analytics/', include('analytics.urls', namespace='analytics')),
     path('members/', include('members.urls', namespace='members')),
+    # Include Enhanced Scoring URLs directly
+    path('', include('surveys.urls_enhanced_scoring', namespace='enhanced_scoring')),
+    # Include Assessments URLs
+    path('assessments/', include('assessments.urls', namespace='assessments')),
 
     # QR code scanning and direct questionnaire access
     path('qr/', include([

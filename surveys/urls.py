@@ -62,7 +62,7 @@ urlpatterns = [
     path('', include('surveys.urls_scoring')),
 
     # Include Enhanced Scoring URLs
-    path('', include('surveys.urls_enhanced_scoring')),
+    path('', include('surveys.urls_enhanced_scoring', namespace='enhanced_scoring')),
 
     # Email Tracking URLs
     path('emails/track/open/<str:tracking_id>/', track_email_open, name='track_email_open'),

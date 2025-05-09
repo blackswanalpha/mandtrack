@@ -71,6 +71,8 @@ INSTALLED_APPS = [
     'analytics.apps.AnalyticsConfig',
     'dashboard.apps.DashboardConfig',
     'members.apps.MembersConfig',
+    'assessments.apps.AssessmentsConfig',
+    'questionnaires.apps.QuestionnairesConfig',
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"

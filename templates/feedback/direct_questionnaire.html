@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}{{ questionnaire.title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-4 bg-indigo-600">
+            <h1 class="text-2xl font-bold text-white">{{ questionnaire.title }}</h1>
+        </div>
+        
+        <div class="p-6">
+            {% if questionnaire.instructions %}
+            <div class="mb-6 p-4 bg-gray-50 rounded-md">
+                <h2 class="text-lg font-semibold text-gray-800 mb-2">Instructions</h2>
+                <p class="text-gray-700">{{ questionnaire.instructions }}</p>
+            </div>
+            {% endif %}
+            
+            {% if messages %}
+            <div class="mb-6">
+                {% for message in messages %}
+                <div class="p-4 mb-2 rounded-md {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% if not bio_data_collected %}
+            <!-- Bio Data Collection Form -->
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                <div class="bg-gray-50 p-4 rounded-md mb-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Patient Information</h2>
+                    <p class="text-gray-600 mb-4">Please provide the following information before proceeding to the questionnaire.</p>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label for="patient_email" class="block text-sm font-medium text-gray-700">Email Address <span class="text-red-500">*</span></label>
+                            <input type="email" name="patient_email" id="patient_email" required 
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                   value="{{ bio_data_values.email|default:'' }}">
+                        </div>
+                        
+                        <div>
+                            <label for="patient_age" class="block text-sm font-medium text-gray-700">Age <span class="text-red-500">*</span></label>
+                            <input type="number" name="patient_age" id="patient_age" required min="1" max="120"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                   value="{{ bio_data_values.age|default:'' }}">
+                        </div>
+                        
+                        <div>
+                            <label for="patient_gender" class="block text-sm font-medium text-gray-700">Gender <span class="text-red-500">*</span></label>
+                            <select name="patient_gender" id="patient_gender" required
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="" {% if not bio_data_values.gender %}selected{% endif %}>Select Gender</option>
+                                <option value="male" {% if bio_data_values.gender == 'male' %}selected{% endif %}>Male</option>
+                                <option value="female" {% if bio_data_values.gender == 'female' %}selected{% endif %}>Female</option>
+                                <option value="other" {% if bio_data_values.gender == 'other' %}selected{% endif %}>Other</option>
+                                <option value="prefer_not_to_say" {% if bio_data_values.gender == 'prefer_not_to_say' %}selected{% endif %}>Prefer not to say</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button type="submit" name="submit_bio_data" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Continue to Questionnaire
+                    </button>
+                </div>
+            </form>
+            {% else %}
+            <!-- Questionnaire Form -->
+            <form method="post" class="space-y-8">
+                {% csrf_token %}
+                
+                {% for question in questions %}
+                <div class="bg-gray-50 p-4 rounded-md mb-4" id="question_{{ question.id }}">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">
+                        {{ forloop.counter }}. {{ question.text }}
+                        {% if question.required %}<span class="text-red-500">*</span>{% endif %}
+                    </h3>
+                    
+                    {% if question.description %}
+                    <p class="text-gray-600 mb-4">{{ question.description }}</p>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        {% if question.question_type == 'text' %}
+                        <input type="text" name="question_{{ question.id }}" id="question_{{ question.id }}"
+                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                               {% if question.required %}required{% endif %}>
+                        
+                        {% elif question.question_type == 'textarea' %}
+                        <textarea name="question_{{ question.id }}" id="question_{{ question.id }}" rows="3"
+                                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                  {% if question.required %}required{% endif %}></textarea>
+                        
+                        {% elif question.question_type == 'single_choice' %}
+                        <div class="space-y-2">
+                            {% for choice in question.choices.all %}
+                            <div class="flex items-center">
+                                <input type="radio" id="choice_{{ choice.id }}" name="question_{{ question.id }}" value="{{ choice.id }}"
+                                       class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                                       {% if question.required %}required{% endif %}>
+                                <label for="choice_{{ choice.id }}" class="ml-3 block text-gray-700">
+                                    {{ choice.text }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% elif question.question_type == 'multiple_choice' %}
+                        <div class="space-y-2">
+                            {% for choice in question.choices.all %}
+                            <div class="flex items-center">
+                                <input type="checkbox" id="choice_{{ choice.id }}" name="question_{{ question.id }}" value="{{ choice.id }}"
+                                       class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                <label for="choice_{{ choice.id }}" class="ml-3 block text-gray-700">
+                                    {{ choice.text }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% elif question.question_type == 'scale' %}
+                        <div class="flex items-center space-x-2">
+                            <span class="text-gray-700">{{ question.scale_min_label|default:question.scale_min }}</span>
+                            <input type="range" name="question_{{ question.id }}" id="question_{{ question.id }}"
+                                   min="{{ question.scale_min|default:1 }}" max="{{ question.scale_max|default:10 }}" step="1"
+                                   class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                   {% if question.required %}required{% endif %}>
+                            <span class="text-gray-700">{{ question.scale_max_label|default:question.scale_max }}</span>
+                        </div>
+                        
+                        {% elif question.question_type == 'number' %}
+                        <input type="number" name="question_{{ question.id }}" id="question_{{ question.id }}"
+                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                               {% if question.required %}required{% endif %}>
+                        
+                        {% elif question.question_type == 'date' %}
+                        <input type="date" name="question_{{ question.id }}" id="question_{{ question.id }}"
+                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                               {% if question.required %}required{% endif %}>
+                        
+                        {% elif question.question_type == 'time' %}
+                        <input type="time" name="question_{{ question.id }}" id="question_{{ question.id }}"
+                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                               {% if question.required %}required{% endif %}>
+                        
+                        {% elif question.question_type == 'country' %}
+                        <select name="question_{{ question.id }}" id="question_{{ question.id }}"
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                {% if question.required %}required{% endif %}>
+                            <option value="">Select Country</option>
+                            {% include 'surveys/country_options.html' %}
+                        </select>
+                        
+                        {% else %}
+                        <input type="text" name="question_{{ question.id }}" id="question_{{ question.id }}"
+                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                               {% if question.required %}required{% endif %}>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="flex justify-end">
+                    <button type="submit" name="submit_questionnaire" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Submit Questionnaire
+                    </button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

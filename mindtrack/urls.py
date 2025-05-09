@@ -22,6 +22,7 @@ from django.views.generic import RedirectView
 from django.contrib import admin
 # Import views for direct questionnaire access
 from feedback import views_new
+from feedback.simple_direct_access import simple_direct_questionnaire_view
 
 urlpatterns = [
     # Django admin (kept for superusers)
@@ -58,8 +59,10 @@ urlpatterns = [
 
     # Direct questionnaire access (public URLs)
     path('q/', include([
-        path('<uuid:pk>/', views_new.direct_questionnaire_access, name='direct_questionnaire_access_uuid'),
-        path('<str:pk>/', views_new.direct_questionnaire_access, name='direct_questionnaire_access_str'),
+        # Handle any string format for the questionnaire ID - use the simple direct view
+        path('<str:pk>/', simple_direct_questionnaire_view, name='direct_questionnaire_access'),
+        # Keep the debug route
+        path('debug/<str:pk>/', views_new.debug_questionnaire, name='debug_questionnaire'),
     ])),
 
     # Keep old URLs for backward compatibility - temporarily commented out

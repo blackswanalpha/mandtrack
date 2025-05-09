@@ -52,11 +52,10 @@ def qr_code_create(request):
             qr_code = form.save(commit=False)
             qr_code.created_by = request.user
 
-            # Generate URL for the QR code that redirects to member access page
+            # Generate URL for the QR code that redirects directly to the questionnaire
             questionnaire = qr_code.survey
-            qr_code.url = request.build_absolute_uri(
-                reverse('members:qr_member_access', kwargs={'qr_code_id': qr_code.id})
-            )
+            # Use the questionnaire ID directly without any formatting
+            qr_code.url = request.build_absolute_uri(f"/q/{questionnaire.id}/?qr={qr_code.id}")
 
             qr_code.save()
             messages.success(request, 'QR code created successfully.')
@@ -105,22 +104,19 @@ def generate_survey_qr_code(request, pk):
         qr_code = existing_qr_codes.first()
         messages.info(request, "Using existing QR code for this questionnaire.")
     else:
-        # Create a new QR code that redirects to member access page
-        # First save the QR code to get an ID
+        # Create a new QR code that redirects directly to the questionnaire
         qr_code = QRCode(
             survey=questionnaire,
             name=f"QR Code for {questionnaire.title}",
             description=f"QR Code for accessing {questionnaire.title}",
-            url="",  # Temporary placeholder
             is_active=True,
             created_by=request.user
         )
         qr_code.save()
 
         # Now update with the correct URL that includes the QR code ID
-        qr_code.url = request.build_absolute_uri(
-            reverse('members:qr_member_access', kwargs={'qr_code_id': qr_code.id})
-        )
+        # Use the questionnaire ID directly without any formatting
+        qr_code.url = request.build_absolute_uri(f"/q/{questionnaire.id}/?qr={qr_code.id}")
         qr_code.save()
         messages.success(request, "QR code generated successfully.")
 

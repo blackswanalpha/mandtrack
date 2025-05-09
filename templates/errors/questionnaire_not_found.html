@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Questionnaire Not Found{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Questionnaire Not Found
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                The questionnaire you're looking for could not be found.
+            </p>
+        </div>
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">Error Details</h3>
+                    <p class="mt-1 text-sm text-gray-500">
+                        The questionnaire with ID "{{ uuid }}" could not be found in our system.
+                    </p>
+                    <div class="mt-6">
+                        <a href="{% url 'core:home' %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Return to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if active_questionnaires %}
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mt-6">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                    Available Questionnaires
+                </h3>
+                <div class="mt-2 max-w-xl text-sm text-gray-500">
+                    <p>
+                        Here are some active questionnaires you can access:
+                    </p>
+                </div>
+                <div class="mt-5">
+                    <ul class="divide-y divide-gray-200">
+                        {% for questionnaire in active_questionnaires %}
+                        <li class="py-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 truncate">
+                                        {{ questionnaire.title }}
+                                    </p>
+                                </div>
+                                <div>
+                                    <a href="/q/{{ questionnaire.id }}/" class="inline-flex items-center shadow-sm px-2.5 py-0.5 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                        Access
+                                    </a>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

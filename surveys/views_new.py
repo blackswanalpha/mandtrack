@@ -143,19 +143,40 @@ def survey_create(request):
 
                                 # Use SQL to directly insert into the database
                                 with connection.cursor() as cursor:
+                                    # Check if the created_at column exists
                                     cursor.execute("""
-                                        INSERT INTO surveys_questionchoice
-                                        (question_id, text, "order", score, is_correct, created_at, updated_at)
-                                        VALUES (%s, %s, %s, %s, %s, %s, %s)
-                                    """, [
-                                        question.id,
-                                        template_choice.text,
-                                        template_choice.order,
-                                        template_choice.score,
-                                        False,  # is_correct default value
-                                        now,
-                                        now
-                                    ])
+                                        PRAGMA table_info(surveys_questionchoice)
+                                    """)
+                                    columns = [col[1] for col in cursor.fetchall()]
+
+                                    # If created_at and updated_at columns exist, use them
+                                    if 'created_at' in columns and 'updated_at' in columns:
+                                        cursor.execute("""
+                                            INSERT INTO surveys_questionchoice
+                                            (question_id, text, "order", score, is_correct, created_at, updated_at)
+                                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                                        """, [
+                                            question.id,
+                                            template_choice.text,
+                                            template_choice.order,
+                                            template_choice.score,
+                                            False,  # is_correct default value
+                                            now,
+                                            now
+                                        ])
+                                    else:
+                                        # If the columns don't exist, use a simpler query
+                                        cursor.execute("""
+                                            INSERT INTO surveys_questionchoice
+                                            (question_id, text, "order", score, is_correct)
+                                            VALUES (?, ?, ?, ?, ?)
+                                        """, [
+                                            question.id,
+                                            template_choice.text,
+                                            template_choice.order,
+                                            template_choice.score,
+                                            False  # is_correct default value
+                                        ])
                     except Exception as e:
                         # If there's an error with the template, log it but continue
                         print(f"Error cloning template: {e}")
@@ -617,19 +638,40 @@ def question_create(request, survey_pk):
 
                         # Use SQL to directly insert into the database
                         with connection.cursor() as cursor:
+                            # Check if the created_at column exists
                             cursor.execute("""
-                                INSERT INTO surveys_questionchoice
-                                (question_id, text, "order", score, is_correct, created_at, updated_at)
-                                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                            """, [
-                                question.id,
-                                text,
-                                i+1,
-                                score_value,
-                                False,  # is_correct default value
-                                now,
-                                now
-                            ])
+                                PRAGMA table_info(surveys_questionchoice)
+                            """)
+                            columns = [col[1] for col in cursor.fetchall()]
+
+                            # If created_at and updated_at columns exist, use them
+                            if 'created_at' in columns and 'updated_at' in columns:
+                                cursor.execute("""
+                                    INSERT INTO surveys_questionchoice
+                                    (question_id, text, "order", score, is_correct, created_at, updated_at)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                                """, [
+                                    question.id,
+                                    text,
+                                    i+1,
+                                    score_value,
+                                    False,  # is_correct default value
+                                    now,
+                                    now
+                                ])
+                            else:
+                                # If the columns don't exist, use a simpler query
+                                cursor.execute("""
+                                    INSERT INTO surveys_questionchoice
+                                    (question_id, text, "order", score, is_correct)
+                                    VALUES (?, ?, ?, ?, ?)
+                                """, [
+                                    question.id,
+                                    text,
+                                    i+1,
+                                    score_value,
+                                    False  # is_correct default value
+                                ])
                         logger.info(f"Created choice {i+1}: {text}")
 
                 messages.success(request, 'Question added successfully!')
@@ -772,35 +814,39 @@ def question_edit(request, survey_pk, pk):
                     # If we have an existing choice at this index, update it
                     if i < len(existing_choices):
                         choice = existing_choices[i]
-                        # Update the choice using SQL
-                        with connection.cursor() as cursor:
-                            cursor.execute("""
-                                UPDATE surveys_questionchoice
-                                SET text = %s, "order" = %s, score = %s, updated_at = %s
-                                WHERE id = %s
-                            """, [
-                                text,
-                                order,
-                                score_value,
-                                now,
-                                choice.id
-                            ])
+                        # Update the choice using Django ORM instead of raw SQL
+                        try:
+                            # Update the choice fields
+                            choice.text = text
+                            choice.order = order
+                            choice.score = score_value
+
+                            # Save the choice
+                            choice.save()
+
+                            # Log the update
+                            logger.info(f"Updated choice {choice.id}: {text}")
+                        except Exception as e:
+                            logger.error(f"Error updating choice: {e}")
                     else:
-                        # Create a new choice using SQL
-                        with connection.cursor() as cursor:
-                            cursor.execute("""
-                                INSERT INTO surveys_questionchoice
-                                (question_id, text, "order", score, is_correct, created_at, updated_at)
-                                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                            """, [
-                                question.id,
-                                text,
-                                order,
-                                score_value,
-                                False,  # is_correct default value
-                                now,
-                                now
-                            ])
+                        # Create a new choice using Django ORM
+                        try:
+                            # Create a new choice
+                            new_choice = QuestionChoice(
+                                question=question,
+                                text=text,
+                                order=order,
+                                score=score_value,
+                                is_correct=False
+                            )
+
+                            # Save the new choice
+                            new_choice.save()
+
+                            # Log the creation
+                            logger.info(f"Created new choice for question {question.id}: {text}")
+                        except Exception as e:
+                            logger.error(f"Error creating choice: {e}")
 
                 # If we have more existing choices than new ones, delete the extras
                 if len(existing_choices) > len(valid_choices):
@@ -809,12 +855,17 @@ def question_edit(request, survey_pk, pk):
 
                     # Delete choices that aren't in the keep_ids list
                     if keep_ids:
-                        id_list = ','.join(['?'] * len(keep_ids))
+                        # Create placeholders for the SQL IN clause
+                        placeholders = ', '.join(['?'] * len(keep_ids))
+                        # Build the SQL query without f-string
+                        sql = """
+                            DELETE FROM surveys_questionchoice
+                            WHERE question_id = ? AND id NOT IN ({})
+                        """.format(placeholders)
+
+                        # Execute with parameters
                         with connection.cursor() as cursor:
-                            cursor.execute(f"""
-                                DELETE FROM surveys_questionchoice
-                                WHERE question_id = ? AND id NOT IN ({id_list})
-                            """, [question.id] + keep_ids)
+                            cursor.execute(sql, [question.id] + keep_ids)
                     else:
                         # If no choices to keep, delete all for this question
                         with connection.cursor() as cursor:
@@ -960,20 +1011,42 @@ def country_question_create(request, survey_pk):
 
                         # Use SQL to directly insert into the database
                         with connection.cursor() as cursor:
+                            # Check if the created_at column exists
                             cursor.execute("""
-                                INSERT INTO surveys_questionchoice
-                                (question_id, text, "order", score, is_correct, created_at, updated_at, metadata)
-                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                            """, [
-                                question.id,
-                                country_name,
-                                i+1,
-                                0,  # score
-                                False,  # is_correct
-                                now,
-                                now,
-                                json.dumps({"code": country_code})  # Store country code in metadata
-                            ])
+                                PRAGMA table_info(surveys_questionchoice)
+                            """)
+                            columns = [col[1] for col in cursor.fetchall()]
+
+                            # If created_at and updated_at columns exist, use them
+                            if 'created_at' in columns and 'updated_at' in columns:
+                                cursor.execute("""
+                                    INSERT INTO surveys_questionchoice
+                                    (question_id, text, "order", score, is_correct, created_at, updated_at, metadata)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                                """, [
+                                    question.id,
+                                    country_name,
+                                    i+1,
+                                    0,  # score
+                                    False,  # is_correct
+                                    now,
+                                    now,
+                                    json.dumps({"code": country_code})  # Store country code in metadata
+                                ])
+                            else:
+                                # If the columns don't exist, use a simpler query
+                                cursor.execute("""
+                                    INSERT INTO surveys_questionchoice
+                                    (question_id, text, "order", score, is_correct, metadata)
+                                    VALUES (?, ?, ?, ?, ?, ?)
+                                """, [
+                                    question.id,
+                                    country_name,
+                                    i+1,
+                                    0,  # score
+                                    False,  # is_correct
+                                    json.dumps({"code": country_code})  # Store country code in metadata
+                                ])
 
                         if i < 5:  # Log only the first few countries to avoid excessive logging
                             logger.info(f"Created country choice {i+1}: {country_name} ({country_code})")
@@ -1048,7 +1121,7 @@ def question_delete(request, survey_pk, pk):
                 cursor.execute("""
                     SELECT COUNT(*) FROM feedback_answer_multiple_choices
                     WHERE questionchoice_id IN (
-                        SELECT id FROM surveys_questionchoice WHERE question_id = %s
+                        SELECT id FROM surveys_questionchoice WHERE question_id = ?
                     )
                 """, [question.id])
 
@@ -1059,14 +1132,14 @@ def question_delete(request, survey_pk, pk):
                     cursor.execute("""
                         DELETE FROM feedback_answer_multiple_choices
                         WHERE questionchoice_id IN (
-                            SELECT id FROM surveys_questionchoice WHERE question_id = %s
+                            SELECT id FROM surveys_questionchoice WHERE question_id = ?
                         )
                     """, [question.id])
 
                 # Now delete the choices
                 cursor.execute("""
                     DELETE FROM surveys_questionchoice
-                    WHERE question_id = %s
+                    WHERE question_id = ?
                 """, [question.id])
 
             # Now delete the question
@@ -1089,174 +1162,7 @@ def question_delete(request, survey_pk, pk):
         'question': question
     })
 
-@login_required
-def country_question_create(request, survey_pk):
-    """
-    Create a new country question for a questionnaire
-    This is a specialized version of question_create that automatically sets the question type to 'country'
-    and populates it with a list of countries
-    """
-    questionnaire = get_object_or_404(Questionnaire, pk=survey_pk)
-
-    # Check if user has permission to add questions to this questionnaire
-    if questionnaire.created_by != request.user and not questionnaire.organization.members.filter(user=request.user, role__in=['admin', 'manager']).exists():
-        messages.error(request, "You don't have permission to add questions to this questionnaire.")
-        return redirect('surveys:survey_detail', pk=survey_pk)
-
-    # Get the next order number
-    next_order = questionnaire.questions.count() + 1
-
-    if request.method == 'POST':
-        # Log the raw POST data for debugging
-        logger.info(f"Country question creation POST data: {json.dumps(dict(request.POST))}")
-
-        form = QuestionForm(request.POST)
-
-        # Override the question_type to ensure it's 'country'
-        form.data = form.data.copy()
-        form.data['question_type'] = 'country'
-
-        if form.is_valid():
-            try:
-                # Get the cleaned data from the form
-                question_data = form.cleaned_data
-
-                # Ensure question_type is 'country'
-                question_data['question_type'] = 'country'
-
-                # Try to get the QuestionType object
-                try:
-                    from .models import QuestionType
-                    question_type_obj = QuestionType.objects.filter(code='country').first()
-                    logger.info(f"Found QuestionType: {question_type_obj}")
-                except Exception as e:
-                    logger.error(f"Error getting QuestionType: {e}")
-                    question_type_obj = None
-
-                # Create the question
-                question = Question(
-                    survey=questionnaire,
-                    text=question_data.get('text', 'Select your country'),
-                    description=question_data.get('description', 'Please select your country from the list'),
-                    question_type='country',
-                    question_type_obj=question_type_obj,
-                    required=question_data.get('required', True),
-                    is_scored=question_data.get('is_scored', False),
-                    is_visible=question_data.get('is_visible', True),
-                    scoring_weight=question_data.get('scoring_weight', 1.0),
-                    max_score=question_data.get('max_score', 0),
-                    category=question_data.get('category', 'demographic')
-                )
-
-                # Handle order field
-                order_value = question_data.get('order', 0)
-                if order_value > 0:
-                    # User specified an order - shift other questions if needed
-                    with transaction.atomic():
-                        # Set this question's order
-                        question.order = order_value
-
-                        # Shift questions with order >= the new order down by 1
-                        questionnaire.questions.filter(order__gte=order_value).update(order=models.F('order') + 1)
-                else:
-                    # Auto-assign at the end
-                    question.order = next_order
-
-                # Save the question
-                question.save()
-                logger.info(f"Country question saved with ID: {question.id}")
-
-                # List of countries to add as choices
-                countries = [
-                    "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina",
-                    "Armenia", "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados",
-                    "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana",
-                    "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon",
-                    "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo",
-                    "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica",
-                    "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia",
-                    "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana",
-                    "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hungary",
-                    "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan",
-                    "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Korea, North", "Korea, South", "Kosovo", "Kuwait",
-                    "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania",
-                    "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands",
-                    "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro",
-                    "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand",
-                    "Nicaragua", "Niger", "Nigeria", "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Palestine",
-                    "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar",
-                    "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines",
-                    "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles",
-                    "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa",
-                    "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Taiwan",
-                    "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia",
-                    "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom",
-                    "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen",
-                    "Zambia", "Zimbabwe"
-                ]
-
-                # Add countries as choices
-                # Import timezone for created_at and updated_at fields
-                from django.utils import timezone
-                now = timezone.now()
-
-                for i, country in enumerate(countries):
-                    try:
-                        # Use direct SQL to insert the choice
-                        # This bypasses model validation issues
-                        from django.db import connection
-
-                        # Use SQL to directly insert into the database
-                        with connection.cursor() as cursor:
-                            cursor.execute("""
-                                INSERT INTO surveys_questionchoice
-                                (question_id, text, "order", score, is_correct, created_at, updated_at)
-                                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                            """, [
-                                question.id,
-                                country,
-                                i+1,
-                                0,
-                                False,  # is_correct default value
-                                now,
-                                now
-                            ])
-                        logger.info(f"Created country choice {i+1}: {country}")
-                    except Exception as e:
-                        # Log the error and continue with the next country
-                        logger.error(f"Error creating choice: {e}")
-                        continue
-
-                messages.success(request, 'Country question added successfully!')
-                return redirect('surveys:question_list', pk=survey_pk)
-
-            except Exception as e:
-                # Log any exceptions
-                logger.error(f"Error creating country question: {str(e)}")
-                messages.error(request, f"Error creating country question: {str(e)}")
-        else:
-            # Log form validation errors
-            logger.error(f"Form validation failed: {form.errors}")
-            messages.error(request, "Please correct the errors in the form.")
-    else:
-        # Pre-populate the form with country question defaults
-        initial_data = {
-            'order': next_order,
-            'text': 'Select your country',
-            'description': 'Please select your country from the list',
-            'question_type': 'country',
-            'required': True,
-            'category': 'demographic'
-        }
-        form = QuestionForm(initial=initial_data)
-
-    context = {
-        'form': form,
-        'questionnaire': questionnaire,
-        'is_country_question': True
-    }
-
-    return render(request, 'surveys/question_form.html', context)
+# The country_question_create function is already defined above
 
 @login_required
 def generate_qr_code(request, pk):

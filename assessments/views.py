@@ -439,6 +439,12 @@ def patient_portal(request):
     latest_assessment = None
     risk_trend = None
 
+    # Check for sign-out action
+    if request.GET.get('action') == 'signout':
+        if 'patient_identifier' in request.session:
+            del request.session['patient_identifier']
+        return redirect('assessments:patient_portal')
+
     # Check if the patient is already authenticated
     if 'patient_identifier' in request.session:
         patient_identifier = request.session['patient_identifier']
@@ -465,51 +471,60 @@ def patient_portal(request):
 
     # If patient is authenticated, get their data
     if patient_identifier:
-        # Get assessments for this patient
-        assessments = Assessment.objects.filter(
-            response__patient_identifier=patient_identifier
-        ).select_related('response', 'response__survey').order_by('-assessment_date')
+        try:
+            # Get assessments for this patient
+            assessments = Assessment.objects.filter(
+                response__patient_identifier=patient_identifier
+            ).select_related('response', 'response__survey').order_by('-assessment_date')
 
-        # Get consultations for this patient
-        if assessments:
-            assessment_ids = [assessment.id for assessment in assessments]
-            consultations = Consultation.objects.filter(
-                assessment_id__in=assessment_ids
-            ).select_related('consultant').order_by('-scheduled_date')
+            # Get consultations for this patient
+            if assessments:
+                assessment_ids = [assessment.id for assessment in assessments]
+                consultations = Consultation.objects.filter(
+                    assessment_id__in=assessment_ids
+                ).select_related('consultant').order_by('-scheduled_date')
 
-            # Get upcoming consultations
-            upcoming_consultations = consultations.filter(
-                status='scheduled',
-                scheduled_date__gte=timezone.now()
-            )
+                # Get upcoming consultations
+                upcoming_consultations = consultations.filter(
+                    status='scheduled',
+                    scheduled_date__gte=timezone.now()
+                )
 
-            # Get latest assessment
-            latest_assessment = assessments.first()
+                # Get latest assessment
+                latest_assessment = assessments.first()
 
-            # Calculate risk trend if there are multiple assessments
-            if len(assessments) > 1:
-                # Convert risk levels to numeric values
-                risk_values = []
-                for assessment in assessments:
-                    risk_level = assessment.get_risk_level()
-                    if risk_level == 'low':
-                        risk_values.append(1)
-                    elif risk_level == 'medium':
-                        risk_values.append(2)
-                    elif risk_level == 'high':
-                        risk_values.append(3)
-                    elif risk_level == 'critical':
-                        risk_values.append(4)
+                # Calculate risk trend if there are multiple assessments
+                if len(assessments) > 1:
+                    # Convert risk levels to numeric values
+                    risk_values = []
+                    for assessment in assessments:
+                        risk_level = assessment.get_risk_level()
+                        if risk_level == 'low':
+                            risk_values.append(1)
+                        elif risk_level == 'medium':
+                            risk_values.append(2)
+                        elif risk_level == 'high':
+                            risk_values.append(3)
+                        elif risk_level == 'critical':
+                            risk_values.append(4)
+                        else:
+                            risk_values.append(0)
+
+                    # Calculate trend (simple comparison of first and last values)
+                    if risk_values[0] < risk_values[-1]:
+                        risk_trend = 'worsening'
+                    elif risk_values[0] > risk_values[-1]:
+                        risk_trend = 'improving'
                     else:
-                        risk_values.append(0)
-
-                # Calculate trend (simple comparison of first and last values)
-                if risk_values[0] < risk_values[-1]:
-                    risk_trend = 'worsening'
-                elif risk_values[0] > risk_values[-1]:
-                    risk_trend = 'improving'
-                else:
-                    risk_trend = 'stable'
+                        risk_trend = 'stable'
+        except Exception as e:
+            # Log the error and reset variables to prevent template errors
+            print(f"Error retrieving patient data: {str(e)}")
+            assessments = []
+            consultations = []
+            upcoming_consultations = []
+            latest_assessment = None
+            risk_trend = None
 
     context = {
         'patient_identifier': patient_identifier,

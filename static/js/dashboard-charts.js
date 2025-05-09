@@ -1,6 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize all charts for the admin dashboard
     initializeAdminDashboardCharts();
+
+    // Initialize dashboard UI interactions
+    initializeDashboardUI();
 });
 
 function initializeAdminDashboardCharts() {
@@ -915,4 +918,273 @@ function updateStatsCards(data) {
         const date = new Date(data.cache_timestamp);
         cacheTimestamp.textContent = date.toLocaleString();
     }
+}
+
+function initializeDashboardUI() {
+    // Initialize dashboard tabs
+    initializeDashboardTabs();
+
+    // Initialize date range selector
+    initializeDateRangeSelector();
+
+    // Initialize chart type toggle
+    initializeChartTypeToggle();
+
+    // Initialize view mode toggle
+    initializeViewModeToggle();
+
+    // Initialize refresh data button
+    initializeRefreshDataButton();
+
+    // Initialize tooltips
+    initializeTooltips();
+
+    // Initialize fullscreen functionality for charts
+    initializeFullscreenCharts();
+
+    // Initialize activity view tabs
+    initializeActivityViewTabs();
+}
+
+function initializeDashboardTabs() {
+    const dashboardTabs = document.querySelectorAll('.dashboard-tab');
+    if (dashboardTabs.length === 0) return;
+
+    dashboardTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active class from all tabs
+            dashboardTabs.forEach(t => t.classList.remove('active'));
+
+            // Add active class to clicked tab
+            this.classList.add('active');
+
+            // Here you would typically show/hide content based on the tab
+            const tabId = this.getAttribute('data-tab');
+            console.log(`Switched to ${tabId} tab`);
+
+            // For a complete implementation, you would show/hide sections based on the tab
+            // const sections = document.querySelectorAll('.dashboard-section');
+            // sections.forEach(section => {
+            //     section.style.display = section.getAttribute('data-section') === tabId ? 'block' : 'none';
+            // });
+        });
+    });
+}
+
+function initializeDateRangeSelector() {
+    const dateRangeOptions = document.querySelectorAll('.date-range-option');
+    const currentDateRangeSpan = document.getElementById('currentDateRange');
+    const customDateRange = document.getElementById('customDateRange');
+
+    if (dateRangeOptions.length === 0) return;
+
+    dateRangeOptions.forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            const days = this.getAttribute('data-range');
+            currentDateRangeSpan.textContent = `Last ${days} Days`;
+
+            // Here you would typically update the dashboard data based on the selected range
+            console.log(`Date range changed to last ${days} days`);
+
+            // For a complete implementation, you would call an API to get new data
+            // fetchDashboardData({ dateRange: days });
+        });
+    });
+
+    if (customDateRange) {
+        customDateRange.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Here you would typically show a date range picker
+            console.log('Custom date range selected');
+
+            // For a complete implementation, you would show a date picker
+            // showDateRangePicker();
+        });
+    }
+}
+
+function initializeChartTypeToggle() {
+    const chartTypeButtons = document.querySelectorAll('#chartTypeBar, #chartTypeLine, #chartTypeArea');
+    if (chartTypeButtons.length === 0) return;
+
+    chartTypeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons
+            chartTypeButtons.forEach(btn => btn.classList.remove('active'));
+
+            // Add active class to clicked button
+            this.classList.add('active');
+
+            // Get the chart type
+            const chartType = this.id.replace('chartType', '').toLowerCase();
+            console.log(`Chart type changed to ${chartType}`);
+
+            // Here you would typically update the charts based on the selected type
+            // updateChartsType(chartType);
+        });
+    });
+}
+
+function initializeViewModeToggle() {
+    const gridViewBtn = document.getElementById('gridViewBtn');
+    const listViewBtn = document.getElementById('listViewBtn');
+
+    if (!gridViewBtn || !listViewBtn) return;
+
+    gridViewBtn.addEventListener('click', function() {
+        gridViewBtn.classList.add('active');
+        listViewBtn.classList.remove('active');
+        console.log('Switched to grid view');
+
+        // Here you would typically update the view mode
+        // document.body.classList.remove('list-view');
+        // document.body.classList.add('grid-view');
+    });
+
+    listViewBtn.addEventListener('click', function() {
+        listViewBtn.classList.add('active');
+        gridViewBtn.classList.remove('active');
+        console.log('Switched to list view');
+
+        // Here you would typically update the view mode
+        // document.body.classList.remove('grid-view');
+        // document.body.classList.add('list-view');
+    });
+}
+
+function initializeRefreshDataButton() {
+    const refreshBtn = document.getElementById('refreshDashboardData');
+    if (!refreshBtn) return;
+
+    refreshBtn.addEventListener('click', function() {
+        // Add loading class to button
+        this.classList.add('loading');
+
+        // Here you would typically fetch new data
+        console.log('Refreshing dashboard data...');
+
+        // Simulate loading
+        setTimeout(() => {
+            // Remove loading class from button
+            this.classList.remove('loading');
+
+            // Update cache timestamp
+            const cacheTimestamp = document.getElementById('cache-timestamp');
+            if (cacheTimestamp) {
+                cacheTimestamp.textContent = new Date().toLocaleString();
+            }
+
+            // Show success message
+            showToast('Dashboard data refreshed successfully', 'success');
+        }, 1500);
+
+        // For a complete implementation, you would call an API to get new data
+        // fetchDashboardData().then(() => {
+        //     this.classList.remove('loading');
+        // }).catch(error => {
+        //     this.classList.remove('loading');
+        //     showToast('Error refreshing data: ' + error.message, 'error');
+        // });
+    });
+}
+
+function initializeTooltips() {
+    // Initialize Bootstrap tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+}
+
+function initializeFullscreenCharts() {
+    // Add fullscreen functionality to charts
+    const fullscreenButtons = document.querySelectorAll('[id$="Fullscreen"]');
+
+    fullscreenButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            // Get the chart container
+            const chartId = this.id.replace('Fullscreen', '');
+            const chartContainer = document.querySelector(`#${chartId}Chart`).closest('.chart-container');
+
+            if (!chartContainer) return;
+
+            // Toggle fullscreen
+            if (!document.fullscreenElement) {
+                chartContainer.requestFullscreen().catch(err => {
+                    console.error(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        });
+    });
+}
+
+function initializeActivityViewTabs() {
+    const activityTabs = document.querySelectorAll('#activityRecent, #activityHighRisk, #activityFlagged');
+    if (activityTabs.length === 0) return;
+
+    activityTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active class from all tabs
+            activityTabs.forEach(t => t.classList.remove('active'));
+
+            // Add active class to clicked tab
+            this.classList.add('active');
+
+            // Get the activity view type
+            const viewType = this.id.replace('activity', '');
+            console.log(`Activity view changed to ${viewType}`);
+
+            // Here you would typically update the activity list based on the selected view
+            // fetchActivityData(viewType.toLowerCase());
+        });
+    });
+}
+
+function showToast(message, type = 'info') {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        document.body.appendChild(toastContainer);
+    }
+
+    // Create toast element
+    const toastEl = document.createElement('div');
+    toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
+    toastEl.setAttribute('role', 'alert');
+    toastEl.setAttribute('aria-live', 'assertive');
+    toastEl.setAttribute('aria-atomic', 'true');
+
+    // Create toast content
+    toastEl.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+
+    // Add toast to container
+    toastContainer.appendChild(toastEl);
+
+    // Initialize and show toast
+    const toast = new bootstrap.Toast(toastEl, {
+        autohide: true,
+        delay: 3000
+    });
+    toast.show();
+
+    // Remove toast after it's hidden
+    toastEl.addEventListener('hidden.bs.toast', function() {
+        toastEl.remove();
+    });
 }

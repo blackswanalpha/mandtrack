@@ -1,9 +1,11 @@
-{% extends 'admin_portal/modern_base.html' %}
+{% extends 'base/base.html' %}
 {% load static %}
 
 {% block extra_head %}
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<!-- ApexCharts for advanced visualizations -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <!-- Ensure Chart.js is loaded -->
 <script>
   // Check if Chart.js is loaded, if not, load it again
@@ -23,6 +25,169 @@
     }
   });
 </script>
+
+<!-- Dashboard specific styles -->
+<style>
+  .dashboard-card {
+    transition: all 0.3s ease;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  .dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  .stat-card {
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+    z-index: -1;
+  }
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-size: 1.5rem;
+  }
+
+  .trend-indicator {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .trend-indicator.up {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: rgb(16, 185, 129);
+  }
+
+  .trend-indicator.down {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: rgb(239, 68, 68);
+  }
+
+  .chart-container {
+    position: relative;
+    min-height: 250px;
+  }
+
+  .quick-action {
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+  }
+
+  .quick-action:hover {
+    transform: translateY(-3px);
+  }
+
+  .notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: #ef4444;
+    color: white;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .activity-timeline .timeline-item {
+    position: relative;
+    padding-left: 2rem;
+    padding-bottom: 1.5rem;
+    border-left: 2px solid #e5e7eb;
+  }
+
+  .activity-timeline .timeline-item:last-child {
+    border-left: 2px solid transparent;
+  }
+
+  .activity-timeline .timeline-dot {
+    position: absolute;
+    left: -9px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+  }
+
+  .dashboard-tab {
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+  }
+
+  .dashboard-tab.active {
+    background-color: #3b82f6;
+    color: white;
+  }
+
+  .dashboard-tab:not(.active):hover {
+    background-color: #f3f4f6;
+  }
+
+  .ai-insight-card {
+    border-left: 4px solid transparent;
+  }
+
+  .ai-insight-card.high {
+    border-left-color: #ef4444;
+  }
+
+  .ai-insight-card.medium {
+    border-left-color: #f59e0b;
+  }
+
+  .ai-insight-card.low {
+    border-left-color: #10b981;
+  }
+
+  .data-refresh-btn {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .data-refresh-btn .spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+  }
+
+  .data-refresh-btn.loading .spinner {
+    display: block;
+  }
+
+  .data-refresh-btn.loading .btn-text {
+    visibility: hidden;
+  }
+</style>
+
 <!-- Hidden data for charts -->
 <script id="trend-data" type="application/json">{{ trend_data|safe }}</script>
 <script id="gender-distribution" type="application/json">{{ gender_distribution|safe }}</script>
@@ -39,28 +204,65 @@
 {% block page_title %}Dashboard Overview{% endblock %}
 
 {% block page_actions %}
-<div class="dropdown d-inline-block me-2">
-    <button class="btn btn-sm btn-primary dropdown-toggle transition-all" type="button" id="createDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-        <i class="fas fa-plus-circle me-1"></i> Create New
+<div class="d-flex align-items-center gap-2">
+    <!-- Data refresh button -->
+    <button class="btn btn-sm btn-outline-secondary data-refresh-btn" id="refreshDashboardData">
+        <span class="btn-text"><i class="fas fa-sync-alt me-1"></i> Refresh Data</span>
+        <div class="spinner"></div>
     </button>
-    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 animated--fade-in" aria-labelledby="createDropdown">
-        <li><a class="dropdown-item" href="#"><i class="fas fa-clipboard-list me-2 text-primary"></i> Questionnaire</a></li>
-        <li><a class="dropdown-item" href="#"><i class="fas fa-users me-2 text-info"></i> User</a></li>
-        <li><a class="dropdown-item" href="#"><i class="fas fa-building me-2 text-warning"></i> Organization</a></li>
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" href="#"><i class="fas fa-chart-line me-2 text-success"></i> Report</a></li>
-    </ul>
-</div>
 
-<div class="dropdown d-inline-block">
-    <button class="btn btn-sm btn-info dropdown-toggle transition-all" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-        <i class="fas fa-download me-1"></i> Export Data
-    </button>
-    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 animated--fade-in" aria-labelledby="exportDropdown">
-        <li><a class="dropdown-item" href="#"><i class="fas fa-file-csv me-2 text-primary"></i> Export as CSV</a></li>
-        <li><a class="dropdown-item" href="#"><i class="fas fa-file-excel me-2 text-success"></i> Export as Excel</a></li>
-        <li><a class="dropdown-item" href="#"><i class="fas fa-file-pdf me-2 text-danger"></i> Export as PDF</a></li>
-    </ul>
+    <!-- Date range selector -->
+    <div class="dropdown d-inline-block me-2">
+        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="dateRangeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-calendar-alt me-1"></i> <span id="currentDateRange">Last 30 Days</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="dateRangeDropdown">
+            <li><a class="dropdown-item date-range-option" href="#" data-range="7"><i class="fas fa-calendar-week me-2 text-primary"></i> Last 7 Days</a></li>
+            <li><a class="dropdown-item date-range-option" href="#" data-range="30"><i class="fas fa-calendar-alt me-2 text-primary"></i> Last 30 Days</a></li>
+            <li><a class="dropdown-item date-range-option" href="#" data-range="90"><i class="fas fa-calendar me-2 text-primary"></i> Last 90 Days</a></li>
+            <li><a class="dropdown-item date-range-option" href="#" data-range="365"><i class="fas fa-calendar-day me-2 text-primary"></i> Last Year</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#" id="customDateRange"><i class="fas fa-calendar-plus me-2 text-primary"></i> Custom Range</a></li>
+        </ul>
+    </div>
+
+    <!-- Create new dropdown -->
+    <div class="dropdown d-inline-block me-2">
+        <button class="btn btn-sm btn-primary dropdown-toggle transition-all" type="button" id="createDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-plus-circle me-1"></i> Create New
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 animated--fade-in" aria-labelledby="createDropdown">
+            <li><a class="dropdown-item" href="#"><i class="fas fa-clipboard-list me-2 text-primary"></i> Questionnaire</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-users me-2 text-info"></i> User</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-building me-2 text-warning"></i> Organization</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-chart-line me-2 text-success"></i> Report</a></li>
+        </ul>
+    </div>
+
+    <!-- Export dropdown -->
+    <div class="dropdown d-inline-block">
+        <button class="btn btn-sm btn-info dropdown-toggle transition-all" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-download me-1"></i> Export Data
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 animated--fade-in" aria-labelledby="exportDropdown">
+            <li><a class="dropdown-item" href="#"><i class="fas fa-file-csv me-2 text-primary"></i> Export as CSV</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-file-excel me-2 text-success"></i> Export as Excel</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-file-pdf me-2 text-danger"></i> Export as PDF</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#" id="scheduleReports"><i class="fas fa-clock me-2 text-warning"></i> Schedule Reports</a></li>
+        </ul>
+    </div>
+
+    <!-- View mode toggle -->
+    <div class="btn-group ms-2" role="group" aria-label="View Mode">
+        <button type="button" class="btn btn-sm btn-outline-secondary active" id="gridViewBtn">
+            <i class="fas fa-th-large"></i>
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="listViewBtn">
+            <i class="fas fa-list"></i>
+        </button>
+    </div>
 </div>
 {% endblock %}
 
@@ -89,55 +291,129 @@
 {% include 'dashboard/components/dashboard_filters.html' %}
 
 <!-- Cache Information -->
-<div class="d-flex justify-content-end mb-2">
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <div class="btn-group" role="group" aria-label="Dashboard Tabs">
+            <button type="button" class="btn btn-sm btn-outline-primary active dashboard-tab" data-tab="overview">Overview</button>
+            <button type="button" class="btn btn-sm btn-outline-primary dashboard-tab" data-tab="analytics">Analytics</button>
+            <button type="button" class="btn btn-sm btn-outline-primary dashboard-tab" data-tab="responses">Responses</button>
+            <button type="button" class="btn btn-sm btn-outline-primary dashboard-tab" data-tab="insights">AI Insights</button>
+        </div>
+    </div>
     <small class="text-muted">
         <i class="fas fa-clock me-1"></i> Last updated: <span id="cache-timestamp">{% now "F j, Y, g:i a" %}</span>
     </small>
 </div>
 
 <!-- Dashboard Overview Section -->
-<div class="row mb-4">
+<div class="row g-3 mb-4">
     <div class="col-12">
-        <div class="card shadow-sm border-0 overflow-hidden">
+        <div class="card dashboard-card border-0">
             <div class="card-body p-0">
                 <div class="row g-0">
-                    <div class="col-md-6 d-flex flex-column p-4">
-                        <h4 class="text-primary fw-bold mb-2">Welcome back, {{ user.first_name|default:"Admin" }}!</h4>
-                        <p class="text-muted mb-3">Here's what's happening with your questionnaires today.</p>
+                    <div class="col-lg-7 d-flex flex-column p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            {% if user.profile_image %}
+                            <img src="{{ user.profile_image.url }}" alt="{{ user.get_full_name }}" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                            {% else %}
+                            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
+                                <span class="text-white h3 mb-0">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <h3 class="text-primary fw-bold mb-1">Welcome back, {{ user.first_name|default:"Admin" }}!</h3>
+                                <p class="text-muted mb-0">{{ today_date|date:"l, F j, Y" }}</p>
+                            </div>
+                        </div>
 
-                        <div class="row mt-auto">
-                            <div class="col-6">
+                        <p class="text-muted mb-4">Here's your dashboard overview with the latest metrics and insights.</p>
+
+                        <div class="row g-3 mt-auto">
+                            <div class="col-sm-6">
                                 <div class="d-flex align-items-center">
                                     <div class="flex-shrink-0">
-                                        <div class="rounded-circle bg-primary bg-opacity-10 p-2">
-                                            <i class="fas fa-chart-line text-primary"></i>
+                                        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                                            <i class="fas fa-chart-line"></i>
                                         </div>
                                     </div>
                                     <div class="flex-grow-1 ms-3">
-                                        <h6 class="mb-0">Completion Rate</h6>
-                                        <h4 class="mb-0 fw-bold">{{ completion_rate }}%</h4>
+                                        <div class="d-flex align-items-baseline">
+                                            <h3 class="mb-0 fw-bold">{{ completion_rate|default:"0" }}%</h3>
+                                            <span class="ms-2 trend-indicator up">
+                                                <i class="fas fa-arrow-up me-1"></i>{{ completion_rate_change|default:"2" }}%
+                                            </span>
+                                        </div>
+                                        <p class="mb-0 text-muted">Completion Rate</p>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-6">
+                            <div class="col-sm-6">
                                 <div class="d-flex align-items-center">
                                     <div class="flex-shrink-0">
-                                        <div class="rounded-circle bg-success bg-opacity-10 p-2">
-                                            <i class="fas fa-star-half-alt text-success"></i>
+                                        <div class="stat-icon bg-success bg-opacity-10 text-success">
+                                            <i class="fas fa-star-half-alt"></i>
                                         </div>
                                     </div>
                                     <div class="flex-grow-1 ms-3">
-                                        <h6 class="mb-0">Average Score</h6>
-                                        <h4 class="mb-0 fw-bold">{{ avg_score }}</h4>
+                                        <div class="d-flex align-items-baseline">
+                                            <h3 class="mb-0 fw-bold">{{ avg_score|default:"0" }}</h3>
+                                            <span class="ms-2 trend-indicator up">
+                                                <i class="fas fa-arrow-up me-1"></i>{{ avg_score_change|default:"0.5" }}
+                                            </span>
+                                        </div>
+                                        <p class="mb-0 text-muted">Average Score</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        <div class="mt-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <h6 class="mb-0 me-auto">System Status</h6>
+                                <span class="badge bg-success">Healthy</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 92%;" aria-valuenow="92" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <small class="text-muted">Server Load: 8%</small>
+                                <small class="text-muted">Response Time: 0.2s</small>
+                                <small class="text-muted">Uptime: 99.9%</small>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-6 bg-primary bg-gradient p-4 text-white">
-                        <h5 class="fw-bold mb-3">Response Trend (Last 30 Days)</h5>
-                        <div class="chart-container" style="position: relative; height:150px;">
-                            <canvas id="responseOverviewChart"></canvas>
+                    <div class="col-lg-5 bg-gradient-primary p-4 text-white position-relative overflow-hidden">
+                        <div class="position-relative" style="z-index: 1;">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold mb-0">Response Trend</h5>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-light active btn-sm px-2 py-0" data-period="week">Week</button>
+                                    <button type="button" class="btn btn-outline-light btn-sm px-2 py-0" data-period="month">Month</button>
+                                </div>
+                            </div>
+                            <div class="chart-container" style="position: relative; height:220px;">
+                                <canvas id="responseOverviewChart"></canvas>
+                            </div>
+
+                            <div class="row mt-3 text-center">
+                                <div class="col-4">
+                                    <h5 class="mb-0">{{ total_responses_today|default:"12" }}</h5>
+                                    <small class="text-white-50">Today</small>
+                                </div>
+                                <div class="col-4">
+                                    <h5 class="mb-0">{{ total_responses_week|default:"68" }}</h5>
+                                    <small class="text-white-50">This Week</small>
+                                </div>
+                                <div class="col-4">
+                                    <h5 class="mb-0">{{ total_responses_month|default:"245" }}</h5>
+                                    <small class="text-white-50">This Month</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Decorative background elements -->
+                        <div class="position-absolute top-0 end-0 opacity-10" style="z-index: 0;">
+                            <i class="fas fa-chart-line fa-10x"></i>
                         </div>
                     </div>
                 </div>
@@ -150,44 +426,42 @@
 <div class="row g-3 mb-4">
     <!-- Total Questionnaires Card -->
     <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="flex-shrink-0">
-                        <div class="rounded p-2 bg-primary bg-opacity-10">
-                            <i class="fas fa-clipboard-list fa-fw text-primary"></i>
-                        </div>
+        <div class="card dashboard-card stat-card border-0 h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="stat-icon bg-primary-100 text-primary">
+                        <i class="fas fa-clipboard-list"></i>
                     </div>
-                    <div class="flex-grow-1 ms-3">
-                        <h6 class="text-muted mb-0 text-uppercase small">Questionnaires</h6>
-                    </div>
-                </div>
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h3 class="fw-bold mb-0">{{ total_questionnaires }}</h3>
-                    </div>
-                    <div class="flex-shrink-0">
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-link text-muted" type="button" id="questionnairesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="questionnairesDropdown">
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-list me-2 text-primary"></i> View All</a></li>
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-plus me-2 text-success"></i> Create New</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-chart-pie me-2 text-info"></i> View Analytics</a></li>
-                            </ul>
-                        </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-icon" type="button" id="questionnairesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-h text-muted"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="questionnairesDropdown">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-list me-2 text-primary"></i> View All</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-plus me-2 text-success"></i> Create New</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-chart-pie me-2 text-info"></i> View Analytics</a></li>
+                        </ul>
                     </div>
                 </div>
-                <div class="d-flex align-items-center mt-3">
-                    <div class="flex-grow-1">
-                        <div class="progress" style="height: 6px;">
-                            <div class="progress-bar bg-primary" role="progressbar" style="width: 70%;" aria-valuenow="{{ active_questionnaires|default:0 }}" aria-valuemin="0" aria-valuemax="{{ total_questionnaires|default:1 }}"></div>
-                        </div>
+
+                <div>
+                    <h6 class="text-muted mb-2 text-uppercase small">Total Questionnaires</h6>
+                    <div class="d-flex align-items-baseline">
+                        <h3 class="fw-bold mb-0">{{ total_questionnaires|default:"0" }}</h3>
+                        <span class="ms-2 trend-indicator up">
+                            <i class="fas fa-arrow-up me-1"></i>{{ questionnaire_growth|default:"12" }}%
+                        </span>
                     </div>
-                    <div class="flex-shrink-0 ms-2">
-                        <span class="badge bg-primary">{{ active_questionnaires|default:0 }} Active</span>
+                </div>
+
+                <div class="mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small">Active</span>
+                        <span class="text-primary fw-medium">{{ active_questionnaires|default:"0" }}</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ active_percentage|default:"70" }}%;" aria-valuenow="{{ active_questionnaires|default:0 }}" aria-valuemin="0" aria-valuemax="{{ total_questionnaires|default:1 }}"></div>
                     </div>
                 </div>
             </div>
@@ -196,46 +470,42 @@
 
     <!-- Total Responses Card -->
     <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="flex-shrink-0">
-                        <div class="rounded p-2 bg-success bg-opacity-10">
-                            <i class="fas fa-comments fa-fw text-success"></i>
-                        </div>
+        <div class="card dashboard-card stat-card border-0 h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="stat-icon bg-success-100 text-success">
+                        <i class="fas fa-comments"></i>
                     </div>
-                    <div class="flex-grow-1 ms-3">
-                        <h6 class="text-muted mb-0 text-uppercase small">Responses</h6>
-                    </div>
-                </div>
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h3 class="fw-bold mb-0">{{ total_responses }}</h3>
-                    </div>
-                    <div class="flex-shrink-0">
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-link text-muted" type="button" id="responsesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="responsesDropdown">
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-list me-2 text-success"></i> View All</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-chart-line me-2 text-info"></i> View Analytics</a></li>
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2 text-primary"></i> Export Data</a></li>
-                            </ul>
-                        </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-icon" type="button" id="responsesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-h text-muted"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="responsesDropdown">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-list me-2 text-success"></i> View All</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-chart-line me-2 text-info"></i> View Analytics</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2 text-primary"></i> Export Data</a></li>
+                        </ul>
                     </div>
                 </div>
-                <div class="d-flex align-items-center mt-3">
-                    <div class="flex-grow-1">
-                        <div class="d-flex align-items-center">
-                            <div class="text-success me-2">
-                                <i class="fas fa-arrow-up"></i>
-                            </div>
-                            <div>
-                                <span class="fw-medium">{{ completion_rate }}% completion rate</span>
-                            </div>
-                        </div>
+
+                <div>
+                    <h6 class="text-muted mb-2 text-uppercase small">Total Responses</h6>
+                    <div class="d-flex align-items-baseline">
+                        <h3 class="fw-bold mb-0">{{ total_responses|default:"0" }}</h3>
+                        <span class="ms-2 trend-indicator up">
+                            <i class="fas fa-arrow-up me-1"></i>{{ response_growth|default:"8" }}%
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small">Completion Rate</span>
+                        <span class="text-success fw-medium">{{ completion_rate|default:"0" }}%</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ completion_rate|default:"0" }}%;" aria-valuenow="{{ completion_rate|default:0 }}" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
             </div>
@@ -244,46 +514,42 @@
 
     <!-- Total Users Card -->
     <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="flex-shrink-0">
-                        <div class="rounded p-2 bg-info bg-opacity-10">
-                            <i class="fas fa-users fa-fw text-info"></i>
-                        </div>
+        <div class="card dashboard-card stat-card border-0 h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="stat-icon bg-info-100 text-info">
+                        <i class="fas fa-users"></i>
                     </div>
-                    <div class="flex-grow-1 ms-3">
-                        <h6 class="text-muted mb-0 text-uppercase small">Users</h6>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-icon" type="button" id="usersDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-h text-muted"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="usersDropdown">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-list me-2 text-info"></i> View All</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user-plus me-2 text-success"></i> Add User</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user-shield me-2 text-warning"></i> Manage Roles</a></li>
+                        </ul>
                     </div>
                 </div>
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
+
+                <div>
+                    <h6 class="text-muted mb-2 text-uppercase small">Total Users</h6>
+                    <div class="d-flex align-items-baseline">
                         <h3 class="fw-bold mb-0">{{ total_users|default:"0" }}</h3>
-                    </div>
-                    <div class="flex-shrink-0">
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-link text-muted" type="button" id="usersDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="usersDropdown">
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-list me-2 text-info"></i> View All</a></li>
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-user-plus me-2 text-success"></i> Add User</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-user-shield me-2 text-warning"></i> Manage Roles</a></li>
-                            </ul>
-                        </div>
+                        <span class="ms-2 trend-indicator up">
+                            <i class="fas fa-arrow-up me-1"></i>{{ user_growth|default:"5" }}%
+                        </span>
                     </div>
                 </div>
-                <div class="d-flex align-items-center mt-3">
-                    <div class="flex-grow-1">
-                        <div class="d-flex align-items-center">
-                            <div class="text-info me-2">
-                                <i class="fas fa-user-check"></i>
-                            </div>
-                            <div>
-                                <span class="fw-medium">Active users</span>
-                            </div>
-                        </div>
+
+                <div class="mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small">Active Users</span>
+                        <span class="text-info fw-medium">{{ active_users|default:"0" }}</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ active_users_percentage|default:"85" }}%;" aria-valuenow="{{ active_users|default:0 }}" aria-valuemin="0" aria-valuemax="{{ total_users|default:1 }}"></div>
                     </div>
                 </div>
             </div>
@@ -292,46 +558,42 @@
 
     <!-- Total Organizations Card -->
     <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="flex-shrink-0">
-                        <div class="rounded p-2 bg-warning bg-opacity-10">
-                            <i class="fas fa-building fa-fw text-warning"></i>
-                        </div>
+        <div class="card dashboard-card stat-card border-0 h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="stat-icon bg-warning-100 text-warning">
+                        <i class="fas fa-building"></i>
                     </div>
-                    <div class="flex-grow-1 ms-3">
-                        <h6 class="text-muted mb-0 text-uppercase small">Organizations</h6>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-icon" type="button" id="orgsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-h text-muted"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="orgsDropdown">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-list me-2 text-warning"></i> View All</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-plus me-2 text-success"></i> Add Organization</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-chart-pie me-2 text-info"></i> View Analytics</a></li>
+                        </ul>
                     </div>
                 </div>
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
+
+                <div>
+                    <h6 class="text-muted mb-2 text-uppercase small">Total Organizations</h6>
+                    <div class="d-flex align-items-baseline">
                         <h3 class="fw-bold mb-0">{{ total_organizations|default:"0" }}</h3>
-                    </div>
-                    <div class="flex-shrink-0">
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-link text-muted" type="button" id="orgsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="orgsDropdown">
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-list me-2 text-warning"></i> View All</a></li>
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-plus me-2 text-success"></i> Add Organization</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-chart-pie me-2 text-info"></i> View Analytics</a></li>
-                            </ul>
-                        </div>
+                        <span class="ms-2 trend-indicator up">
+                            <i class="fas fa-arrow-up me-1"></i>{{ org_growth|default:"3" }}%
+                        </span>
                     </div>
                 </div>
-                <div class="d-flex align-items-center mt-3">
-                    <div class="flex-grow-1">
-                        <div class="d-flex align-items-center">
-                            <div class="text-warning me-2">
-                                <i class="fas fa-building"></i>
-                            </div>
-                            <div>
-                                <span class="fw-medium">Active organizations</span>
-                            </div>
-                        </div>
+
+                <div class="mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small">Active Organizations</span>
+                        <span class="text-warning fw-medium">{{ active_organizations|default:"0" }}</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ active_org_percentage|default:"90" }}%;" aria-valuenow="{{ active_organizations|default:0 }}" aria-valuemin="0" aria-valuemax="{{ total_organizations|default:1 }}"></div>
                     </div>
                 </div>
             </div>
@@ -341,31 +603,57 @@
 
 <!-- Data Visualization Section -->
 <div class="row g-3 mb-4">
-    <div class="col-12">
-        <h5 class="text-dark mb-3 fw-bold">Data Visualization</h5>
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h5 class="text-dark mb-0 fw-bold">Data Visualization</h5>
+        <div class="btn-group btn-group-sm" role="group" aria-label="Chart Type Toggle">
+            <button type="button" class="btn btn-outline-primary active" id="chartTypeBar">
+                <i class="fas fa-chart-bar me-1"></i> Bar
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="chartTypeLine">
+                <i class="fas fa-chart-line me-1"></i> Line
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="chartTypeArea">
+                <i class="fas fa-chart-area me-1"></i> Area
+            </button>
+        </div>
     </div>
 
     <!-- Response Trends Chart -->
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+        <div class="card dashboard-card border-0 h-100">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-primary">Response Trends</h6>
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-link text-muted" type="button" id="trendDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v"></i>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="downloadTrendChart">
+                        <i class="fas fa-download me-1"></i> Export
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="trendDropdown">
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-calendar me-2 text-primary"></i> Last 7 Days</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-alt me-2 text-primary"></i> Last 30 Days</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-week me-2 text-primary"></i> Last 90 Days</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2 text-success"></i> Export Chart</a></li>
-                    </ul>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-icon" type="button" id="trendDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-h text-muted"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="trendDropdown">
+                            <li><a class="dropdown-item trend-period" href="#" data-period="7"><i class="fas fa-calendar me-2 text-primary"></i> Last 7 Days</a></li>
+                            <li><a class="dropdown-item trend-period active" href="#" data-period="30"><i class="fas fa-calendar-alt me-2 text-primary"></i> Last 30 Days</a></li>
+                            <li><a class="dropdown-item trend-period" href="#" data-period="90"><i class="fas fa-calendar-week me-2 text-primary"></i> Last 90 Days</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="trendFullscreen"><i class="fas fa-expand me-2 text-info"></i> Full Screen</a></li>
+                            <li><a class="dropdown-item" href="#" id="trendSettings"><i class="fas fa-cog me-2 text-secondary"></i> Chart Settings</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
                 <div class="chart-container" style="position: relative; height: 300px;">
                     <canvas id="responseTrendChart"></canvas>
+                </div>
+                <div class="d-flex justify-content-between mt-3">
+                    <div class="small text-muted">
+                        <i class="fas fa-info-circle me-1"></i> Showing data from {{ trend_start_date|default:"May 1, 2023" }} to {{ trend_end_date|default:"May 30, 2023" }}
+                    </div>
+                    <div class="small">
+                        <span class="badge bg-primary me-2">Total: {{ total_responses|default:"0" }}</span>
+                        <span class="badge bg-success">Avg: {{ avg_daily_responses|default:"8.2" }}/day</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -373,22 +661,42 @@
 
     <!-- Risk Distribution Chart -->
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+        <div class="card dashboard-card border-0 h-100">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-primary">Risk Distribution</h6>
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-link text-muted" type="button" id="riskDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v"></i>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="downloadRiskChart">
+                        <i class="fas fa-download me-1"></i> Export
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="riskDropdown">
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-chart-pie me-2 text-primary"></i> View Details</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2 text-success"></i> Export Chart</a></li>
-                    </ul>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-icon" type="button" id="riskDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-h text-muted"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="riskDropdown">
+                            <li><a class="dropdown-item" href="#" id="viewRiskDetails"><i class="fas fa-chart-pie me-2 text-primary"></i> View Details</a></li>
+                            <li><a class="dropdown-item" href="#" id="riskFullscreen"><i class="fas fa-expand me-2 text-info"></i> Full Screen</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="highRiskNotifications"><i class="fas fa-bell me-2 text-warning"></i> Notification Settings</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
-                <div class="chart-container" style="position: relative; height: 300px;">
+                <div class="chart-container" style="position: relative; height: 250px;">
                     <canvas id="riskDistributionChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small text-danger fw-medium">High Risk: {{ high_risk_count|default:"25" }}</span>
+                        <button class="btn btn-sm btn-outline-danger" id="viewHighRisk">
+                            <i class="fas fa-exclamation-triangle me-1"></i> View High Risk
+                        </button>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 45%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: 30%;" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -399,22 +707,35 @@
 <div class="row g-3 mb-4">
     <!-- Questionnaire Categories Chart -->
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+        <div class="card dashboard-card border-0 h-100">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-primary">Questionnaire Categories</h6>
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-link text-muted" type="button" id="categoriesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v"></i>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="downloadCategoriesChart">
+                        <i class="fas fa-download me-1"></i> Export
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="categoriesDropdown">
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-chart-pie me-2 text-primary"></i> View Details</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2 text-success"></i> Export Chart</a></li>
-                    </ul>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-icon" type="button" id="categoriesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-h text-muted"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="categoriesDropdown">
+                            <li><a class="dropdown-item" href="#" id="viewCategoryDetails"><i class="fas fa-chart-pie me-2 text-primary"></i> View Details</a></li>
+                            <li><a class="dropdown-item" href="#" id="categoriesFullscreen"><i class="fas fa-expand me-2 text-info"></i> Full Screen</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="manageCategorySettings"><i class="fas fa-cog me-2 text-secondary"></i> Manage Categories</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
                 <div class="chart-container" style="position: relative; height: 250px;">
                     <canvas id="categoriesChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small text-muted">Top Category:</span>
+                        <span class="badge bg-primary">{{ top_category|default:"Mental Health" }}</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -422,22 +743,35 @@
 
     <!-- Device Distribution Chart -->
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+        <div class="card dashboard-card border-0 h-100">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-primary">Device Distribution</h6>
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-link text-muted" type="button" id="deviceDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v"></i>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="downloadDeviceChart">
+                        <i class="fas fa-download me-1"></i> Export
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="deviceDropdown">
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-chart-pie me-2 text-primary"></i> View Details</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2 text-success"></i> Export Chart</a></li>
-                    </ul>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-icon" type="button" id="deviceDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-h text-muted"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="deviceDropdown">
+                            <li><a class="dropdown-item" href="#" id="viewDeviceDetails"><i class="fas fa-chart-pie me-2 text-primary"></i> View Details</a></li>
+                            <li><a class="dropdown-item" href="#" id="deviceFullscreen"><i class="fas fa-expand me-2 text-info"></i> Full Screen</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="deviceOptimization"><i class="fas fa-mobile-alt me-2 text-success"></i> Mobile Optimization</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
                 <div class="chart-container" style="position: relative; height: 250px;">
                     <canvas id="deviceDistributionChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small text-muted">Most Used:</span>
+                        <span class="badge bg-success">{{ most_used_device|default:"Mobile" }}</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -445,18 +779,35 @@
 
     <!-- Demographics Chart -->
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+        <div class="card dashboard-card border-0 h-100">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-primary">Demographics</h6>
-                <div class="btn-group">
-                    <button type="button" class="btn btn-sm btn-outline-primary active" id="genderTabBtn">Gender</button>
-                    <button type="button" class="btn btn-sm btn-outline-primary" id="ageTabBtn">Age</button>
+                <div class="d-flex gap-2">
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-primary active" id="genderTabBtn">Gender</button>
+                        <button type="button" class="btn btn-outline-primary" id="ageTabBtn">Age</button>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-icon" type="button" id="demographicsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-h text-muted"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="demographicsDropdown">
+                            <li><a class="dropdown-item" href="#" id="downloadDemographicsChart"><i class="fas fa-download me-2 text-primary"></i> Export Chart</a></li>
+                            <li><a class="dropdown-item" href="#" id="demographicsFullscreen"><i class="fas fa-expand me-2 text-info"></i> Full Screen</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="demographicsReport"><i class="fas fa-file-alt me-2 text-success"></i> Generate Report</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
                 <div class="chart-container" style="position: relative; height: 250px;">
                     <canvas id="genderChart" class="demographics-chart active"></canvas>
                     <canvas id="ageChart" class="demographics-chart" style="display: none;"></canvas>
+                </div>
+                <div class="mt-3 small text-center" id="demographicsSummary">
+                    <span class="text-muted">Predominant demographic: </span>
+                    <span class="fw-medium">{{ predominant_demographic|default:"Females, 25-34 age group" }}</span>
                 </div>
             </div>
         </div>
@@ -465,33 +816,47 @@
 
 <!-- Advanced Analytics Section -->
 <div class="row g-3 mb-4">
-    <div class="col-12">
-        <h5 class="text-dark mb-3 fw-bold">Advanced Analytics</h5>
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h5 class="text-dark mb-0 fw-bold">Advanced Analytics</h5>
+        <button class="btn btn-sm btn-primary" id="generateAnalyticsReport">
+            <i class="fas fa-file-chart-line me-1"></i> Generate Analytics Report
+        </button>
     </div>
 
-    <!-- Category Comparison Chart -->
+    <!-- Category Comparison Chart (Radar Chart) -->
     <div class="col-lg-6">
-        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+        <div class="card dashboard-card border-0 h-100">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-primary">Category Comparison</h6>
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-link text-muted" type="button" id="categoryComparisonDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v"></i>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="downloadCategoryChart">
+                        <i class="fas fa-download me-1"></i> Export
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="categoryComparisonDropdown">
-                        <li><a class="dropdown-item" href="#" id="downloadCategoryChart"><i class="fas fa-download me-2 text-success"></i> Download Chart</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#" id="showAllCategories"><i class="fas fa-list me-2 text-primary"></i> Show All Categories</a></li>
-                        <li><a class="dropdown-item" href="#" id="showTopCategories"><i class="fas fa-trophy me-2 text-warning"></i> Show Top 5 Categories</a></li>
-                    </ul>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-icon" type="button" id="categoryComparisonDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-h text-muted"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="categoryComparisonDropdown">
+                            <li><a class="dropdown-item" href="#" id="showAllCategories"><i class="fas fa-list me-2 text-primary"></i> Show All Categories</a></li>
+                            <li><a class="dropdown-item" href="#" id="showTopCategories"><i class="fas fa-trophy me-2 text-warning"></i> Show Top 5 Categories</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="categoryComparisonFullscreen"><i class="fas fa-expand me-2 text-info"></i> Full Screen</a></li>
+                            <li><a class="dropdown-item" href="#" id="categoryComparisonSettings"><i class="fas fa-cog me-2 text-secondary"></i> Chart Settings</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
                 <div class="chart-container" style="position: relative; height: 300px;">
                     <canvas id="categoryComparisonChart"></canvas>
                 </div>
-                <div class="text-center mt-3">
-                    <small class="text-muted">Comparing key metrics across questionnaire categories</small>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <small class="text-muted">Comparing key metrics across categories</small>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-secondary active btn-xs px-2 py-0" data-metric="responses">Responses</button>
+                        <button type="button" class="btn btn-outline-secondary btn-xs px-2 py-0" data-metric="completion">Completion</button>
+                        <button type="button" class="btn btn-outline-secondary btn-xs px-2 py-0" data-metric="scores">Scores</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -499,27 +864,34 @@
 
     <!-- Response Time Heatmap -->
     <div class="col-lg-6">
-        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+        <div class="card dashboard-card border-0 h-100">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-primary">Response Time Heatmap</h6>
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-link text-muted" type="button" id="heatmapDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v"></i>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="downloadHeatmapChart">
+                        <i class="fas fa-download me-1"></i> Export
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="heatmapDropdown">
-                        <li><a class="dropdown-item" href="#" id="downloadHeatmapChart"><i class="fas fa-download me-2 text-success"></i> Download Chart</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#" id="showWeekdaysOnly"><i class="fas fa-calendar-week me-2 text-primary"></i> Show Weekdays Only</a></li>
-                        <li><a class="dropdown-item" href="#" id="showAllDays"><i class="fas fa-calendar-alt me-2 text-info"></i> Show All Days</a></li>
-                    </ul>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-icon" type="button" id="heatmapDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-h text-muted"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="heatmapDropdown">
+                            <li><a class="dropdown-item" href="#" id="showWeekdaysOnly"><i class="fas fa-calendar-week me-2 text-primary"></i> Show Weekdays Only</a></li>
+                            <li><a class="dropdown-item" href="#" id="showAllDays"><i class="fas fa-calendar-alt me-2 text-info"></i> Show All Days</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="heatmapFullscreen"><i class="fas fa-expand me-2 text-info"></i> Full Screen</a></li>
+                            <li><a class="dropdown-item" href="#" id="optimizeScheduling"><i class="fas fa-clock me-2 text-success"></i> Optimize Scheduling</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
                 <div class="chart-container" style="position: relative; height: 300px;">
                     <canvas id="responseTimeHeatmap"></canvas>
                 </div>
-                <div class="text-center mt-3">
-                    <small class="text-muted">Shows when responses are most frequently submitted</small>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <small class="text-muted">Response submission patterns by day and time</small>
+                    <span class="badge bg-info">Peak: {{ peak_response_time|default:"Weekdays, 10-11 AM" }}</span>
                 </div>
             </div>
         </div>
@@ -529,29 +901,77 @@
 <!-- Completion Time Stats -->
 <div class="row g-3 mb-4">
     <div class="col-12">
-        <div class="card border-0 shadow-sm transition-all hover:shadow stagger-item">
-            <div class="card-header bg-transparent border-0">
+        <div class="card dashboard-card border-0">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-primary">Completion Time Statistics</h6>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="downloadTimeStats">
+                        <i class="fas fa-download me-1"></i> Export
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-icon" type="button" id="timeStatsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-h text-muted"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="timeStatsDropdown">
+                            <li><a class="dropdown-item" href="#" id="viewDetailedTimeStats"><i class="fas fa-chart-line me-2 text-primary"></i> View Detailed Stats</a></li>
+                            <li><a class="dropdown-item" href="#" id="optimizeQuestionnaires"><i class="fas fa-tachometer-alt me-2 text-success"></i> Optimize Questionnaires</a></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
-                <div class="row">
+                <div class="row g-4">
                     <div class="col-md-4">
-                        <div class="text-center p-3">
-                            <div class="display-6 text-primary mb-2">{{ completion_time_data.average_display }}</div>
+                        <div class="p-3 bg-light rounded-3 text-center h-100">
+                            <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle mb-3" style="width: 60px; height: 60px;">
+                                <i class="fas fa-clock text-primary fa-lg"></i>
+                            </div>
+                            <div class="display-6 text-primary mb-2">{{ completion_time_data.average_display|default:"4:32" }}</div>
                             <p class="text-muted mb-0">Average Completion Time</p>
+                            <div class="mt-2 small">
+                                <span class="trend-indicator {{ avg_time_trend|default:'down' }}">
+                                    <i class="fas fa-arrow-{{ avg_time_trend|default:'down' }} me-1"></i>{{ avg_time_change|default:"12" }}%
+                                </span>
+                                <span class="text-muted ms-1">vs last period</span>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="text-center p-3">
-                            <div class="display-6 text-success mb-2">{{ completion_time_data.min_display }}</div>
+                        <div class="p-3 bg-light rounded-3 text-center h-100">
+                            <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 rounded-circle mb-3" style="width: 60px; height: 60px;">
+                                <i class="fas fa-bolt text-success fa-lg"></i>
+                            </div>
+                            <div class="display-6 text-success mb-2">{{ completion_time_data.min_display|default:"1:15" }}</div>
                             <p class="text-muted mb-0">Minimum Completion Time</p>
+                            <div class="mt-2 small text-muted">
+                                Questionnaire: <span class="fw-medium">{{ fastest_questionnaire|default:"Depression Screening" }}</span>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="text-center p-3">
-                            <div class="display-6 text-warning mb-2">{{ completion_time_data.max_display }}</div>
+                        <div class="p-3 bg-light rounded-3 text-center h-100">
+                            <div class="d-inline-flex align-items-center justify-content-center bg-warning bg-opacity-10 rounded-circle mb-3" style="width: 60px; height: 60px;">
+                                <i class="fas fa-hourglass-half text-warning fa-lg"></i>
+                            </div>
+                            <div class="display-6 text-warning mb-2">{{ completion_time_data.max_display|default:"12:48" }}</div>
                             <p class="text-muted mb-0">Maximum Completion Time</p>
+                            <div class="mt-2 small text-muted">
+                                Questionnaire: <span class="fw-medium">{{ slowest_questionnaire|default:"Comprehensive Assessment" }}</span>
+                            </div>
                         </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Completion Time Distribution</h6>
+                        <span class="badge bg-primary">{{ total_responses|default:"0" }} Responses</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 35%;" aria-valuenow="35" aria-valuemin="0" aria-valuemax="100" data-bs-toggle="tooltip" title="< 3 minutes: 35%"></div>
+                        <div class="progress-bar bg-info" role="progressbar" style="width: 40%;" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" data-bs-toggle="tooltip" title="3-6 minutes: 40%"></div>
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: 15%;" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100" data-bs-toggle="tooltip" title="6-10 minutes: 15%"></div>
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: 10%;" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100" data-bs-toggle="tooltip" title="> 10 minutes: 10%"></div>
                     </div>
                 </div>
             </div>
@@ -561,25 +981,59 @@
 
 <!-- Activity and Insights Section -->
 <div class="row g-3 mb-4">
-    <div class="col-12">
-        <h5 class="text-dark mb-3 fw-bold">Activity & Insights</h5>
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h5 class="text-dark mb-0 fw-bold">Activity & Insights</h5>
+        <div class="btn-group btn-group-sm" role="group" aria-label="Activity View">
+            <button type="button" class="btn btn-outline-primary active" id="activityRecent">Recent</button>
+            <button type="button" class="btn btn-outline-primary" id="activityHighRisk">High Risk</button>
+            <button type="button" class="btn btn-outline-primary" id="activityFlagged">Flagged</button>
+        </div>
     </div>
 
     <!-- Recent Responses -->
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+        <div class="card dashboard-card border-0 h-100">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-primary">Recent Responses</h6>
-                <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                <div class="d-flex gap-2">
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" placeholder="Search responses..." id="responseSearch">
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Questionnaire</th>
-                                <th>Respondent</th>
-                                <th>Date</th>
+                                <th>
+                                    <div class="d-flex align-items-center">
+                                        Questionnaire
+                                        <button class="btn btn-sm btn-icon ms-1" data-bs-toggle="tooltip" title="Sort">
+                                            <i class="fas fa-sort text-muted small"></i>
+                                        </button>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="d-flex align-items-center">
+                                        Respondent
+                                        <button class="btn btn-sm btn-icon ms-1" data-bs-toggle="tooltip" title="Sort">
+                                            <i class="fas fa-sort text-muted small"></i>
+                                        </button>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="d-flex align-items-center">
+                                        Date
+                                        <button class="btn btn-sm btn-icon ms-1" data-bs-toggle="tooltip" title="Sort">
+                                            <i class="fas fa-sort-down text-primary small"></i>
+                                        </button>
+                                    </div>
+                                </th>
                                 <th>Status</th>
                                 <th>Score</th>
                                 <th>Actions</th>
@@ -588,25 +1042,65 @@
                         <tbody>
                             {% for response in recent_responses %}
                             <tr>
-                                <td class="text-nowrap">{{ response.survey.title|truncatechars:25 }}</td>
                                 <td>
-                                    {% if response.patient_name %}
-                                        {{ response.patient_name|truncatechars:20 }}
-                                    {% elif response.user %}
-                                        {{ response.user.get_full_name|default:response.user.email|truncatechars:20 }}
-                                    {% elif response.patient_email %}
-                                        {{ response.patient_email|truncatechars:20 }}
-                                    {% else %}
-                                        Anonymous
-                                    {% endif %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 me-2">
+                                            <div class="rounded-circle bg-{{ response.survey.category|default:'primary' }}-100 text-{{ response.survey.category|default:'primary' }} p-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="fas fa-clipboard-list fa-sm"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-medium">{{ response.survey.title|truncatechars:25 }}</div>
+                                            <div class="small text-muted">{{ response.survey.category|default:"General"|title }}</div>
+                                        </div>
+                                    </div>
                                 </td>
-                                <td class="text-nowrap">{{ response.completed_at|default:response.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 me-2">
+                                            <div class="rounded-circle bg-light text-secondary" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="fas fa-user fa-sm"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            {% if response.patient_name %}
+                                                <div class="fw-medium">{{ response.patient_name|truncatechars:20 }}</div>
+                                            {% elif response.user %}
+                                                <div class="fw-medium">{{ response.user.get_full_name|default:response.user.email|truncatechars:20 }}</div>
+                                            {% elif response.patient_email %}
+                                                <div class="fw-medium">{{ response.patient_email|truncatechars:20 }}</div>
+                                            {% else %}
+                                                <div class="fw-medium">Anonymous</div>
+                                            {% endif %}
+                                            <div class="small text-muted">{{ response.patient_age|default:"" }} {{ response.patient_gender|default:"" }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-medium">{{ response.completed_at|default:response.created_at|date:"M d, Y" }}</div>
+                                    <div class="small text-muted">{{ response.completed_at|default:response.created_at|time:"g:i A" }}</div>
+                                </td>
                                 <td>
                                     <span class="badge {% if response.status == 'completed' %}bg-success{% elif response.status == 'in_progress' %}bg-warning{% else %}bg-secondary{% endif %}">
                                         {{ response.get_status_display }}
                                     </span>
                                 </td>
-                                <td>{{ response.score|default:"-" }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if response.score %}
+                                            <div class="me-2">{{ response.score }}</div>
+                                            {% if response.risk_level == 'high' %}
+                                                <span class="badge bg-danger">High Risk</span>
+                                            {% elif response.risk_level == 'medium' %}
+                                                <span class="badge bg-warning">Medium Risk</span>
+                                            {% elif response.risk_level == 'low' %}
+                                                <span class="badge bg-success">Low Risk</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
                                         <a href="#" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="View">
@@ -615,6 +1109,15 @@
                                         <a href="#" class="btn btn-outline-info" data-bs-toggle="tooltip" title="Analyze">
                                             <i class="fas fa-chart-bar"></i>
                                         </a>
+                                        <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <span class="visually-hidden">More</span>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item" href="#"><i class="fas fa-file-pdf me-2 text-danger"></i> Export PDF</a></li>
+                                            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope me-2 text-primary"></i> Send Report</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item" href="#"><i class="fas fa-flag me-2 text-warning"></i> Flag Response</a></li>
+                                        </ul>
                                     </div>
                                 </td>
                             </tr>
@@ -624,6 +1127,7 @@
                                     <div class="text-muted">
                                         <i class="fas fa-inbox fa-2x mb-3"></i>
                                         <p>No responses found</p>
+                                        <button class="btn btn-sm btn-outline-primary">Generate Test Data</button>
                                     </div>
                                 </td>
                             </tr>
@@ -631,38 +1135,89 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="d-flex justify-content-between align-items-center p-3 border-top">
+                    <div class="small text-muted">
+                        Showing <span class="fw-medium">1-5</span> of <span class="fw-medium">{{ total_responses|default:"0" }}</span> responses
+                    </div>
+                    <nav aria-label="Response pagination">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="#" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- AI Insights -->
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+        <div class="card dashboard-card border-0 h-100">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-primary">AI Insights</h6>
-                <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary" id="generateInsights">
+                        <i class="fas fa-robot me-1"></i> Generate
+                    </button>
+                    <a href="#" class="btn btn-sm btn-outline-secondary">View All</a>
+                </div>
             </div>
             <div class="card-body p-0">
                 <div class="list-group list-group-flush">
                     {% for insight in recent_insights %}
-                    <div class="list-group-item border-0 py-3">
+                    <div class="list-group-item border-0 py-3 ai-insight-card {{ insight.priority|default:'medium' }}">
                         <div class="d-flex w-100 justify-content-between mb-1">
-                            <h6 class="mb-1 text-primary">{{ insight.title|truncatechars:40 }}</h6>
+                            <h6 class="mb-1 fw-bold">{{ insight.title|truncatechars:40 }}</h6>
                             <small class="text-muted">{{ insight.created_at|timesince }} ago</small>
                         </div>
                         <p class="mb-1 small text-muted">{{ insight.content|truncatechars:100 }}</p>
-                        <div class="d-flex align-items-center mt-2">
-                            <span class="badge bg-{{ insight.insight_type|yesno:'success,warning,info,primary,secondary' }} me-2">{{ insight.insight_type|title }}</span>
-                            <div class="small text-muted">Confidence: {{ insight.confidence|floatformat:0 }}%</div>
+                        <div class="d-flex align-items-center justify-content-between mt-2">
+                            <div>
+                                <span class="badge bg-{{ insight.insight_type|yesno:'success,warning,info,primary,secondary' }} me-2">{{ insight.insight_type|title }}</span>
+                                <span class="small text-muted">Confidence: {{ insight.confidence|floatformat:0 }}%</span>
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" title="Apply Suggestion">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     {% empty %}
                     <div class="text-center py-5">
-                        <i class="fas fa-robot fa-2x text-muted mb-3"></i>
-                        <p class="text-muted">No AI insights available</p>
+                        <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="fas fa-robot fa-2x text-primary"></i>
+                        </div>
+                        <p class="text-muted mb-3">No AI insights available yet</p>
+                        <button class="btn btn-primary" id="generateFirstInsight">
+                            <i class="fas fa-magic me-2"></i> Generate First Insight
+                        </button>
                     </div>
                     {% endfor %}
                 </div>
+
+                {% if recent_insights %}
+                <div class="p-3 border-top">
+                    <button class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-brain me-1"></i> View All AI Insights
+                    </button>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -670,54 +1225,126 @@
 
 <!-- Quick Actions Section -->
 <div class="row g-3 mb-4">
-    <div class="col-12">
-        <h5 class="text-dark mb-3 fw-bold">Quick Actions</h5>
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h5 class="text-dark mb-0 fw-bold">Quick Actions</h5>
+        <button class="btn btn-sm btn-outline-primary" id="customizeActions">
+            <i class="fas fa-sliders-h me-1"></i> Customize
+        </button>
     </div>
     <div class="col-12">
-        <div class="card border-0 shadow-sm transition-all hover:shadow stagger-item">
+        <div class="card dashboard-card border-0">
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-3 col-sm-6">
-                        <a href="#" class="d-flex align-items-center p-3 rounded bg-light text-decoration-none transition-all hover:bg-primary hover:text-white">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-clipboard-list fa-lg"></i>
+                        <a href="#" class="quick-action d-flex align-items-center p-3 rounded bg-primary bg-opacity-10 text-decoration-none">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </div>
                             </div>
-                            <div class="flex-grow-1 ms-3">
-                                <h6 class="mb-0">New Questionnaire</h6>
-                                <small>Create a new assessment</small>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-sm-6">
-                        <a href="#" class="d-flex align-items-center p-3 rounded bg-light text-decoration-none transition-all hover:bg-success hover:text-white">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-qrcode fa-lg"></i>
-                            </div>
-                            <div class="flex-grow-1 ms-3">
-                                <h6 class="mb-0">Generate QR Code</h6>
-                                <small>Create access codes</small>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold text-primary">New Questionnaire</h6>
+                                <p class="mb-0 small text-muted">Create a new assessment</p>
                             </div>
                         </a>
                     </div>
                     <div class="col-md-3 col-sm-6">
-                        <a href="#" class="d-flex align-items-center p-3 rounded bg-light text-decoration-none transition-all hover:bg-info hover:text-white">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-chart-bar fa-lg"></i>
+                        <a href="#" class="quick-action d-flex align-items-center p-3 rounded bg-success bg-opacity-10 text-decoration-none">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                    <i class="fas fa-qrcode"></i>
+                                </div>
                             </div>
-                            <div class="flex-grow-1 ms-3">
-                                <h6 class="mb-0">Generate Report</h6>
-                                <small>Create custom reports</small>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold text-success">Generate QR Code</h6>
+                                <p class="mb-0 small text-muted">Create access codes</p>
                             </div>
                         </a>
                     </div>
                     <div class="col-md-3 col-sm-6">
-                        <a href="#" class="d-flex align-items-center p-3 rounded bg-light text-decoration-none transition-all hover:bg-warning hover:text-white">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-cog fa-lg"></i>
+                        <a href="#" class="quick-action d-flex align-items-center p-3 rounded bg-info bg-opacity-10 text-decoration-none">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                    <i class="fas fa-chart-bar"></i>
+                                </div>
                             </div>
-                            <div class="flex-grow-1 ms-3">
-                                <h6 class="mb-0">System Settings</h6>
-                                <small>Configure application</small>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold text-info">Generate Report</h6>
+                                <p class="mb-0 small text-muted">Create custom reports</p>
+                            </div>
+                            <div class="position-absolute top-0 end-0 mt-2 me-2">
+                                <span class="notification-badge">3</span>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="#" class="quick-action d-flex align-items-center p-3 rounded bg-warning bg-opacity-10 text-decoration-none">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold text-warning">Send Notifications</h6>
+                                <p class="mb-0 small text-muted">Email reports to users</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                    <div class="col-md-3 col-sm-6">
+                        <a href="#" class="quick-action d-flex align-items-center p-3 rounded bg-danger bg-opacity-10 text-decoration-none">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold text-danger">High Risk Cases</h6>
+                                <p class="mb-0 small text-muted">View flagged responses</p>
+                            </div>
+                            <div class="position-absolute top-0 end-0 mt-2 me-2">
+                                <span class="notification-badge">{{ high_risk_count|default:"5" }}</span>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="#" class="quick-action d-flex align-items-center p-3 rounded bg-secondary bg-opacity-10 text-decoration-none">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold text-secondary">Manage Users</h6>
+                                <p class="mb-0 small text-muted">Add or edit users</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="#" class="quick-action d-flex align-items-center p-3 rounded bg-purple bg-opacity-10 text-decoration-none">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="rounded-circle bg-purple text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background-color: #6f42c1;">
+                                    <i class="fas fa-brain"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold" style="color: #6f42c1;">AI Analysis</h6>
+                                <p class="mb-0 small text-muted">Generate insights</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="#" class="quick-action d-flex align-items-center p-3 rounded bg-dark bg-opacity-10 text-decoration-none">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                    <i class="fas fa-cog"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold text-dark">System Settings</h6>
+                                <p class="mb-0 small text-muted">Configure application</p>
                             </div>
                         </a>
                     </div>
@@ -730,15 +1357,28 @@
 <!-- Admin Information Row -->
 <div class="row g-3 mb-4">
     <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+        <div class="card dashboard-card border-0 h-100">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-primary">Recent Login Activity</h6>
-                <span class="badge bg-primary rounded-pill">{{ login_history|length }}</span>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-primary rounded-pill">{{ login_history|length }}</span>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-icon" type="button" id="loginHistoryDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-h text-muted"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="loginHistoryDropdown">
+                            <li><a class="dropdown-item" href="#" id="viewAllLogins"><i class="fas fa-list me-2 text-primary"></i> View All Logins</a></li>
+                            <li><a class="dropdown-item" href="#" id="exportLoginHistory"><i class="fas fa-download me-2 text-success"></i> Export History</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="securitySettings"><i class="fas fa-shield-alt me-2 text-warning"></i> Security Settings</a></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
             <div class="card-body p-0">
                 {% if login_history %}
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
                                 <th>Date/Time</th>
@@ -750,10 +1390,18 @@
                         <tbody>
                             {% for login in login_history %}
                             <tr>
-                                <td>{{ login.login_time|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    <div class="fw-medium">{{ login.login_time|date:"M d, Y" }}</div>
+                                    <div class="small text-muted">{{ login.login_time|time:"H:i" }}</div>
+                                </td>
                                 <td>
                                     <span class="d-inline-block" data-bs-toggle="tooltip" title="User Agent: {{ login.user_agent|truncatechars:50 }}">
-                                        {{ login.ip_address|default:"Unknown" }}
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0 me-2">
+                                                <i class="fas fa-globe text-secondary"></i>
+                                            </div>
+                                            <div>{{ login.ip_address|default:"Unknown" }}</div>
+                                        </div>
                                     </span>
                                 </td>
                                 <td>
@@ -764,22 +1412,35 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-secondary"
-                                            data-bs-toggle="tooltip"
-                                            data-bs-placement="top"
-                                            title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" data-bs-toggle="tooltip" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" data-bs-toggle="tooltip" title="Flag as Suspicious">
+                                            <i class="fas fa-flag"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+
+                <div class="d-flex justify-content-center p-3 border-top">
+                    <button class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-shield-alt me-1"></i> View Security Report
+                    </button>
+                </div>
                 {% else %}
                 <div class="text-center py-5">
-                    <i class="fas fa-history fa-2x text-muted mb-3"></i>
-                    <p class="text-muted">No login history available.</p>
+                    <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                        <i class="fas fa-history fa-2x text-primary"></i>
+                    </div>
+                    <p class="text-muted mb-3">No login history available.</p>
+                    <button class="btn btn-outline-primary">
+                        <i class="fas fa-shield-alt me-2"></i> Run Security Scan
+                    </button>
                 </div>
                 {% endif %}
             </div>
@@ -787,90 +1448,117 @@
     </div>
 
     <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100 transition-all hover:shadow stagger-item">
+        <div class="card dashboard-card border-0 h-100">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-primary">Admin Profile</h6>
-                <span class="badge bg-success rounded-pill">Active</span>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-success rounded-pill">Active</span>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-icon" type="button" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-h text-muted"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="profileDropdown">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user-edit me-2 text-primary"></i> Edit Profile</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-key me-2 text-warning"></i> Change Password</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2 text-danger"></i> Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 {% if admin_profile %}
                 <div class="d-flex align-items-center mb-4">
                     <div class="flex-shrink-0">
                         {% if user.profile_image %}
-                        <img src="{{ user.profile_image.url }}" alt="{{ user.get_full_name }}" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
+                        <img src="{{ user.profile_image.url }}" alt="{{ user.get_full_name }}" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover; border: 3px solid #3b82f6;">
                         {% else %}
-                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; border: 3px solid #e5e7eb;">
                             <span class="text-white h3 mb-0">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
                         </div>
                         {% endif %}
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <h5 class="mb-1">{{ user.get_full_name }}</h5>
+                        <h5 class="mb-1 fw-bold">{{ user.get_full_name }}</h5>
                         <p class="text-muted mb-0">{{ user.email }}</p>
                         <div class="mt-2">
                             <span class="badge {% if admin_profile.access_level == 'full' %}bg-success{% elif admin_profile.access_level == 'limited' %}bg-warning{% else %}bg-info{% endif %}">
                                 {{ admin_profile.get_access_level_display }}
                             </span>
+                            <span class="badge bg-secondary ms-1">{{ admin_profile.role|default:"Administrator" }}</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-shrink-0 text-primary">
-                                <i class="fas fa-building"></i>
-                            </div>
-                            <div class="flex-grow-1 ms-2">
-                                <div class="small text-muted">Department</div>
-                                <div>{{ admin_profile.department|default:"Not specified" }}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-shrink-0 text-primary">
-                                <i class="fas fa-id-badge"></i>
-                            </div>
-                            <div class="flex-grow-1 ms-2">
-                                <div class="small text-muted">Position</div>
-                                <div>{{ admin_profile.position|default:"Not specified" }}</div>
+                        <div class="p-3 rounded-3 bg-light">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0 text-primary">
+                                    <i class="fas fa-building"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-2">
+                                    <div class="small text-muted">Department</div>
+                                    <div class="fw-medium">{{ admin_profile.department|default:"Not specified" }}</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-shrink-0 text-primary">
-                                <i class="fas fa-id-card"></i>
-                            </div>
-                            <div class="flex-grow-1 ms-2">
-                                <div class="small text-muted">Employee ID</div>
-                                <div>{{ admin_profile.employee_id|default:"Not specified" }}</div>
+                        <div class="p-3 rounded-3 bg-light">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0 text-primary">
+                                    <i class="fas fa-id-badge"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-2">
+                                    <div class="small text-muted">Position</div>
+                                    <div class="fw-medium">{{ admin_profile.position|default:"Not specified" }}</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-shrink-0 text-primary">
-                                <i class="fas fa-network-wired"></i>
+                        <div class="p-3 rounded-3 bg-light">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0 text-primary">
+                                    <i class="fas fa-id-card"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-2">
+                                    <div class="small text-muted">Employee ID</div>
+                                    <div class="fw-medium">{{ admin_profile.employee_id|default:"Not specified" }}</div>
+                                </div>
                             </div>
-                            <div class="flex-grow-1 ms-2">
-                                <div class="small text-muted">Last Login IP</div>
-                                <div>{{ admin_profile.last_login_ip|default:"Not available" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 bg-light">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0 text-primary">
+                                    <i class="fas fa-network-wired"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-2">
+                                    <div class="small text-muted">Last Login IP</div>
+                                    <div class="fw-medium">{{ admin_profile.last_login_ip|default:"Not available" }}</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-4">
-                    <a href="{% url 'admin_profile' %}" class="btn btn-sm btn-primary">
+                <div class="d-flex gap-2 mt-4">
+                    <a href="{% url 'admin_profile' %}" class="btn btn-primary">
                         <i class="fas fa-user-edit me-2"></i> Edit Profile
                     </a>
+                    <button class="btn btn-outline-secondary">
+                        <i class="fas fa-cog me-2"></i> Account Settings
+                    </button>
                 </div>
                 {% else %}
                 <div class="text-center py-5">
-                    <i class="fas fa-user-circle fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">Admin profile not available.</p>
+                    <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                        <i class="fas fa-user-circle fa-2x text-primary"></i>
+                    </div>
+                    <p class="text-muted mb-3">Admin profile not available.</p>
                     <div class="mt-3">
                         <a href="{% url 'admin_profile' %}" class="btn btn-primary">
                             <i class="fas fa-plus-circle me-2"></i> Create Profile
@@ -884,26 +1572,34 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block extra\_js %}
 {{ block.super }}
+
 <!-- Chart.js -->
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- Moment.js and DateRangePicker (for date filtering) -->
+
 <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.min.js"></script>
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.css">
 
 <!-- Dashboard Scripts -->
+
 <script src="{% static 'js/dashboard-charts.js' %}"></script>
+
 <script src="{% static 'js/dashboard-filters.js' %}"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Overview Response Trend Chart
         const responseOverviewChart = document.getElementById('responseOverviewChart');
         if (responseOverviewChart) {
             const overviewCtx = responseOverviewChart.getContext('2d');
-            const trendData = {{ trend_data|safe }};
+            const trendData = JSON.parse('{{ trend_data|escapejs }}');
             const responseLabels = trendData.labels;
             const responseData = trendData.data;
 
@@ -1042,7 +1738,7 @@
         const riskDistributionChart = document.getElementById('riskDistributionChart');
         if (riskDistributionChart) {
             const riskCtx = riskDistributionChart.getContext('2d');
-            const riskData = {{ risk_data|safe }};
+            const riskData = JSON.parse('{{ risk_data|escapejs }}');
 
             new Chart(riskCtx, {
             type: 'doughnut',
@@ -1093,7 +1789,7 @@
         const categoriesChart = document.getElementById('categoriesChart');
         if (categoriesChart) {
             const categoriesCtx = categoriesChart.getContext('2d');
-            const categoriesData = {{ top_questionnaires_data|safe }};
+            const categoriesData = JSON.parse('{{ top_questionnaires_data|escapejs }}');
 
             new Chart(categoriesCtx, {
             type: 'pie',
@@ -1133,7 +1829,7 @@
         const deviceDistributionChart = document.getElementById('deviceDistributionChart');
         if (deviceDistributionChart) {
             const deviceCtx = deviceDistributionChart.getContext('2d');
-            const deviceData = {{ device_data|safe }};
+            const deviceData = JSON.parse('{{ device_data|escapejs }}');
 
             new Chart(deviceCtx, {
             type: 'bar',
@@ -1188,7 +1884,7 @@
         const genderChart = document.getElementById('genderChart');
         if (genderChart) {
             const genderCtx = genderChart.getContext('2d');
-            const genderData = {{ gender_distribution|safe }};
+            const genderData = JSON.parse('{{ gender_distribution|escapejs }}');
 
             new Chart(genderCtx, {
             type: 'pie',
@@ -1227,7 +1923,7 @@
         const ageChart = document.getElementById('ageChart');
         if (ageChart) {
             const ageCtx = ageChart.getContext('2d');
-            const ageData = {{ age_distribution|safe }};
+            const ageData = JSON.parse('{{ age_distribution|escapejs }}');
 
             new Chart(ageCtx, {
             type: 'bar',
@@ -1309,4 +2005,6 @@
         }
     });
 </script>
+
 {% endblock %}
+

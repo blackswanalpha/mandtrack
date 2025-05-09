@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.utils import timezone
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 import csv
 import json
@@ -366,8 +366,23 @@ def respond_to_questionnaire(request, questionnaire_pk):
     # Check if this is a direct access from QR code or URL
     is_direct_access = request.GET.get('direct') == 'true' or 'direct' in request.session
 
-    # If this is not direct access, apply normal authentication rules
-    if not is_direct_access:
+    # Log the direct access status for debugging
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Respond to questionnaire: direct={is_direct_access}, session_direct={'direct' in request.session}, GET_direct={request.GET.get('direct')}")
+    logger.info(f"Session keys: {list(request.session.keys())}")
+    logger.info(f"GET params: {dict(request.GET.items())}")
+
+    # If this is direct access or we have the bypass flag, skip all authentication checks
+    if is_direct_access or request.session.get('bypass_auth_redirect', False):
+        # This is a direct access, so we allow anonymous access
+        # Make sure the session flags are set (in case direct=true was passed in URL but not via session)
+        request.session['direct'] = True
+        request.session['bypass_auth_redirect'] = True
+        request.session['is_patient_questionnaire'] = True
+        logger.info("Set session flags for direct access in respond_to_questionnaire view")
+    else:
+        # Apply normal authentication rules for non-direct access
         # Check if authentication is required (skip for preview mode or if user is creator/admin)
         if questionnaire.requires_auth and not request.user.is_authenticated and not (is_preview or is_creator or is_admin):
             messages.error(request, "You need to be logged in to respond to this questionnaire.")
@@ -378,20 +393,24 @@ def respond_to_questionnaire(request, questionnaire_pk):
             messages.error(request, "Anonymous responses are not allowed for this questionnaire.")
             return redirect('account_login')
 
-    # Check if this is an organization-specific questionnaire
-    if questionnaire.organization and not (is_preview or is_creator or is_admin):
-        # If user is authenticated, check if they are a member of the organization
-        if request.user.is_authenticated:
-            user_is_member = questionnaire.organization.members.filter(user=request.user, is_active=True).exists()
-            if not user_is_member:
-                messages.error(request, "You don't have permission to access this questionnaire.")
-                return render(request, 'errors/organization_access_denied.html')
+        # Check if this is an organization-specific questionnaire
+        if questionnaire.organization and not (is_preview or is_creator or is_admin):
+            # If user is authenticated, check if they are a member of the organization
+            if request.user.is_authenticated:
+                user_is_member = questionnaire.organization.members.filter(user=request.user, is_active=True).exists()
+                if not user_is_member:
+                    messages.error(request, "You don't have permission to access this questionnaire.")
+                    return render(request, 'errors/organization_access_denied.html')
 
     # Get all questions for this questionnaire
     questions = Question.objects.filter(survey=questionnaire).order_by('order').prefetch_related('choices')
 
     # Check if bio data has been collected from the QR code flow
     bio_data_collected = request.session.get('bio_data_collected', False)
+
+    # For direct access, we might want to simplify the bio data collection
+    # or skip it entirely for a more streamlined patient experience
+    is_simplified_flow = is_direct_access or request.session.get('bypass_auth_redirect', False)
 
     # Create a new response if this is a GET request
     if request.method == 'GET':
@@ -410,6 +429,11 @@ def respond_to_questionnaire(request, questionnaire_pk):
             response.patient_age = request.session.get('patient_age')
             response.patient_gender = request.session.get('patient_gender', '')
 
+        # For direct access, we might pre-set some values to simplify the flow
+        if is_simplified_flow and not bio_data_collected:
+            # Set a flag to indicate we're using simplified bio data collection
+            request.session['simplified_bio_data'] = True
+
         response.save()
 
         # Store the response ID in the session
@@ -426,7 +450,8 @@ def respond_to_questionnaire(request, questionnaire_pk):
             'questions': questions,
             'response': response,
             'is_patient_questionnaire': is_patient_questionnaire,
-            'bio_data_collected': bio_data_collected
+            'bio_data_collected': bio_data_collected,
+            'is_simplified_flow': is_simplified_flow
         })
 
     # Process the form submission if this is a POST request
@@ -476,7 +501,8 @@ def respond_to_questionnaire(request, questionnaire_pk):
                     'is_patient_questionnaire': is_patient_questionnaire,
                     'bio_data_collected': False,
                     'bio_data_error': True,
-                    'bio_data_values': bio_data_values
+                    'bio_data_values': bio_data_values,
+                    'is_simplified_flow': is_simplified_flow
                 })
 
             # Update bio data
@@ -494,7 +520,8 @@ def respond_to_questionnaire(request, questionnaire_pk):
                         'is_patient_questionnaire': is_patient_questionnaire,
                         'bio_data_collected': False,
                         'bio_data_error': True,
-                        'bio_data_values': bio_data_values
+                        'bio_data_values': bio_data_values,
+                        'is_simplified_flow': is_simplified_flow
                     })
             except ValueError:
                 messages.error(request, "Age must be a valid number.")
@@ -505,7 +532,8 @@ def respond_to_questionnaire(request, questionnaire_pk):
                     'is_patient_questionnaire': is_patient_questionnaire,
                     'bio_data_collected': False,
                     'bio_data_error': True,
-                    'bio_data_values': bio_data_values
+                    'bio_data_values': bio_data_values,
+                    'is_simplified_flow': is_simplified_flow
                 })
 
             response.patient_gender = patient_gender
@@ -828,18 +856,65 @@ def direct_questionnaire_access(request, pk=None, slug=None):
     Can be accessed by UUID or slug
     For patient flow, we bypass all authentication checks
     """
-    # Get the questionnaire by UUID or slug
-    if pk:
-        questionnaire = get_object_or_404(Questionnaire, pk=pk)
-    elif slug:
-        questionnaire = get_object_or_404(Questionnaire, slug=slug)
-    else:
-        messages.error(request, "Invalid questionnaire link.")
-        return redirect('core:home')
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Direct questionnaire access requested with pk={pk}, slug={slug}")
 
-    # For patient flow, we only check if the questionnaire is active
-    # We bypass all other authentication checks
+    # Get the questionnaire by UUID or slug
+    questionnaire = None
+
+    if pk:
+        # First try: exact match by primary key
+        try:
+            questionnaire = Questionnaire.objects.get(pk=pk)
+            logger.info(f"Found questionnaire by exact ID match: {questionnaire.id}")
+        except Questionnaire.DoesNotExist:
+            logger.info(f"No questionnaire found with exact ID: {pk}")
+
+            # Second try: partial match by ID containing the UUID
+            try:
+                questionnaires = Questionnaire.objects.filter(id__icontains=pk)
+                if questionnaires.exists():
+                    questionnaire = questionnaires.first()
+                    logger.info(f"Found questionnaire by partial ID match: {questionnaire.id}")
+                else:
+                    logger.warning(f"No questionnaire found with ID containing: {pk}")
+            except Exception as e:
+                logger.error(f"Error finding questionnaire by partial ID: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error finding questionnaire by ID: {str(e)}")
+
+    # If we still don't have a questionnaire and a slug was provided, try that
+    if not questionnaire and slug:
+        try:
+            questionnaire = Questionnaire.objects.get(slug=slug)
+            logger.info(f"Found questionnaire by slug: {questionnaire.slug}")
+        except Questionnaire.DoesNotExist:
+            logger.warning(f"No questionnaire found with slug: {slug}")
+        except Exception as e:
+            logger.error(f"Error finding questionnaire by slug: {str(e)}")
+
+    # If we still don't have a questionnaire, show a custom error page
+    if not questionnaire:
+        logger.warning(f"No questionnaire found for ID: {pk}")
+
+        try:
+            # Get a few active questionnaires to show as alternatives
+            active_questionnaires = Questionnaire.objects.filter(status='active').order_by('-created_at')[:5]
+
+            # Render the custom error page
+            return render(request, 'errors/questionnaire_not_found.html', {
+                'uuid': pk,
+                'active_questionnaires': active_questionnaires
+            })
+        except Exception as e:
+            logger.error(f"Error rendering questionnaire not found page: {str(e)}")
+            messages.error(request, "The requested questionnaire could not be found.")
+            return redirect('core:home')
+
+    # Check if the questionnaire is active
     if questionnaire.status != 'active':
+        logger.warning(f"Questionnaire {questionnaire.id} is not active (status: {questionnaire.status})")
         messages.error(request, "This questionnaire is not currently active.")
         return redirect('core:home')
 
@@ -849,16 +924,165 @@ def direct_questionnaire_access(request, pk=None, slug=None):
         try:
             qr_code = questionnaire.qr_codes.get(pk=qr_code_id, is_active=True)
             qr_code.increment_access_count()
-        except:
-            # If QR code doesn't exist or isn't active, just continue
-            pass
+            logger.info(f"Tracked QR code access: {qr_code_id}")
+        except Exception as e:
+            logger.warning(f"Failed to track QR code access: {str(e)}")
 
-    # Set direct access flag in session
+    # Set session flags for direct access
     request.session['direct'] = True
+    request.session['bypass_auth_redirect'] = True
+    request.session['is_patient_questionnaire'] = True
+    logger.info("Set session flags for direct access")
 
-    # Redirect to the questionnaire response page with direct flag
-    # Use the full URL pattern to avoid namespace issues
-    return redirect(f'/responses/questionnaire/{questionnaire.pk}/respond/')
+    # Construct the redirect URL - try multiple approaches for robustness
+    try:
+        # First try: Use Django's reverse URL resolution
+        from django.urls import reverse
+        redirect_url = reverse('feedback:respond_to_questionnaire', kwargs={'questionnaire_pk': questionnaire.pk})
+        logger.info(f"Using reverse URL: {redirect_url}")
+    except Exception as e:
+        logger.warning(f"Reverse URL resolution failed: {str(e)}")
+
+        # Second try: Construct URL manually with direct flag
+        redirect_url = f'/responses/questionnaire/{questionnaire.pk}/respond/?direct=true'
+        logger.info(f"Using manual URL: {redirect_url}")
+
+    # Add direct flag to URL if not already present
+    if 'direct=true' not in redirect_url:
+        redirect_url = f"{redirect_url}{'&' if '?' in redirect_url else '?'}direct=true"
+
+    logger.info(f"Redirecting to: {redirect_url}")
+    return redirect(redirect_url)
+
+def debug_questionnaire(request, pk=None):
+    """
+    Debug view to help diagnose questionnaire access issues
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Debug questionnaire access requested with pk={pk}")
+
+    data = {
+        'request_info': {
+            'uuid_provided': pk,
+            'method': request.method,
+            'path': request.path,
+            'GET_params': dict(request.GET.items()),
+            'session_keys': list(request.session.keys()),
+        },
+        'system_info': {
+            'django_version': __import__('django').get_version(),
+            'python_version': __import__('sys').version,
+        }
+    }
+
+    # Try exact match by primary key
+    try:
+        questionnaire = Questionnaire.objects.get(pk=pk)
+        data['exact_match'] = {
+            'success': True,
+            'questionnaire': {
+                'id': str(questionnaire.id),
+                'title': questionnaire.title,
+                'status': questionnaire.status,
+                'created_at': str(questionnaire.created_at) if hasattr(questionnaire, 'created_at') else None,
+                'organization': str(questionnaire.organization.name) if questionnaire.organization else None,
+                'is_active': questionnaire.is_active if hasattr(questionnaire, 'is_active') else None,
+                'question_count': questionnaire.questions.count(),
+                'response_count': getattr(questionnaire, 'response_count', 'N/A'),
+            }
+        }
+
+        # Get URL for this questionnaire
+        try:
+            from django.urls import reverse
+            data['exact_match']['questionnaire']['respond_url'] = reverse(
+                'feedback:respond_to_questionnaire',
+                kwargs={'questionnaire_pk': questionnaire.pk}
+            )
+        except Exception as e:
+            data['exact_match']['questionnaire']['respond_url_error'] = str(e)
+
+        # Add direct URL
+        data['exact_match']['questionnaire']['direct_url'] = f"/q/{questionnaire.pk}/"
+
+    except Questionnaire.DoesNotExist:
+        data['exact_match'] = {
+            'success': False,
+            'message': 'No questionnaire found with exact ID match'
+        }
+    except Exception as e:
+        data['exact_match'] = {
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }
+
+    # Try partial match
+    try:
+        questionnaires = Questionnaire.objects.filter(id__icontains=pk)
+        if questionnaires.exists():
+            data['partial_matches'] = {
+                'success': True,
+                'count': questionnaires.count(),
+                'questionnaires': []
+            }
+
+            for q in questionnaires:
+                data['partial_matches']['questionnaires'].append({
+                    'id': str(q.id),
+                    'title': q.title,
+                    'status': q.status,
+                    'direct_url': f"/q/{q.pk}/",
+                })
+        else:
+            data['partial_matches'] = {
+                'success': False,
+                'message': 'No questionnaires found with partial ID match'
+            }
+    except Exception as e:
+        data['partial_matches'] = {
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }
+
+    # Get all active questionnaires
+    try:
+        active_questionnaires = Questionnaire.objects.filter(status='active').order_by('-created_at')[:5]
+        data['active_questionnaires'] = {
+            'success': True,
+            'count': active_questionnaires.count(),
+            'questionnaires': []
+        }
+
+        for q in active_questionnaires:
+            data['active_questionnaires']['questionnaires'].append({
+                'id': str(q.id),
+                'title': q.title,
+                'direct_url': f"/q/{q.pk}/",
+            })
+    except Exception as e:
+        data['active_questionnaires'] = {
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }
+
+    # Get URL patterns
+    try:
+        from django.urls import get_resolver
+        resolver = get_resolver()
+        patterns = []
+
+        for pattern_list in resolver.url_patterns:
+            if hasattr(pattern_list, 'url_patterns'):
+                for pattern in pattern_list.url_patterns:
+                    if 'questionnaire' in str(pattern) or 'survey' in str(pattern):
+                        patterns.append(str(pattern.pattern))
+
+        data['url_patterns'] = patterns
+    except Exception as e:
+        data['url_patterns_error'] = str(e)
+
+    return JsonResponse(data)
 
 @login_required
 def update_notes(request, pk):

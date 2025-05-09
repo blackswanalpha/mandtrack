@@ -84,7 +84,15 @@
                     </div>
 
                     <!-- Bio Data Submit Button -->
-                    <div class="mt-6 flex justify-end">
+                    <div class="mt-6 flex justify-between">
+                        {% if request.session.simplified_bio_data or request.session.bypass_auth_redirect %}
+                        <button type="button" id="skip-bio-data"
+                                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300">
+                            Skip for now
+                        </button>
+                        {% else %}
+                        <div></div>
+                        {% endif %}
                         <button type="submit" name="submit_bio_data" value="1"
                                 class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300 transform hover:scale-105">
                             <i class="fas fa-arrow-right mr-2"></i> Continue to Assessment
@@ -331,6 +339,27 @@
 
         // Check if this is a patient questionnaire
         const isPatientQuestionnaire = {% if is_patient_questionnaire %}true{% else %}false{% endif %};
+
+        // Handle skip bio data button if it exists
+        const skipBioDataButton = document.getElementById('skip-bio-data');
+        if (skipBioDataButton) {
+            skipBioDataButton.addEventListener('click', function() {
+                // Hide bio data section
+                const bioDataSection = document.getElementById('bio-data-section');
+                if (bioDataSection) {
+                    bioDataSection.style.display = 'none';
+                }
+
+                // Show questions section
+                const questionsSection = document.getElementById('questions-section');
+                if (questionsSection) {
+                    questionsSection.classList.remove('hidden');
+                }
+
+                // Update progress bar
+                updateProgressBar();
+            });
+        }
 
         console.log(`Found ${totalQuestions} questions`);
 

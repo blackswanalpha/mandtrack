@@ -34,8 +34,9 @@ import threading
 import socket
 import json
 import traceback
+import schedule
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Configure logging
 def setup_logging(log_level, log_file=None):
@@ -957,6 +958,238 @@ def update_admin_txt():
         logger.error(f"Failed to update admin.txt file: {e}")
         return False
 
+class CronJobScheduler(threading.Thread):
+    """
+    Cron job scheduler for running scheduled tasks.
+    This class runs as a daemon thread and executes scheduled tasks at specified intervals.
+    """
+
+    def __init__(self, settings_module):
+        super().__init__(daemon=True)
+        self.settings_module = settings_module
+        self.running = False
+        self.jobs = []
+        self.env = os.environ.copy()
+        self.env['DJANGO_SETTINGS_MODULE'] = settings_module
+
+    def run(self):
+        """Run the scheduler."""
+        self.running = True
+        logger.info("Starting cron job scheduler...")
+
+        # Schedule jobs
+        self._schedule_jobs()
+
+        # Run the scheduler
+        while self.running:
+            schedule.run_pending()
+            time.sleep(1)
+
+    def _schedule_jobs(self):
+        """Schedule all cron jobs."""
+        # Process scheduled emails every 15 minutes
+        self._add_job(
+            schedule.every(15).minutes.do(self._run_management_command, 'process_scheduled_emails'),
+            "Process scheduled emails (every 15 minutes)"
+        )
+
+        # Send scheduled reports daily at 1 AM
+        self._add_job(
+            schedule.every().day.at("01:00").do(self._run_management_command, 'send_scheduled_reports'),
+            "Send scheduled reports (daily at 1 AM)"
+        )
+
+        # Database backup daily at 2 AM
+        self._add_job(
+            schedule.every().day.at("02:00").do(self._run_management_command, 'dbbackup'),
+            "Database backup (daily at 2 AM)"
+        )
+
+        # Clean up old files weekly on Sunday at 3 AM
+        self._add_job(
+            schedule.every().sunday.at("03:00").do(self._run_management_command, 'cleanup_old_files'),
+            "Clean up old files (weekly on Sunday at 3 AM)"
+        )
+
+        # Collect static files daily at 4 AM
+        self._add_job(
+            schedule.every().day.at("04:00").do(self._run_management_command, 'collectstatic', '--noinput'),
+            "Collect static files (daily at 4 AM)"
+        )
+
+        # Build Tailwind CSS daily at 4:15 AM
+        self._add_job(
+            schedule.every().day.at("04:15").do(self._build_tailwind_css),
+            "Build Tailwind CSS (daily at 4:15 AM)"
+        )
+
+        # Log scheduled jobs
+        logger.info(f"Scheduled {len(self.jobs)} cron jobs")
+        for job_name in self.jobs:
+            logger.info(f"  - {job_name}")
+
+    def _add_job(self, job, job_name):
+        """Add a job to the scheduler with logging."""
+        self.jobs.append(job_name)
+        return job
+
+    def _run_management_command(self, command, *args):
+        """Run a Django management command."""
+        try:
+            cmd = [sys.executable, 'manage.py', command]
+            cmd.extend(args)
+
+            logger.info(f"Running scheduled command: {' '.join(cmd)}")
+
+            result = subprocess.run(
+                cmd,
+                env=self.env,
+                check=True,
+                capture_output=True,
+                text=True
+            )
+
+            logger.info(f"Scheduled command '{command}' completed successfully")
+            logger.debug(result.stdout)
+            return True
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Scheduled command '{command}' failed: {e}")
+            logger.error(f"Command stdout: {e.stdout}")
+            logger.error(f"Command stderr: {e.stderr}")
+            return False
+        except Exception as e:
+            logger.error(f"Error running scheduled command '{command}': {e}")
+            logger.error(traceback.format_exc())
+            return False
+
+    def _build_tailwind_css(self):
+        """Build Tailwind CSS."""
+        try:
+            logger.info("Building Tailwind CSS...")
+
+            # Check if npm is installed
+            try:
+                npm_version = subprocess.run(
+                    ['npm', '--version'],
+                    check=True,
+                    capture_output=True,
+                    text=True
+                )
+                logger.info(f"npm version: {npm_version.stdout.strip()}")
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                logger.warning("npm not found. Skipping Tailwind CSS build.")
+                return False
+
+            # Run npm build command
+            result = subprocess.run(
+                ['npm', 'run', 'build'],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+
+            logger.info("Tailwind CSS built successfully")
+            logger.debug(result.stdout)
+
+            # Copy the built CSS to staticfiles directory
+            self._ensure_css_in_staticfiles()
+
+            return True
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Tailwind CSS build failed: {e}")
+            logger.error(f"Build stdout: {e.stdout}")
+            logger.error(f"Build stderr: {e.stderr}")
+            return False
+        except Exception as e:
+            logger.error(f"Error building Tailwind CSS: {e}")
+            logger.error(traceback.format_exc())
+            return False
+
+    def _ensure_css_in_staticfiles(self):
+        """Ensure CSS files are in the staticfiles directory."""
+        try:
+            # Import Django settings
+            import django
+            from django.conf import settings
+
+            # Get paths
+            static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+            staticfiles_dir = settings.STATIC_ROOT
+
+            if not os.path.exists(staticfiles_dir):
+                os.makedirs(staticfiles_dir, exist_ok=True)
+                logger.info(f"Created staticfiles directory: {staticfiles_dir}")
+
+            # Ensure CSS directory exists in staticfiles
+            css_staticfiles_dir = os.path.join(staticfiles_dir, 'css')
+            if not os.path.exists(css_staticfiles_dir):
+                os.makedirs(css_staticfiles_dir, exist_ok=True)
+                logger.info(f"Created CSS directory in staticfiles: {css_staticfiles_dir}")
+
+            # Copy CSS files from static to staticfiles
+            css_files = [
+                'tailwind-custom.css',
+                'styles.css',
+                'enhanced-styles.css',
+                'animations.css',
+                'admin-portal.css',
+                'modern-sidebar.css',
+                'sidebar-animations.css',
+                'toast.css'
+            ]
+
+            for css_file in css_files:
+                src_path = os.path.join(static_dir, 'css', css_file)
+                dest_path = os.path.join(css_staticfiles_dir, css_file)
+
+                if os.path.exists(src_path):
+                    import shutil
+                    shutil.copy2(src_path, dest_path)
+                    logger.info(f"Copied {css_file} to staticfiles")
+                else:
+                    logger.warning(f"Source CSS file not found: {src_path}")
+
+            # Copy JS files from static to staticfiles
+            js_staticfiles_dir = os.path.join(staticfiles_dir, 'js')
+            if not os.path.exists(js_staticfiles_dir):
+                os.makedirs(js_staticfiles_dir, exist_ok=True)
+                logger.info(f"Created JS directory in staticfiles: {js_staticfiles_dir}")
+
+            js_files = [
+                'main.js',
+                'admin-portal.js',
+                'dashboard-charts.js',
+                'modern-sidebar.js',
+                'notifications.js',
+                'search.js',
+                'sidebar.js',
+                'theme-switcher.js',
+                'toast.js'
+            ]
+
+            for js_file in js_files:
+                src_path = os.path.join(static_dir, 'js', js_file)
+                dest_path = os.path.join(js_staticfiles_dir, js_file)
+
+                if os.path.exists(src_path):
+                    import shutil
+                    shutil.copy2(src_path, dest_path)
+                    logger.info(f"Copied {js_file} to staticfiles")
+                else:
+                    logger.warning(f"Source JS file not found: {src_path}")
+
+            return True
+        except Exception as e:
+            logger.error(f"Error ensuring CSS in staticfiles: {e}")
+            logger.error(traceback.format_exc())
+            return False
+
+    def stop(self):
+        """Stop the scheduler."""
+        self.running = False
+        logger.info("Stopping cron job scheduler...")
+
+
 class HealthCheckServer(threading.Thread):
     """Simple HTTP server for health checks."""
 
@@ -1105,9 +1338,17 @@ def run_gunicorn(config):
         health_server = HealthCheckServer(config.host, config.port, process)
         health_server.start()
 
+        # Start cron job scheduler
+        cron_scheduler = CronJobScheduler(config.settings_module)
+        cron_scheduler.start()
+        logger.info("Cron job scheduler started")
+
         # Handle signals
         def signal_handler(sig, frame):
             logger.info(f"Received signal {sig}, shutting down gracefully...")
+
+            # Stop cron job scheduler
+            cron_scheduler.stop()
 
             # Stop health check server
             health_server.stop()
@@ -1138,6 +1379,9 @@ def run_gunicorn(config):
             if process.poll() is not None:
                 exit_code = process.returncode
                 logger.error(f"Gunicorn process exited unexpectedly with code {exit_code}")
+
+                # Stop cron job scheduler
+                cron_scheduler.stop()
 
                 # Stop health check server
                 health_server.stop()

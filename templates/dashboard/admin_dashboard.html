@@ -14,7 +14,7 @@
       console.warn('Chart.js not loaded, attempting to load again');
       const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js';
-      script.onload = function() {
+      script.onload = function() {o
         console.log('Chart.js loaded successfully');
         // Initialize charts after loading
         if (typeof initializeAdminDashboardCharts === 'function') {
